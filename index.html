@@ -656,7 +656,12 @@
                 <div class="pair-chip" data-pair="frxUSDNOK">USD/NOK</div>
                 <div class="pair-chip" data-pair="frxXAGUSD">XAG/USD</div>
                 <div class="pair-chip" data-pair="frxXAUUSD">XAU/USD</div>
-      </div>
+                                <div class="pair-chip" data-pair="1HZ100V">VOL 100</div>
+                                <div class="pair-chip" data-pair="1HZ10V">VOL 10</div>
+                                <div class="pair-chip" data-pair="1HZ25V">VOL 25</div>
+                                <div class="pair-chip" data-pair="1HZ50V">VOL 50</div>
+                                <div class="pair-chip" data-pair="1HZ75V">VOL 75</div>
+                      </div>
     </div>
 
     <hr class="divider"/>
@@ -1579,8 +1584,8 @@ function exportAllSignalsCSV() {
   ];
 
   var rows = data.map(function(d) {
-    var name      = d.pair.replace("frx","").replace("cry","").replace(/1HZ.*/,"");
-    var direction = d.col === "R" ? "BEARISH" : "BULLISH";
+      var name      = getPairDisplayName(d.pair);
+      var direction = d.col === "R" ? "BEARISH" : "BULLISH";
     var revPct    = d.c1 ? 100 - Math.round((d.c2 / d.c1) * 100) : 0;
     var momPct    = d.c1 ? Math.round((d.c2 / d.c1) * 100) : 0;
     var score     = Math.round(d.pct * d.c1);
@@ -1638,6 +1643,18 @@ function switchTab(mode) {
   renderTable();
 }
 
+function getPairDisplayName(pair) {
+  const volMatch = pair.match(/^1HZ(\d+)V$/);
+  if (volMatch) return "VOL " + volMatch[1];
+  return pair.replace("frx","").replace("cry","");
+}
+
+function getPairDisplayName(pair) {
+  const volMatch = pair.match(/^1HZ(\d+)V$/);
+  if (volMatch) return "VOL " + volMatch[1];
+  return pair.replace("frx","").replace("cry","");
+}
+
 function renderTable() {
   const minPct    = parseInt(document.getElementById("filterPct").value) || 0;
   const minStreak = parseInt(document.getElementById("filterStreak").value) || 1;
@@ -1659,8 +1676,8 @@ function renderTable() {
   }
 
   const rows = data.map(d => {
-    const name   = d.pair.replace("frx","").replace("cry","").replace(/1HZ.*/,"");
-    const arrow  = d.col === "R" ? "↓" : "↑";
+      const name   = getPairDisplayName(d.pair);
+      const arrow  = d.col === "R" ? "↓" : "↑";
     const arrowCls = d.col === "R" ? "cell-arrow-r" : "cell-arrow-g";
     const pctCls   = d.pct >= 80 ? "pct-high" : d.pct >= 60 ? "pct-med" : "pct-low";
     const barCls   = d.pct >= 80 ? "bar-g" : d.pct >= 60 ? "bar-a" : "bar-r";
