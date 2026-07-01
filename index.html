@@ -8,24 +8,26 @@
   @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
 
   :root {
-            --bg:       #000432;
-            --surface:  #000432;
-            --panel:    #0a0e4d;
-            --border:   #2a2e63;
-            --border2:  #ffffff;
-            --green:    #ffffff;
-            --green-dim:#0a0e4d;
-            --red:      #ffffff;
-            --red-dim:  #0a0e4d;
-            --amber:    #ffffff;
-            --blue:     #ffffff;
-            --cyan:     #ffffff;
-            --text:     #ffffff;
-            --text-dim: #9396c2;
-            --text-mid: #ffffff;
-            --mono:     'JetBrains Mono', monospace;
-            --sans:     'IBM Plex Sans', sans-serif;
-          }
+              --bg:       #000432;
+              --surface:  #000432;
+              --panel:    #0a0e4d;
+              --border:   #2a2e63;
+              --border2:  #ffffff;
+              --green:    #ffffff;
+              --green-dim:#0a0e4d;
+              --red:      #ffffff;
+              --red-dim:  #0a0e4d;
+              --amber:    #ffffff;
+              --blue:     #ffffff;
+              --cyan:     #ffffff;
+              --text:     #ffffff;
+              --text-dim: #9396c2;
+              --text-mid: #ffffff;
+              --sig-green: #2ED573;
+              --sig-red:   #E63946;
+              --mono:     'JetBrains Mono', monospace;
+              --sans:     'IBM Plex Sans', sans-serif;
+            }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -426,9 +428,31 @@
   }
 
   .cell-pair { font-weight: 500; letter-spacing: 0.03em; }
-  .cell-arrow-g { color: var(--green); }
-  .cell-arrow-r { color: var(--red); }
-  .cell-type { letter-spacing: 0.06em; font-size: 10px; }
+      .cell-arrow-g { color: var(--sig-green); }
+      .cell-arrow-r { color: var(--sig-red); }
+      .cell-type { letter-spacing: 0.06em; font-size: 10px; }
+  
+      /* ── FULL-ROW SIGNAL COLORING (Trinity-style) ── */
+      .row-red, .row-red td { color: var(--sig-red) !important; }
+      .row-green, .row-green td { color: var(--sig-green) !important; }
+      .row-red:hover { background: rgba(230,57,70,0.08); border-left: 2px solid var(--sig-red); }
+      .row-green:hover { background: rgba(46,213,115,0.08); border-left: 2px solid var(--sig-green); }
+      .row-red .badge-rev, .row-red .badge-mom {
+        color: var(--sig-red) !important;
+        border-color: rgba(230,57,70,0.4) !important;
+        background: rgba(230,57,70,0.12) !important;
+      }
+      .row-green .badge-rev, .row-green .badge-mom {
+        color: var(--sig-green) !important;
+        border-color: rgba(46,213,115,0.4) !important;
+        background: rgba(46,213,115,0.12) !important;
+      }
+      .row-red .pct-bar-wrap { background: rgba(230,57,70,0.15) !important; }
+          .row-green .pct-bar-wrap { background: rgba(46,213,115,0.15) !important; }
+          .row-red .pct-bar-fill { background: var(--sig-red) !important; }
+          .row-green .pct-bar-fill { background: var(--sig-green) !important; }
+          .row-red .cell-pct { color: var(--sig-red) !important; }
+          .row-green .cell-pct { color: var(--sig-green) !important; }
   .cell-pct {
     font-weight: 700;
     font-size: 13px;
@@ -1671,17 +1695,18 @@ function renderTable() {
   }
 
   const rows = data.map(d => {
-      const name   = getPairDisplayName(d.pair);
-      const arrow  = d.col === "R" ? "↓" : "↑";
-    const arrowCls = d.col === "R" ? "cell-arrow-r" : "cell-arrow-g";
-    const pctCls   = d.pct >= 80 ? "pct-high" : d.pct >= 60 ? "pct-med" : "pct-low";
-    const barCls   = d.pct >= 80 ? "bar-g" : d.pct >= 60 ? "bar-a" : "bar-r";
-    const barW     = Math.min(100, d.pct);
-    const badgeCls = d.type === "REV" ? "badge-rev" : "badge-mom";
-    const typeLbl  = d.type;
-
-    return `<tr>
-      <td class="cell-pair"><span class="${arrowCls}">${arrow}</span> ${name}</td>
+        const name   = getPairDisplayName(d.pair);
+        const arrow  = d.col === "R" ? "↓" : "↑";
+      const arrowCls = d.col === "R" ? "cell-arrow-r" : "cell-arrow-g";
+      const rowCls   = d.col === "R" ? "row-red" : "row-green";
+      const pctCls   = d.pct >= 80 ? "pct-high" : d.pct >= 60 ? "pct-med" : "pct-low";
+      const barCls   = d.pct >= 80 ? "bar-g" : d.pct >= 60 ? "bar-a" : "bar-r";
+      const barW     = Math.min(100, d.pct);
+      const badgeCls = d.type === "REV" ? "badge-rev" : "badge-mom";
+      const typeLbl  = d.type;
+  
+      return `<tr class="${rowCls}">
+        <td class="cell-pair"><span class="${arrowCls}">${arrow}</span> ${name}</td>
       <td><span class="${badgeCls}">${typeLbl}</span></td>
       <td class="cell-dim">C${d.c}</td>
       <td class="cell-dim">R${d.r}</td>
