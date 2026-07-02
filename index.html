@@ -312,46 +312,84 @@
 
   /* ── TABS ── */
   .tab-bar {
-    display: flex;
-    align-items: center;
-    gap: 0;
-    border-bottom: 1px solid var(--border);
-    padding: 0 24px;
-    background: var(--surface);
-  }
-  .tab {
-      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      gap: 0;
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      background: var(--surface);
+    }
+    .tab {
+        padding: 8px 14px;
+        font-family: var(--mono);
+        font-size: 12px;
+        letter-spacing: 0.06em;
+        color: var(--text-dim);
+        cursor: default;
+        border-bottom: 2px solid transparent;
+        transition: all 0.15s;
+        position: relative;
+        top: 1px;
+        white-space: nowrap;
+      }
+    .tab:hover { color: var(--text); }
+    .tab.active {
+      color: var(--green);
+      border-bottom-color: var(--green);
+    }
+    .tab-count {
+      display: inline-block;
+      background: var(--border2);
+      color: var(--text-mid);
+      border-radius: 10px;
+      padding: 1px 6px;
+      font-size: 9px;
+      margin-left: 5px;
+      vertical-align: middle;
+    }
+    .tab.active .tab-count {
+        background: rgba(255,255,255,0.12);
+            color: var(--green);
+      }
+    .tab-spacer { flex: 1; }
+    .split-table-wrap {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: var(--border);
+      height: 100%;
+    }
+    .split-pane {
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      min-width: 0;
+    }
+    .split-pane-header {
+      padding: 6px 10px;
       font-family: var(--mono);
-      font-size: 13px;
-      letter-spacing: 0.06em;
-      color: var(--text-dim);
-      cursor: pointer;
-      border-bottom: 2px solid transparent;
-      transition: all 0.15s;
-      position: relative;
-      top: 1px;
-      white-space: nowrap;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      color: var(--text-mid);
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
     }
-  .tab:hover { color: var(--text); }
-  .tab.active {
-    color: var(--green);
-    border-bottom-color: var(--green);
-  }
-  .tab-count {
-    display: inline-block;
-    background: var(--border2);
-    color: var(--text-mid);
-    border-radius: 10px;
-    padding: 1px 6px;
-    font-size: 9px;
-    margin-left: 5px;
-    vertical-align: middle;
-  }
-  .tab.active .tab-count {
-      background: rgba(255,255,255,0.12);
-          color: var(--green);
+    .split-pane-body {
+      overflow-y: auto;
+      flex: 1;
     }
-  .tab-spacer { flex: 1; }
+    .split-pane table { font-size: 12px; }
+    .split-pane thead th { padding: 5px 6px; font-size: 9px; }
+    .split-pane tbody td { padding: 4px 6px; }
+    .split-pane .cell-pair { font-size: 11px; }
+    .split-pane .cell-pct { font-size: 11px; }
+    .split-pane .badge-rev, .split-pane .badge-mom { font-size: 10px; padding: 0 4px; }
+    .split-pane .pct-bar-wrap { width: 36px; }
   .mode-toggle {
     display: flex;
     gap: 0;
@@ -815,12 +853,12 @@
 
     <!-- TABS -->
     <div class="tab-bar" id="tabBar" style="display:none;">
-      <div class="tab active" data-mode="REV" onclick="switchTab('REV')">
-        REVERSAL <span class="tab-count" id="revCount">0</span>
-      </div>
-      <div class="tab" data-mode="MOM" onclick="switchTab('MOM')">
-        MOMENTUM <span class="tab-count" id="momCount">0</span>
-      </div>
+      <div class="tab active" data-mode="REV">
+              REVERSAL <span class="tab-count" id="revCount">0</span>
+            </div>
+            <div class="tab active" data-mode="MOM">
+              MOMENTUM <span class="tab-count" id="momCount">0</span>
+            </div>
       <div class="tab-spacer"></div>
             <button class="export-btn" id="exportCsvBtn" onclick="exportAllSignalsCSV()" style="display:none;">⬇ EXPORT ALL SIGNALS</button>
           </div>
@@ -1667,45 +1705,14 @@ function resetRunBtn() {
 // ═══════════════════════════════════════════════════════
 //  TABLE RENDER
 // ═══════════════════════════════════════════════════════
-function switchTab(mode) {
-  curMode = mode;
-  document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t.dataset.mode === mode));
-  renderTable();
-}
-
 function getPairDisplayName(pair) {
   const volMatch = pair.match(/^1HZ(\d+)V$/);
   if (volMatch) return "VOL " + volMatch[1];
   return pair.replace("frx","").replace("cry","");
 }
 
-function getPairDisplayName(pair) {
-  const volMatch = pair.match(/^1HZ(\d+)V$/);
-  if (volMatch) return "VOL " + volMatch[1];
-  return pair.replace("frx","").replace("cry","");
-}
-
-function renderTable() {
-  const minPct    = parseInt(document.getElementById("filterPct").value) || 0;
-  const minStreak = parseInt(document.getElementById("filterStreak").value) || 1;
-  const minC1     = parseInt(document.getElementById("filterC1").value) || 1;
-
-  const src = curMode === "REV" ? allRevs : allMoms;
-  let data = src
-    .filter(x => x.pct >= minPct && x.s1 >= minStreak && x.c1 >= minC1)
-    .sort((a, b) => (b.pct * b.c1) - (a.pct * a.c1))
-    .slice(0, 100);
-
-  document.getElementById("resultCount").textContent = `Showing ${data.length} signal(s)`;
-
-  const area = document.getElementById("tableArea");
-
-  if (data.length === 0) {
-    area.innerHTML = `<div class="state-empty"><div class="state-icon">○</div><div class="state-title">No signals at current filters</div><div>Try lowering Min % or adjusting filters</div></div>`;
-    return;
-  }
-
-  const rows = data.map(d => {
+function buildRowsHTML(data) {
+  return data.map(d => {
         const name   = getPairDisplayName(d.pair);
         const arrow  = d.col === "R" ? "↓" : "↑";
       const arrowCls = d.col === "R" ? "cell-arrow-r" : "cell-arrow-g";
@@ -1730,20 +1737,51 @@ function renderTable() {
       </td>
     </tr>`;
   }).join("");
+}
 
-  area.innerHTML = `<div class="table-wrap"><table>
-    <thead><tr>
-      <th>PAIR</th>
-      <th>TYPE</th>
-      <th>CYCLE</th>
-      <th>ROW</th>
-      <th>STREAK</th>
-      <th>C1</th>
-      <th>C2</th>
-      <th>PROB%</th>
-    </tr></thead>
-    <tbody>${rows}</tbody>
-  </table></div>`;
+function buildPaneHTML(label, data, countId) {
+  if (data.length === 0) {
+    return `<div class="split-pane">
+      <div class="split-pane-header"><span>${label}</span><span id="${countId}">0</span></div>
+      <div class="split-pane-body"><div class="state-empty" style="min-height:120px;"><div class="state-icon" style="font-size:22px;">○</div><div class="state-title" style="font-size:11px;">No signals</div></div></div>
+    </div>`;
+  }
+  const rows = buildRowsHTML(data);
+  return `<div class="split-pane">
+    <div class="split-pane-header"><span>${label}</span><span id="${countId}">${data.length}</span></div>
+    <div class="split-pane-body"><table>
+      <thead><tr>
+        <th>PAIR</th><th>TYPE</th><th>CYCLE</th><th>ROW</th><th>STREAK</th><th>C1</th><th>C2</th><th>PROB%</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>
+  </div>`;
+}
+
+function renderTable() {
+  const minPct    = parseInt(document.getElementById("filterPct").value) || 0;
+  const minStreak = parseInt(document.getElementById("filterStreak").value) || 1;
+  const minC1     = parseInt(document.getElementById("filterC1").value) || 1;
+
+  const filterFn = x => x.pct >= minPct && x.s1 >= minStreak && x.c1 >= minC1;
+  const sortFn   = (a, b) => (b.pct * b.c1) - (a.pct * a.c1);
+
+  const revData = allRevs.filter(filterFn).sort(sortFn).slice(0, 100);
+  const momData = allMoms.filter(filterFn).sort(sortFn).slice(0, 100);
+
+  document.getElementById("resultCount").textContent = `Showing ${revData.length} REV, ${momData.length} MOM`;
+
+  const area = document.getElementById("tableArea");
+
+  if (revData.length === 0 && momData.length === 0) {
+    area.innerHTML = `<div class="state-empty"><div class="state-icon">○</div><div class="state-title">No signals at current filters</div><div>Try lowering Min % or adjusting filters</div></div>`;
+    return;
+  }
+
+  area.innerHTML = `<div class="split-table-wrap">
+    ${buildPaneHTML("REVERSAL", revData, "revCount")}
+    ${buildPaneHTML("MOMENTUM", momData, "momCount")}
+  </div>`;
 }
 </script>
 </body>
