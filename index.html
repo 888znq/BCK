@@ -1,0 +1,1791 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>WALLSPECTRUM</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+                --bg:       #000432;
+                                --surface:  #000432;
+                                --panel:    #000432;
+                --border:   #454a7a;
+                                                --border2:  #565c93;
+                                                --green:    #ccf5df;
+                                                --green-dim:#06231550;
+                                                --red:      #f7d9dc;
+                                                --red-dim:  #06231550;
+                                                --amber:    #f6e8c9;
+                                                --blue:     #d8e4f7;
+                                                --cyan:     #cdf1ef;
+                                                --text:     #eef0f7;
+                                                --text-dim: #767ba3;
+                                                --text-mid: #b2b6d9;
+                --sig-green: #2ED573;
+                --sig-red:   #E63946;
+                --mono:     'JetBrains Mono', monospace;
+                --sans:     'IBM Plex Sans', sans-serif;
+              }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      height: 100vh;
+          overflow: hidden;
+          font-size: 15px;
+          line-height: 1.5;
+        }
+
+  /* ── TOP BAR ── */
+  .topbar {
+      display: none !important;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      height: 48px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+  .logo {
+    font-family: var(--mono);
+    font-size: 14px;
+        font-weight: 400;
+        letter-spacing: 0.15em;
+    color: var(--green);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .logo-dot {
+    width: 7px; height: 7px;
+    background: var(--green);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50%      { opacity: 0.4; transform: scale(0.7); }
+  }
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+  .live-badge {
+      padding: 2px 8px;
+      border-radius: 3px;
+      background: rgba(255,255,255,0.1);
+          color: var(--green);
+          border: 1px solid rgba(255,255,255,0.35);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    display: none;
+  }
+  .live-badge.active { display: inline; }
+
+  /* ── LAYOUT ── */
+  .layout {
+        display: grid;
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr auto;
+            height: 100vh;
+          }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+            background: var(--surface);
+            border-top: 1px solid var(--border);
+            padding: 6px 20px;
+            display: flex;
+            flex-direction: row;
+            align-items: stretch;
+            gap: 26px;
+            overflow: hidden;
+            order: 2;
+            height: 120px;
+            flex-wrap: nowrap;
+          }
+        .sidebar > div { display: flex; flex-direction: column; justify-content: flex-start; padding-top: 4px; min-width: 0; overflow: hidden; }
+      .sidebar > div:nth-child(1)  { flex: 3 1 420px; }
+      .sidebar > div:nth-child(3)  { flex: 1 1 190px; }
+      .sidebar > div:nth-child(5)  { flex: 1 1 200px; padding-left: 8px; }
+      .sidebar > div:nth-child(7)  { flex: 1 1 170px; }
+      .sidebar > div:nth-child(9)  { flex: 1 1 160px; }
+      .sidebar > div:nth-child(11) { flex: 2 1 260px; }
+
+  .section-label {
+          display: none;
+        }
+
+  .field {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          margin-bottom: 6px;
+        }
+  .field label {
+        display: none;
+      }
+    .field input, .field select {
+                background: var(--panel);
+                border: 1px solid var(--border2);
+                color: var(--text);
+                padding: 9px 10px;
+              border-radius: 4px;
+              font-family: var(--mono);
+              font-size: 14px;
+              outline: none;
+              transition: border-color 0.15s;
+              width: 100%;
+              appearance: none;
+            }
+  .field input:focus, .field select:focus {
+      border-color: var(--green);
+      box-shadow: 0 0 0 2px rgba(255,255,255,0.15);
+    }
+  .field input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.2);
+    cursor: pointer;
+  }
+
+  .field-row {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+
+  .hint {
+        display: none;
+      }
+
+  .pair-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 5px;
+    }
+    #pairChips {
+          grid-template-columns: repeat(7, 1fr);
+          gap: 6px;
+          overflow: hidden;
+        }
+  .pair-chip {
+          padding: 6px 4px;
+        border-radius: 4px;
+        border: 1px solid var(--border2);
+        background: var(--panel);
+        color: var(--text-mid);
+        font-family: var(--mono);
+        font-size: 11px;
+        cursor: pointer;
+        text-align: center;
+        transition: all 0.12s;
+        letter-spacing: 0.02em;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+  .pair-chip:hover { border-color: var(--border2); color: var(--text); }
+  .pair-chip.active {
+        border-color: var(--green);
+            background: rgba(255,255,255,0.1);
+            color: var(--green);
+          }
+  
+    #pairSelect { height: auto; }
+    #pairSelect option {
+      padding: 4px 6px;
+      font-family: var(--mono);
+      font-size: 12px;
+    }
+    #pairSelect option:checked {
+      background: rgba(255,255,255,0.15);
+      color: var(--green);
+    }
+
+  .divider {
+      border: none;
+      border-left: 1px solid var(--border);
+      align-self: stretch;
+      margin: 0;
+      width: 0;
+    }
+
+  .run-btn {
+            width: 100%;
+            padding: 5px;
+          background: var(--green);
+          color: #000432;
+        border: none;
+        border-radius: 4px;
+        font-family: var(--mono);
+        font-size: 10px;
+                font-weight: 400;
+                letter-spacing: 0.05em;
+        line-height: 1;
+        cursor: pointer;
+        transition: all 0.15s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+      }
+  .run-btn:hover:not(:disabled) {
+        background: #5cffa8;
+            box-shadow: 0 0 20px rgba(46,213,115,0.35);
+      }
+  .run-btn:disabled {
+      opacity: 1;
+      cursor: not-allowed;
+    }
+
+  .stats-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
+        margin-bottom: 5px;
+      }
+  .stat-box {
+          background: var(--panel);
+          border: 1px solid var(--border);
+          border-radius: 4px;
+          padding: 5px 4px;
+          text-align: center;
+        }
+  .stat-val {
+          font-family: var(--mono);
+          font-size: 15px;
+                    font-weight: 400;
+                    color: var(--text);
+          line-height: 1.1;
+        }
+    .stat-lbl {
+          font-size: 8px;
+          color: var(--text-dim);
+          letter-spacing: 0.06em;
+          text-transform: uppercase;
+          margin-top: 1px;
+          line-height: 1;
+        }
+
+  /* ── MAIN AREA ── */
+  .main {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      order: 1;
+      min-height: 0;
+    }
+
+  /* ── PROGRESS ── */
+  .progress-wrap {
+    padding: 16px 24px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: none;
+  }
+  .progress-wrap.visible { display: block; }
+  .progress-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .progress-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-mid);
+  }
+  .progress-pct {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--green);
+  }
+  .progress-bar-bg {
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: var(--green);
+    border-radius: 2px;
+    transition: width 0.3s ease;
+    width: 0%;
+  }
+  .log-area {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-top: 8px;
+    height: 28px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .log-dot { color: var(--green); }
+
+  /* ── TABS ── */
+  .tab-bar {
+        display: none !important;
+        align-items: center;
+        gap: 0;
+        border-bottom: 1px solid var(--border);
+        padding: 0 24px;
+        background: var(--surface);
+      }
+    .tab {
+        padding: 8px 14px;
+        font-family: var(--mono);
+        font-size: 12px;
+        letter-spacing: 0.06em;
+        color: var(--text-dim);
+        cursor: default;
+        border-bottom: 2px solid transparent;
+        transition: all 0.15s;
+        position: relative;
+        top: 1px;
+        white-space: nowrap;
+      }
+    .tab:hover { color: var(--text); }
+    .tab.active {
+      color: var(--green);
+      border-bottom-color: var(--green);
+    }
+    .tab-count {
+      display: inline-block;
+      background: var(--border2);
+      color: var(--text-mid);
+      border-radius: 10px;
+      padding: 1px 6px;
+      font-size: 9px;
+      margin-left: 5px;
+      vertical-align: middle;
+    }
+    .tab.active .tab-count {
+        background: rgba(255,255,255,0.12);
+            color: var(--green);
+      }
+    .tab-spacer { flex: 1; }
+    .split-table-wrap {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: var(--border);
+      height: 100%;
+    }
+    .split-pane {
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      min-width: 0;
+    }
+    .split-pane-header {
+      padding: 6px 10px;
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      color: var(--text-mid);
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .split-pane-body {
+      overflow-y: auto;
+      flex: 1;
+    }
+    .split-pane table { font-size: 12px; }
+    .split-pane thead th { padding: 5px 6px; font-size: 9px; }
+    .split-pane tbody td { padding: 4px 6px; }
+    .split-pane .cell-pair { font-size: 11px; }
+    .split-pane .cell-pct { font-size: 11px; }
+    .split-pane .badge-rev, .split-pane .badge-mom { font-size: 10px; padding: 0 4px; }
+    .split-pane .pct-bar-wrap { width: 36px; }
+  .mode-toggle {
+    display: flex;
+    gap: 0;
+    border: 1px solid var(--border2);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-left: auto;
+  }
+  .mode-btn {
+    padding: 5px 12px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    background: transparent;
+    color: var(--text-dim);
+    border: none;
+    cursor: pointer;
+    transition: all 0.12s;
+  }
+  .mode-btn.active {
+        background: var(--green);
+        color: #000432;
+        font-weight: 400;
+      }
+
+  /* ── TABLE AREA ── */
+  .table-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0;
+  }
+
+  .table-wrap {
+    overflow-x: auto;
+  }
+
+  table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: var(--mono);
+      font-size: 14px;
+    }
+  thead tr {
+    background: var(--panel);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  thead th {
+        padding: 8px 10px;
+        text-align: left;
+        font-size: 11px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--text-dim);
+        border-bottom: 1px solid var(--border);
+        white-space: nowrap;
+        font-weight: 500;
+      }
+  thead th.sortable { cursor: pointer; user-select: none; }
+  thead th.sortable:hover { color: var(--text); }
+  thead th.sort-active { color: var(--green); }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.1s;
+  }
+  tbody tr:hover { background: rgba(255,255,255,0.06); }
+
+  tbody td {
+      padding: 7px 10px;
+      color: var(--text);
+      white-space: nowrap;
+    }
+  
+    table { table-layout: fixed; width: 100%; }
+      .table-wrap { width: 100%; }
+      th:nth-child(1), td:nth-child(1) { width: 14%; }
+      th:nth-child(2), td:nth-child(2) { width: 9%; }
+      th:nth-child(3), td:nth-child(3) { width: 10%; }
+      th:nth-child(4), td:nth-child(4) { width: 9%; }
+      th:nth-child(5), td:nth-child(5) { width: 12%; }
+      th:nth-child(6), td:nth-child(6) { width: 8%; }
+      th:nth-child(7), td:nth-child(7) { width: 8%; }
+      th:nth-child(8), td:nth-child(8) { width: 30%; }
+
+  .cell-pair { font-weight: 400; letter-spacing: 0.03em; font-size: 13px; }
+        .cell-arrow-g { color: var(--sig-green); }
+        .cell-arrow-r { color: var(--sig-red); }
+        .cell-type { letter-spacing: 0.06em; font-size: 13px; }
+  
+      /* ── FULL-ROW SIGNAL COLORING (Trinity-style) ── */
+      .row-red, .row-red td { color: var(--sig-red) !important; }
+      .row-green, .row-green td { color: var(--sig-green) !important; }
+      .row-red:hover { background: rgba(230,57,70,0.08); border-left: 2px solid var(--sig-red); }
+      .row-green:hover { background: rgba(46,213,115,0.08); border-left: 2px solid var(--sig-green); }
+      .row-red .badge-rev, .row-red .badge-mom {
+        color: var(--sig-red) !important;
+        border-color: rgba(230,57,70,0.4) !important;
+        background: rgba(230,57,70,0.12) !important;
+      }
+      .row-green .badge-rev, .row-green .badge-mom {
+        color: var(--sig-green) !important;
+        border-color: rgba(46,213,115,0.4) !important;
+        background: rgba(46,213,115,0.12) !important;
+      }
+      .row-red .pct-bar-wrap { background: rgba(230,57,70,0.15) !important; }
+          .row-green .pct-bar-wrap { background: rgba(46,213,115,0.15) !important; }
+          .row-red .pct-bar-fill { background: var(--sig-red) !important; }
+          .row-green .pct-bar-fill { background: var(--sig-green) !important; }
+          .row-red .cell-pct { color: var(--sig-red) !important; }
+          .row-green .cell-pct { color: var(--sig-green) !important; }
+  .cell-pct {
+          font-weight: 400;
+          font-size: 13px;
+        }
+  .pct-high { color: var(--green); }
+  .pct-med  { color: var(--amber); }
+  .pct-low  { color: var(--text-mid); }
+
+  .pct-bar-wrap {
+    width: 60px;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: 6px;
+  }
+  .pct-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+  }
+  .bar-g { background: var(--green); }
+  .bar-r { background: var(--red); }
+  .bar-a { background: var(--amber); }
+
+  .badge-rev {
+        display: inline-block;
+        padding: 1px 6px;
+        border-radius: 3px;
+        font-size: 13px;
+        letter-spacing: 0.06em;
+        background: rgba(255,255,255,0.15);
+            color: var(--blue);
+            border: 1px solid rgba(255,255,255,0.25);
+      }
+    .badge-mom {
+        display: inline-block;
+        padding: 1px 6px;
+        border-radius: 3px;
+        font-size: 13px;
+        letter-spacing: 0.06em;
+        background: rgba(255,255,255,0.12);
+        color: var(--amber);
+        border: 1px solid rgba(255,255,255,0.25);
+      }
+
+  .cell-streak { color: var(--cyan); font-size: 13px; }
+    .cell-dim    { color: var(--text-dim); font-size: 13px; }
+
+  /* ── EMPTY / IDLE STATES ── */
+  .state-idle, .state-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    min-height: 300px;
+    gap: 14px;
+    color: var(--text-dim);
+    font-family: var(--mono);
+    font-size: 12px;
+    text-align: center;
+  }
+  .state-icon {
+      font-size: 36px;
+      opacity: 1;
+    }
+  .state-title {
+    font-size: 13px;
+    color: var(--text-mid);
+    letter-spacing: 0.05em;
+  }
+
+  /* ── FILTER BAR ── */
+  .filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 24px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    flex-wrap: wrap;
+  }
+  .filter-bar input {
+      background: var(--panel);
+      border: 1px solid var(--border2);
+      color: var(--text);
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-family: var(--mono);
+      font-size: 13px;
+      outline: none;
+      width: 120px;
+    }
+    .filter-bar input:focus { border-color: var(--green); }
+    .filter-bar label { font-size: 11px; color: var(--text-dim); white-space: nowrap; }
+  .filter-bar span { color: var(--border2); }
+  .result-count { margin-left: auto; font-family: var(--mono); font-size: 10px; color: var(--text-dim); }
+
+  /* ── DAY SUMMARY BAR ── */
+  .day-summary {
+        padding: 8px 24px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        background: rgba(255,255,255,0.06);
+        border-bottom: 1px solid var(--border);
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--text-dim);
+      flex-wrap: wrap;
+      display: none !important;
+    }
+    .day-summary.visible { display: none !important; }
+  .day-chip {
+    padding: 3px 8px;
+    border-radius: 3px;
+    border: 1px solid var(--border2);
+    color: var(--text-mid);
+  }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #5cffa8; }
+
+  /* ── TOAST ── */
+  #toast {
+      position: fixed;
+      bottom: 140px;
+      right: 24px;
+      background: var(--panel);
+      border: 1px solid var(--border2);
+      border-radius: 6px;
+      padding: 12px 18px;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--text);
+      z-index: 999;
+      opacity: 0;
+      transition: opacity 0.2s;
+      max-width: 340px;
+      pointer-events: none;
+    }
+  #toast.show { opacity: 1; }
+  #toast.err  { border-color: var(--red); color: var(--red); }
+  #toast.ok   { border-color: var(--green); color: var(--green); }
+  
+    .export-btn {
+      margin: 0 12px;
+      padding: 5px 14px;
+      background: transparent;
+      color: var(--cyan);
+      border: 1px solid var(--cyan);
+      border-radius: 4px;
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .export-btn:hover {
+              background: rgba(46,213,115,0.1);
+                    box-shadow: 0 0 10px rgba(46,213,115,0.3);
+            }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="logo">
+    <div class="logo-dot"></div>
+    WALLSPECTRUM
+  </div>
+  <div class="topbar-right">
+    <span id="clockEl">—</span>
+    <span class="live-badge active" id="liveBadge">● LIVE</span>
+  </div>
+</div>
+
+<!-- LAYOUT -->
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+
+    <!-- PAIR -->
+    <div>
+      <div class="section-label">Instrument</div>
+      <div class="field">
+                    <label>Custom pair</label>
+                    <input type="text" id="pairInput" value="frxAUDCAD" placeholder="frxAUDCAD"/>
+                  </div>
+                  <div class="field">
+                    <select id="pairSelect">
+                                          <option value="__ALL__" selected>ALL PAIRS</option>
+                                          <option value="frxAUDCAD">AUD/CAD</option>
+                                          <option value="frxAUDCHF">AUD/CHF</option>
+                                          <option value="frxAUDJPY">AUD/JPY</option>
+                                          <option value="frxAUDNZD">AUD/NZD</option>
+                                          <option value="frxAUDUSD">AUD/USD</option>
+                                          <option value="frxEURAUD">EUR/AUD</option>
+                                          <option value="frxEURCAD">EUR/CAD</option>
+                                          <option value="frxEURCHF">EUR/CHF</option>
+                                          <option value="frxEURGBP">EUR/GBP</option>
+                                          <option value="frxEURJPY">EUR/JPY</option>
+                                          <option value="frxEURNZD">EUR/NZD</option>
+                                          <option value="frxEURUSD">EUR/USD</option>
+                                          <option value="frxGBPAUD">GBP/AUD</option>
+                                          <option value="frxGBPCAD">GBP/CAD</option>
+                                          <option value="frxGBPCHF">GBP/CHF</option>
+                                          <option value="frxGBPJPY">GBP/JPY</option>
+                                          <option value="frxGBPNZD">GBP/NZD</option>
+                                          <option value="frxGBPUSD">GBP/USD</option>
+                                          <option value="frxNZDJPY">NZD/JPY</option>
+                                          <option value="frxNZDUSD">NZD/USD</option>
+                                          <option value="frxUSDCAD">USD/CAD</option>
+                                          <option value="frxUSDCHF">USD/CHF</option>
+                                          <option value="frxUSDJPY">USD/JPY</option>
+                                          <option value="frxUSDMXN">USD/MXN</option>
+                                          <option value="frxUSDNOK">USD/NOK</option>
+                                          <option value="frxXAGUSD">XAG/USD</option>
+                                          <option value="frxXAUUSD">XAU/USD</option>
+                                          <option value="frxXPTUSD">XPT/USD</option>
+                                          <option value="cryBTCUSD">BTC/USD</option>
+                                          <option value="cryETHUSD">ETH/USD</option>
+                                        </select>
+                  </div>
+          </div>
+
+    <hr class="divider"/>
+
+    <!-- DATE RANGE -->
+    <div>
+      <div class="section-label">Date Range (All days)</div>
+      <div class="field-row">
+        <div class="field">
+          <label>From</label>
+          <input type="date" id="dateFrom"/>
+        </div>
+        <div class="field">
+          <label>To</label>
+          <input type="date" id="dateTo"/>
+        </div>
+      </div>
+      <p class="hint" id="dayCountHint">Weekdays selected: —</p>
+    </div>
+
+    <hr class="divider"/>
+
+    <!-- TIME WINDOW -->
+    <div>
+      <div class="section-label">Tick Time Window (IST)</div>
+      <div class="field-row">
+        <div class="field">
+          <label>Start time</label>
+          <input type="time" id="timeFrom" value="10:30"/>
+                  </div>
+                  <div class="field">
+                    <label>End time</label>
+                    <input type="time" id="timeTo" value="22:30"/>
+        </div>
+      </div>
+      <p class="hint">Enter times in IST. Equal start/end = full 24h day (00:00–00:00 UTC). Ticks are only fetched in this window each day</p>
+      <div class="pair-grid" style="margin-top:6px">
+        <div class="pair-chip" data-preset="00:00-20:57" title="Full session" style="display:none">Full Session</div>
+                <div class="pair-chip" data-preset="08:00-10:00" title="London open" style="display:none">London Open</div>
+                <div class="pair-chip" data-preset="13:00-15:00" title="NY open" style="display:none">NY Open</div>
+                <div class="pair-chip" data-preset="10:00-12:00" title="Mid morning" style="display:none">Mid Morning</div>
+      </div>
+    </div>
+
+    <hr class="divider"/>
+
+    <!-- CYCLE RANGE -->
+    <div>
+      <div class="section-label">Cycle Scan Range</div>
+      <div class="field-row">
+        <div class="field">
+                  <label>Min cycle (C)</label>
+                  <input type="number" id="cycleMin" value="180" min="1" max="500"/>
+                          </div>
+                          <div class="field">
+                            <label>Max cycle (C)</label>
+                            <input type="number" id="cycleMax" value="240" min="1" max="500"/>
+                </div>
+              </div>
+              <p class="hint">Range C<span id="cMinLabel">180</span>–C<span id="cMaxLabel">240</span> &nbsp;(<span id="cycleCountLabel">61</span> cycle(s))</p>
+    </div>
+
+    <hr class="divider"/>
+
+    <!-- MIN % -->
+    <div>
+      <div class="section-label">Signal Filter</div>
+      <div class="field">
+              <label>Min probability %</label>
+                            <input type="number" id="minPct" value="85" min="0" max="100"/>
+      </div>
+    </div>
+
+    <hr class="divider"/>
+
+    <!-- STATS + ACTIONS -->
+        <div>
+        <div class="stats-row" id="statsRow">
+          <div class="stat-box">
+            <div class="stat-val" id="statDays">—</div>
+            <div class="stat-lbl">Days</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-val" id="statTicks">—</div>
+            <div class="stat-lbl">Ticks</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-val" id="statSigs">—</div>
+            <div class="stat-lbl">Signals</div>
+          </div>
+        </div>
+    
+        <button class="run-btn" id="runBtn" onclick="runScan()" disabled>
+                      <span>▶</span> RUN SCAN
+                    </button>
+                    <button class="run-btn" id="clearCacheBtn" style="background:transparent;color:var(--text-dim);border:1px solid var(--border2);margin-top:3px;" onclick="clearPersistedCache()" disabled>
+                      <span>⌫</span> CLEAR CACHE
+                    </button>
+        </div>
+    
+      </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- PROGRESS -->
+    <div class="progress-wrap" id="progressWrap">
+      <div class="progress-header">
+        <span class="progress-label" id="progressLabel">Initialising…</span>
+        <span class="progress-pct" id="progressPct">0%</span>
+      </div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="progressFill"></div>
+      </div>
+      <div class="log-area">
+        <span class="log-dot">›</span>
+        <span id="logLine">Ready</span>
+      </div>
+    </div>
+
+    <!-- DAY SUMMARY -->
+    <div class="day-summary" id="daySummary"></div>
+
+    <!-- TABS -->
+    <div class="tab-bar" id="tabBar" style="display:none;">
+      <div class="tab active" data-mode="REV">
+              REVERSAL <span class="tab-count" id="revCount">0</span>
+            </div>
+            <div class="tab active" data-mode="MOM">
+              MOMENTUM <span class="tab-count" id="momCount">0</span>
+            </div>
+      <div class="tab-spacer"></div>
+            <button class="export-btn" id="exportCsvBtn" onclick="exportAllSignalsCSV()" style="display:none;">⬇ EXPORT ALL SIGNALS</button>
+          </div>
+
+    <!-- FILTER BAR -->
+    <div class="filter-bar" id="filterBar" style="display:none;">
+      <label>Min %</label>
+      <input type="number" id="filterPct" placeholder="100" min="0" max="100"/>
+      <span>|</span>
+      <label>Streak ≥</label>
+      <input type="number" id="filterStreak" placeholder="1" min="1"/>
+      <span>|</span>
+      <label>C1 ≥</label>
+      <input type="number" id="filterC1" placeholder="1" min="1"/>
+      <div class="result-count" id="resultCount">—</div>
+    </div>
+
+    <!-- TABLE AREA -->
+    <div class="table-area" id="tableArea">
+      <div class="state-idle" id="stateIdle">
+        <div class="state-icon">⬡</div>
+        <div class="state-title">Configure & Run Scan</div>
+        <div>Set date range, time window, cycle range,<br>then hit RUN SCAN</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════
+const WS_URL    = "wss://ws.derivws.com/websockets/v3?app_id=1089";
+const CHUNK_S   = 3600;
+const SCAN_END  = 75420;  // kept for backward compat, overridden by time window
+
+let allRevs  = [];
+let allMoms  = [];
+let curMode  = "REV";
+let scanRunning = false;
+let cancelFlag  = false;
+
+// ── TICK CACHE ──
+// Structure: tickCache[cacheKey] = { prices: Float64Array|Array, fetchedAt: timestamp }
+// cacheKey = `${pair}|${dateISO}|${secFrom}-${secTo}`
+var tickCache = {};
+var lastCacheKey = null; // tracks pair+dateRange+timeWindow combo
+
+// ── INDEXEDDB PERSISTENCE (tick cache survives page reloads) ──
+const IDB_NAME    = "wallspectrum_cache";
+const IDB_VERSION = 1;
+const IDB_STORE   = "ticks";
+var idbReady = null;
+
+function idbOpen() {
+  if (idbReady) return idbReady;
+  idbReady = new Promise((resolve, reject) => {
+    const req = indexedDB.open(IDB_NAME, IDB_VERSION);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains(IDB_STORE)) {
+        db.createObjectStore(IDB_STORE);
+      }
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror   = () => reject(req.error);
+  }).catch(err => { console.warn("IndexedDB unavailable, falling back to in-memory cache only", err); return null; });
+  return idbReady;
+}
+
+async function idbGetAll() {
+  const db = await idbOpen();
+  if (!db) return {};
+  return new Promise(resolve => {
+    const out = {};
+    const tx = db.transaction(IDB_STORE, "readonly");
+    const store = tx.objectStore(IDB_STORE);
+    const req = store.openCursor();
+    req.onsuccess = () => {
+      const cursor = req.result;
+      if (cursor) {
+        out[cursor.key] = cursor.value;
+        cursor.continue();
+      } else {
+        resolve(out);
+      }
+    };
+    req.onerror = () => resolve(out);
+  });
+}
+
+async function idbSet(key, value) {
+  const db = await idbOpen();
+  if (!db) return;
+  return new Promise(resolve => {
+    try {
+      const tx = db.transaction(IDB_STORE, "readwrite");
+      tx.objectStore(IDB_STORE).put(value, key);
+      tx.oncomplete = () => resolve();
+      tx.onerror    = () => resolve();
+    } catch (e) { resolve(); }
+  });
+}
+
+async function idbClear() {
+  const db = await idbOpen();
+  if (!db) return;
+  return new Promise(resolve => {
+    try {
+      const tx = db.transaction(IDB_STORE, "readwrite");
+      tx.objectStore(IDB_STORE).clear();
+      tx.oncomplete = () => resolve();
+      tx.onerror    = () => resolve();
+    } catch (e) { resolve(); }
+  });
+}
+
+async function restoreTickCacheFromIDB() {
+  try {
+    const stored = await idbGetAll();
+    const keys = Object.keys(stored);
+    for (let i = 0; i < keys.length; i++) {
+      tickCache[keys[i]] = stored[keys[i]];
+    }
+    if (keys.length) {
+      toast(`Restored ${keys.length} cached day(s) from disk`, "ok", 2500);
+    }
+  } catch (e) {
+    console.warn("Failed to restore tick cache from IndexedDB", e);
+  }
+  return true;
+}
+
+async function clearPersistedCache() {
+  tickCache = {};
+  lastCacheKey = null;
+  await idbClear();
+  toast("Cache cleared", "ok");
+}
+
+// ═══════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════
+document.addEventListener("DOMContentLoaded", () => {
+  const today = new Date();
+  const fmt = d => d.toISOString().slice(0, 10);
+  document.getElementById("dateFrom").value = fmt(today);
+  document.getElementById("dateTo").value   = fmt(today);
+  updateDayCount();
+  updateCycleLabel();
+  startClock();
+
+  const runBtnEl   = document.getElementById("runBtn");
+  const clearBtnEl = document.getElementById("clearCacheBtn");
+  runBtnEl.innerHTML   = "<span>⏳</span> LOADING CACHE…";
+  clearBtnEl.innerHTML = "<span>⏳</span> LOADING…";
+
+  restoreTickCacheFromIDB().finally(() => {
+    runBtnEl.disabled   = false;
+    clearBtnEl.disabled = false;
+    runBtnEl.innerHTML   = "<span>▶</span> RUN SCAN";
+    clearBtnEl.innerHTML = "<span>⌫</span> CLEAR CACHE";
+  });
+});
+
+var ALL_PAIRS = Array.from(document.querySelectorAll("#pairSelect option[value]:not([value='__ALL__'])"))
+  .map(o => o.value);
+var allPairsMode = true;
+
+function getSelectedPairs() {
+  if (allPairsMode) return [];
+  const v = document.getElementById("pairSelect").value;
+  return v && v !== "__ALL__" ? [v] : [];
+}
+
+// Pair select — native single-line dropdown, defaults to ALL PAIRS
+document.getElementById("pairSelect").addEventListener("change", function() {
+  const v = this.value;
+  if (v === "__ALL__") {
+    allPairsMode = true;
+    document.getElementById("pairInput").value = "ALL (" + ALL_PAIRS.length + " pairs)";
+  } else {
+    allPairsMode = false;
+    document.getElementById("pairInput").value = v;
+  }
+});
+
+document.getElementById("pairInput").addEventListener("input", () => {
+  allPairsMode = false;
+  document.getElementById("pairSelect").value = "__ALL__";
+});
+
+// Initialise the visible pair input to reflect the ALL PAIRS default
+document.getElementById("pairInput").value = "ALL (" + ALL_PAIRS.length + " pairs)";
+  
+  // Time presets
+document.querySelectorAll("[data-preset]").forEach(chip => {
+  chip.addEventListener("click", () => {
+    document.querySelectorAll("[data-preset]").forEach(c => c.classList.remove("active"));
+    chip.classList.add("active");
+    const [f, t] = chip.dataset.preset.split("-");
+    document.getElementById("timeFrom").value = f;
+    document.getElementById("timeTo").value   = t;
+  });
+});
+
+// Date change
+document.getElementById("dateFrom").addEventListener("change", updateDayCount);
+document.getElementById("dateTo").addEventListener("change",   updateDayCount);
+
+// Cycle labels
+document.getElementById("cycleMin").addEventListener("input", updateCycleLabel);
+document.getElementById("cycleMax").addEventListener("input", updateCycleLabel);
+
+// Filter bar inputs → re-render
+["filterPct","filterStreak","filterC1"].forEach(id => {
+  document.getElementById(id).addEventListener("input", renderTable);
+});
+
+// ═══════════════════════════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════════════════════════
+function startClock() {
+  const el = document.getElementById("clockEl");
+  const tick = () => {
+    const now = new Date();
+    el.textContent = now.toUTCString().slice(17, 25) + " UTC";
+  };
+  tick();
+  setInterval(tick, 1000);
+}
+
+function getWeekdays(from, to) {
+  const days = [];
+  const cur = new Date(from + "T00:00:00Z");
+  const end = new Date(to   + "T00:00:00Z");
+  while (cur <= end) {
+    days.push(new Date(cur));
+    cur.setUTCDate(cur.getUTCDate() + 1);
+  }
+  return days;
+}
+
+function updateDayCount() {
+  const from = document.getElementById("dateFrom").value;
+  const to   = document.getElementById("dateTo").value;
+  if (!from || !to) { document.getElementById("dayCountHint").textContent = "Days selected: —"; return; }
+  const days = getWeekdays(from, to);
+  document.getElementById("dayCountHint").textContent = `Days selected: ${days.length}`;
+}
+
+function updateCycleLabel() {
+  const mn = parseInt(document.getElementById("cycleMin").value) || 1;
+  const mx = parseInt(document.getElementById("cycleMax").value) || 1;
+  document.getElementById("cMinLabel").textContent = mn;
+  document.getElementById("cMaxLabel").textContent = mx;
+  document.getElementById("cycleCountLabel").textContent = Math.max(0, mx - mn + 1);
+}
+
+function setProgress(pct, label, log) {
+  document.getElementById("progressFill").style.width = pct + "%";
+  document.getElementById("progressPct").textContent  = Math.round(pct) + "%";
+  if (label) document.getElementById("progressLabel").textContent = label;
+  if (log)   document.getElementById("logLine").textContent = log;
+}
+
+function toast(msg, type="ok", dur=3000) {
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.className = "show " + type;
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.className = "", dur);
+}
+
+function fmtK(n) {
+  if (n >= 1_000_000) return (n/1_000_000).toFixed(1) + "M";
+  if (n >= 1_000)     return (n/1_000).toFixed(1) + "K";
+  return n;
+}
+
+// ═══════════════════════════════════════════════════════
+//  WEBSOCKET TICK FETCH
+// ═══════════════════════════════════════════════════════
+function fetchChunk(pair, t0, t1) {
+  return new Promise(resolve => {
+    let ws;
+    const result = {};
+    const cleanup = () => { try { ws.close(); } catch(e){} };
+    const timeout = setTimeout(() => { cleanup(); resolve(result); }, 25000);
+
+    try {
+      ws = new WebSocket(WS_URL);
+      ws.onopen = () => ws.send(JSON.stringify({
+        ticks_history: pair,
+        start: t0, end: t1,
+        count: 5000,
+        style: "ticks"
+      }));
+      ws.onmessage = ev => {
+        const d = JSON.parse(ev.data);
+        if (d.history) {
+          for (let i = 0; i < d.history.times.length; i++) {
+            result[+d.history.times[i]] = +d.history.prices[i];
+          }
+          clearTimeout(timeout); cleanup(); resolve(result);
+        } else if (d.error) {
+          clearTimeout(timeout); cleanup(); resolve(result);
+        }
+      };
+      ws.onerror = () => { clearTimeout(timeout); cleanup(); resolve(result); };
+      ws.onclose = () => { clearTimeout(timeout); resolve(result); };
+    } catch(e) { clearTimeout(timeout); resolve(result); }
+  });
+}
+
+async function loadTicksForDay(pair, dayEpoch, hFrom, hTo, logCb) {
+  const start = dayEpoch + hFrom;
+  const end   = dayEpoch + hTo;
+  const now   = Math.floor(Date.now() / 1000);
+  const actualEnd = Math.min(end, now);
+  if (actualEnd < start) return [];
+
+  const chunks = [];
+  let s = start;
+  while (s <= actualEnd) {
+    chunks.push([s, Math.min(s + CHUNK_S, actualEnd)]);
+    s += CHUNK_S + 1;
+  }
+
+  const WORKERS = 8;
+  const tickMap = {};
+  let completed = 0;
+
+  // Process chunks in parallel batches of WORKERS
+  for (let i = 0; i < chunks.length; i += WORKERS) {
+    if (cancelFlag) return null;
+    const batch = chunks.slice(i, i + WORKERS);
+    if (logCb) logCb(`chunks ${i+1}–${Math.min(i+WORKERS, chunks.length)}/${chunks.length}  [${WORKERS} parallel]`);
+    const results = await Promise.all(batch.map(([cs, ce]) => fetchChunk(pair, cs, ce)));
+    results.forEach(res => Object.assign(tickMap, res));
+    completed += batch.length;
+  }
+
+  const length = actualEnd - start + 1;
+  const prices = new Array(length).fill(-1.0);
+  for (const [ts, px] of Object.entries(tickMap)) {
+    const idx = +ts - start;
+    if (idx >= 0 && idx < length) prices[idx] = +px;
+  }
+  return prices;
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ═══════════════════════════════════════════════════════
+//  CUMULATIVE
+// ═══════════════════════════════════════════════════════
+function applyCumulative(hist, maxS) {
+  let cum = 0;
+  const res = {};
+  for (let i = maxS; i > 0; i--) {
+    if (hist[i]) cum += hist[i];
+    if (cum) res[i] = cum;
+  }
+  return res;
+}
+
+// ═══════════════════════════════════════════════════════
+//  STREAK SCAN — Web Worker + multi-core shard approach
+// ═══════════════════════════════════════════════════════
+
+var _workerBlobURL = null;
+function getWorkerBlob() {
+  if (_workerBlobURL) return _workerBlobURL;
+  const code = `
+function applyCumulative(hist, maxS) {
+  var cum = 0, res = {};
+  for (var i = maxS; i > 0; i--) {
+    if (hist[i]) cum += hist[i];
+    if (cum) res[i] = cum;
+  }
+  return res;
+}
+self.onmessage = function(e) {
+  var prices = e.data.prices;
+  var minC   = e.data.minC;
+  var maxC   = e.data.maxC;
+  var pair   = e.data.pair;
+  var n      = prices.length;
+  var revs   = [];
+  var moms   = [];
+  for (var c = minC; c <= maxC; c++) {
+    var rowColor  = new Int32Array(c);
+    var rowStreak = new Int32Array(c);
+    var rowCol    = new Int32Array(c).fill(-2);
+    var shg_max   = new Int32Array(c);
+    var shr_max   = new Int32Array(c);
+    var shg       = new Array(c).fill(null);
+    var shr       = new Array(c).fill(null);
+    for (var i = 0; i < n; i++) {
+      var p     = prices[i];
+      var prevP = i >= c ? prices[i - c] : -1.0;
+      var col   = Math.floor(i / c);
+      var row   = i % c;
+      var newC, newS;
+      if (prevP === -1.0) {
+        newC = p === -1.0 ? 0 : 1;
+        newS = p === -1.0 ? 0 : 1;
+      } else if (p === -1.0) {
+        newC = 0; newS = 0;
+      } else if (p > prevP) {
+        newC = 1;
+        newS = (rowCol[row] === col - 1 && rowColor[row] === 1 && rowStreak[row] > 0)
+               ? rowStreak[row] + 1 : 1;
+      } else if (p < prevP) {
+        newC = 2;
+        newS = (rowCol[row] === col - 1 && rowColor[row] === 2 && rowStreak[row] > 0)
+               ? rowStreak[row] + 1 : 1;
+      } else {
+        newC = rowColor[row];
+        newS = 0;
+      }
+      if (newS === 1 && rowStreak[row] > 0 && rowColor[row] !== 0 && rowCol[row] === col - 1) {
+        var s = rowStreak[row];
+        if (rowColor[row] === 1) {
+          if (!shg[row]) shg[row] = {};
+          shg[row][s] = (shg[row][s] || 0) + 1;
+          if (s > shg_max[row]) shg_max[row] = s;
+        } else {
+          if (!shr[row]) shr[row] = {};
+          shr[row][s] = (shr[row][s] || 0) + 1;
+          if (s > shr_max[row]) shr_max[row] = s;
+        }
+      }
+      rowColor[row]  = newC;
+      rowStreak[row] = newS;
+      rowCol[row]    = col;
+    }
+    for (var row2 = 0; row2 < c; row2++) {
+      var ll = rowStreak[row2];
+      if (ll < 1 || rowColor[row2] === 0) continue;
+      if (rowColor[row2] === 1) {
+        if (!shg[row2]) shg[row2] = {};
+        shg[row2][ll] = (shg[row2][ll] || 0) + 1;
+        if (ll > shg_max[row2]) shg_max[row2] = ll;
+      } else {
+        if (!shr[row2]) shr[row2] = {};
+        shr[row2][ll] = (shr[row2][ll] || 0) + 1;
+        if (ll > shr_max[row2]) shr_max[row2] = ll;
+      }
+    }
+    for (var r = 0; r < c; r++) {
+      for (var ci = 0; ci < 2; ci++) {
+        var raw  = ci === 0 ? shg[r] : shr[r];
+        var maxS = ci === 0 ? shg_max[r] : shr_max[r];
+        if (!raw || maxS === 0) continue;
+        var colColor = ci === 0 ? "G" : "R";
+        var cum = applyCumulative(raw, maxS);
+        var keys = Object.keys(cum);
+        for (var ki = 0; ki < keys.length; ki++) {
+          var sk = +keys[ki];
+          if (sk < 1) continue;
+          var c1 = cum[sk];
+          var c2 = cum[sk + 1] || 0;
+          var pctRev = c1 ? 100 - Math.round((c2 / c1) * 100) : 0;
+          var pctMom = c1 ? Math.round((c2 / c1) * 100) : 0;
+          revs.push({ pair: pair, c: c, r: r, s1: sk, s2: sk+1, c1: c1, c2: c2, pct: pctRev, col: colColor, type: "REV" });
+          if (c1 > 1) {
+            moms.push({ pair: pair, c: c, r: r, s1: sk, s2: sk+1, c1: c1, c2: c2, pct: pctMom, col: colColor, type: "MOM" });
+          }
+        }
+      }
+    }
+  }
+  self.postMessage({ revs: revs, moms: moms });
+};
+  `;
+  _workerBlobURL = URL.createObjectURL(new Blob([code], { type: "application/javascript" }));
+  return _workerBlobURL;
+}
+
+function workerScan(prices, minC, maxC, pair, progressCb) {
+  return new Promise(function(resolve) {
+    var totalCores  = Math.min(navigator.hardwareConcurrency || 4, 16);
+    var totalCycles = maxC - minC + 1;
+    var numWorkers  = Math.min(totalCores, totalCycles);
+    var cyclesPerWorker = Math.ceil(totalCycles / numWorkers);
+    var allRevs = [], allMoms = [];
+    var done = 0;
+    var blobURL = getWorkerBlob();
+    for (var wi = 0; wi < numWorkers; wi++) {
+      var shardMin = minC + wi * cyclesPerWorker;
+      var shardMax = Math.min(shardMin + cyclesPerWorker - 1, maxC);
+      if (shardMin > maxC) {
+        done++;
+        if (done === numWorkers) resolve([allRevs, allMoms]);
+        continue;
+      }
+      (function(wMin, wMax) {
+        var w = new Worker(blobURL);
+        var transferArr = new Float64Array(prices);
+        w.postMessage({ prices: transferArr, minC: wMin, maxC: wMax, pair: pair }, [transferArr.buffer]);
+        w.onmessage = function(e) {
+          var _r = e.data.revs; for (var _a = 0; _a < _r.length; _a++) allRevs.push(_r[_a]);
+                var _m = e.data.moms; for (var _b = 0; _b < _m.length; _b++) allMoms.push(_m[_b]);
+          w.terminate();
+          done++;
+          if (progressCb) progressCb(done / numWorkers);
+          if (done === numWorkers) resolve([allRevs, allMoms]);
+        };
+        w.onerror = function() {
+          w.terminate();
+          done++;
+          if (done === numWorkers) resolve([allRevs, allMoms]);
+        };
+      })(shardMin, shardMax);
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+//  WALL FILTER
+// ═══════════════════════════════════════════════════════
+function wallFilter(raw, minPct) {
+  return raw
+    .filter(x => x.pct >= minPct)
+    .sort((a, b) => (b.pct * b.c1) - (a.pct * a.c1));
+}
+
+// ═══════════════════════════════════════════════════════
+//  MAIN SCAN RUNNER
+// ═══════════════════════════════════════════════════════
+async function runScan() {
+  if (scanRunning) { cancelFlag = true; return; }
+
+  // ── Collect inputs ──
+    const selectedChipPairs = getSelectedPairs();
+    const pairsToScan = (allPairsMode
+          ? ALL_PAIRS
+          : (selectedChipPairs.length > 0
+              ? selectedChipPairs
+              : [document.getElementById("pairInput").value.trim() || "cryBTCUSD"]))
+          .map(p => p.trim());
+        const pair        = pairsToScan[0]; // kept for single-pair backward compat label
+    const dateFrom = document.getElementById("dateFrom").value;
+  const dateTo   = document.getElementById("dateTo").value;
+  const timeFrom = document.getElementById("timeFrom").value || "00:00";
+  const timeTo   = document.getElementById("timeTo").value   || "20:57";
+  const cycleMin = Math.max(1, parseInt(document.getElementById("cycleMin").value) || 60);
+    const cycleMax = Math.max(cycleMin, parseInt(document.getElementById("cycleMax").value) || 120);
+  const minPct   = parseInt(document.getElementById("minPct").value) || 100;
+
+  if (!dateFrom || !dateTo) { toast("Please set date range", "err"); return; }
+  
+    const days = getWeekdays(dateFrom, dateTo);
+    if (days.length === 0) { toast("No days in selected range", "err"); return; }
+  
+    // Time window: inputs are IST (UTC+5:30) → convert to UTC seconds-from-midnight
+    const IST_OFFSET_SEC = 5.5 * 3600; // 19800
+    const [fH, fM] = timeFrom.split(":").map(Number);
+    const [tH, tM] = timeTo.split(":").map(Number);
+    const istFromSec = fH * 3600 + fM * 60;
+    const istToSec   = tH * 3600 + tM * 60;
+
+    let secFrom, secTo;
+    if (istFromSec === istToSec) {
+      // Equal start/end = full 24h day, anchored to UTC 00:00–24:00
+      secFrom = 0;
+      secTo   = 86400;
+    } else {
+      secFrom = istFromSec - IST_OFFSET_SEC;
+      secTo   = istToSec   - IST_OFFSET_SEC;
+      if (secTo <= secFrom) secTo += 86400; // IST window crosses UTC midnight
+    }
+    if (secTo <= secFrom) { toast("End time must be after start time", "err"); return; }
+  
+    // ── Cache key: all pairs + date range + time window ──
+    const newCacheKey = `${pairsToScan.join(",")}|${dateFrom}|${dateTo}|${secFrom}-${secTo}`;
+        const allDaysCached = pairsToScan.every(p => days.every(d => {
+          const dk = `${p}|${d.toISOString().slice(0,10)}|${secFrom}-${secTo}`;
+          return tickCache[dk] !== undefined;
+        }));
+
+  // ── UI state ──
+  scanRunning = true;
+  cancelFlag  = false;
+  document.getElementById("runBtn").textContent = "■ CANCEL";
+    document.getElementById("runBtn").style.background = "var(--red)";
+    document.getElementById("progressWrap").classList.add("visible");
+    document.getElementById("tabBar").style.display = "none";
+    document.getElementById("filterBar").style.display = "none";
+    document.getElementById("tableArea").innerHTML = '<div class="state-idle" id="stateIdle"><div class="state-icon">⬡</div><div class="state-title">Scanning…</div></div>';
+    document.getElementById("daySummary").classList.remove("visible");
+
+  allRevs = []; allMoms = [];
+    let totalTicks = 0;
+    const totalPairs = pairsToScan.length;
+  
+    // ── For each pair: fetch all days, then scan ──
+    for (var pi = 0; pi < totalPairs; pi++) {
+      if (cancelFlag) break;
+      var curPair = pairsToScan[pi];
+      var pairFetchBase = (pi / totalPairs) * 60;
+            var pairFetchSlice = (1 / totalPairs) * 60;
+        
+            // ── Collect all prices per day (fetch or cache), 8 days parallel ──
+            var allDayPrices = new Array(days.length).fill(null);
+            var DAY_WORKERS = 8;
+        
+            var pairFullyCached = days.every(d => {
+              const dk = `${curPair}|${d.toISOString().slice(0,10)}|${secFrom}-${secTo}`;
+              return tickCache[dk] !== undefined;
+            });
+        
+            if (pairFullyCached) {
+              // ── FAST PATH: everything for this pair is already cached, skip network entirely ──
+              setProgress(pairFetchBase + pairFetchSlice,
+                `[${pi+1}/${totalPairs}] ${curPair}  using cached ticks (0 fetches)`,
+                `${curPair}  ${timeFrom}–${timeTo} IST  [CACHE HIT]`);
+              for (let di = 0; di < days.length; di++) {
+                const dateLabel = days[di].toISOString().slice(0, 10);
+                const dayKey = `${curPair}|${dateLabel}|${secFrom}-${secTo}`;
+                allDayPrices[di] = tickCache[dayKey];
+              }
+              await sleep(5);
+            } else {
+              for (let di = 0; di < days.length; di += DAY_WORKERS) {
+                if (cancelFlag) break;
+                const batch = days.slice(di, di + DAY_WORKERS);
+                const batchEnd = Math.min(di + DAY_WORKERS, days.length);
+                var fetchPct = pairFetchBase + (di / days.length) * pairFetchSlice;
+                setProgress(fetchPct,
+                  `[${pi+1}/${totalPairs}] ${curPair}  fetching days ${di+1}–${batchEnd}/${days.length}`,
+                  `${curPair}  ${timeFrom}–${timeTo} IST`);
+        
+                await Promise.all(batch.map(async (day, bi) => {
+                  const idx = di + bi;
+                  const dayEpoch = Math.floor(day.getTime() / 1000);
+                  const dateLabel = day.toISOString().slice(0, 10);
+                  const dayKey = `${curPair}|${dateLabel}|${secFrom}-${secTo}`;
+        
+                  if (tickCache[dayKey] !== undefined) {
+                                      allDayPrices[idx] = tickCache[dayKey];
+                                    } else {
+                                      const prices = await loadTicksForDay(curPair, dayEpoch, secFrom, secTo, log => {
+                                        document.getElementById("logLine").textContent = `[${pi+1}/${totalPairs}] ${curPair}  Day ${idx+1}/${days.length}  ${dateLabel}  ${log}`;
+                                      });
+                                      if (prices && !cancelFlag) {
+                                        tickCache[dayKey] = prices;
+                                        allDayPrices[idx] = prices;
+                                        idbSet(dayKey, prices); // fire-and-forget persist to disk
+                                      }
+                                    }
+                }));
+              }
+            }
+  
+      if (cancelFlag) break;
+  
+      for (let di = 0; di < allDayPrices.length; di++) {
+        const prices = allDayPrices[di];
+        if (!prices) continue;
+        const real = prices.filter(p => p !== -1.0).length;
+        totalTicks += real;
+      }
+  
+      // ── Run streak scan for this pair ──
+      var totalCores = Math.min(navigator.hardwareConcurrency || 4, 16);
+      var scanBase = 60 + (pi / totalPairs) * 28;
+      var scanSlice = (1 / totalPairs) * 28;
+      setProgress(scanBase, `[${pi+1}/${totalPairs}] ${curPair}  scanning ${totalCores} cores…`, `Cycles C${cycleMin}–C${cycleMax}`);
+      await sleep(10);
+  
+      var combined = [];
+      for (var di2 = 0; di2 < allDayPrices.length; di2++) {
+        if (allDayPrices[di2]) {
+          for (var pi2 = 0; pi2 < allDayPrices[di2].length; pi2++) {
+            combined.push(allDayPrices[di2][pi2]);
+          }
+        }
+      }
+  
+      var scanResult = await workerScan(combined, cycleMin, cycleMax, curPair, function(frac) {
+        setProgress(scanBase + frac * scanSlice,
+          `[${pi+1}/${totalPairs}] ${curPair}  scanning… ${Math.round(frac * 100)}%`,
+          `C${cycleMin}–C${cycleMax}  [${totalCores} workers]`);
+      });
+      for (var _i = 0; _i < scanResult[0].length; _i++) allRevs.push(scanResult[0][_i]);
+      for (var _j = 0; _j < scanResult[1].length; _j++) allMoms.push(scanResult[1][_j]);
+    }
+
+  if (!cancelFlag) {
+    lastCacheKey = newCacheKey;
+  }
+
+  if (cancelFlag) {
+    toast("Scan cancelled", "err");
+    resetRunBtn();
+    return;
+  }
+
+  // ── Final filter + render ──
+  setProgress(90, "Filtering signals…", `${allRevs.length} raw REV  |  ${allMoms.length} raw MOM`);
+  await sleep(30);
+
+  const filtRevs = wallFilter(allRevs, minPct);
+  const filtMoms = wallFilter(allMoms, minPct);
+
+  setProgress(100, "Complete", `Done — ${filtRevs.length} REV  |  ${filtMoms.length} MOM`);
+
+  // Update stats
+  document.getElementById("statDays").textContent  = days.length;
+  document.getElementById("statTicks").textContent = fmtK(totalTicks);
+  document.getElementById("statSigs").textContent  = filtRevs.length + filtMoms.length;
+
+  // Show day summary
+  const summaryEl = document.getElementById("daySummary");
+  summaryEl.innerHTML = days.map(d => {
+    const lbl = d.toISOString().slice(5,10).replace("-","/");
+    return `<span class="day-chip">${lbl}</span>`;
+  }).join(" ");
+  summaryEl.classList.add("visible");
+
+  // Show tabs and table
+  document.getElementById("tabBar").style.display     = "flex";
+  document.getElementById("filterBar").style.display  = "flex";
+  document.getElementById("filterPct").value          = minPct;
+  document.getElementById("revCount").textContent     = filtRevs.length;
+  document.getElementById("momCount").textContent     = filtMoms.length;
+
+  renderTable();
+    document.getElementById("exportCsvBtn").style.display = "inline-block";
+    setTimeout(() => document.getElementById("progressWrap").classList.remove("visible"), 2000);
+  
+    toast(`Scan complete — ${filtRevs.length + filtMoms.length} signals`, "ok");
+    resetRunBtn();
+}
+
+function exportAllSignalsCSV() {
+  var revSrc = allRevs || [];
+  var momSrc = allMoms || [];
+  var combined = revSrc.concat(momSrc);
+  var src = combined;
+  if (!src || src.length === 0) { toast("No signals to export", "err"); return; }
+
+  var minPctF    = parseInt(document.getElementById("filterPct").value)    || 0;
+  var minStreakF = parseInt(document.getElementById("filterStreak").value)  || 1;
+  var minC1F     = parseInt(document.getElementById("filterC1").value)      || 1;
+
+  var data = src
+    .filter(function(x) { return x.pct >= minPctF && x.s1 >= minStreakF && x.c1 >= minC1F; })
+    .sort(function(a, b) { return (b.pct * b.c1) - (a.pct * a.c1); });
+
+  var headers = [
+    "PAIR","TYPE","DIRECTION","CYCLE","ROW",
+    "STREAK_FROM","STREAK_TO","C1_OCCURRENCES","C2_OCCURRENCES",
+    "PROBABILITY_%","REVERSAL_PROB_%","MOMENTUM_PROB_%",
+    "SCORE","SIGNAL_STRENGTH"
+  ];
+
+  var rows = data.map(function(d) {
+      var name      = getPairDisplayName(d.pair);
+      var direction = d.col === "R" ? "BEARISH" : "BULLISH";
+    var revPct    = d.c1 ? 100 - Math.round((d.c2 / d.c1) * 100) : 0;
+    var momPct    = d.c1 ? Math.round((d.c2 / d.c1) * 100) : 0;
+    var score     = Math.round(d.pct * d.c1);
+    var strength  = d.pct >= 90 ? "STRONG" : d.pct >= 75 ? "MODERATE" : d.pct >= 60 ? "WEAK" : "SPECULATIVE";
+    return [
+      name, d.type, direction, d.c, d.r,
+      d.s1, d.s2, d.c1, d.c2,
+      d.pct, revPct, momPct,
+      score, strength
+    ].join(",");
+  });
+
+  var csv = [headers.join(",")].concat(rows).join("\n");
+  var filename = "wallspectrum_ALL_signals_" + new Date().toISOString().slice(0,10) + ".csv";
+    downloadCSV(csv, filename);
+    toast("Exported " + data.length + " signals to CSV", "ok");
+  }
+  
+  function downloadCSV(csv, filename) {
+    try {
+      var blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      var url  = URL.createObjectURL(blob);
+      var a    = document.createElement("a");
+      a.href     = url;
+      a.setAttribute("download", filename);
+      a.style.position = "fixed";
+      a.style.top = "0";
+      a.style.left = "0";
+      a.style.opacity = "0";
+      document.body.appendChild(a);
+      a.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, view: window }));
+      setTimeout(function() {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 3000);
+    } catch(e) {
+      toast("Download failed: " + e.message, "err");
+    }
+  }
+
+function resetRunBtn() {
+  scanRunning = false;
+  cancelFlag  = false;
+  const btn = document.getElementById("runBtn");
+  btn.innerHTML = "<span>▶</span> RUN SCAN";
+  btn.style.background = "var(--green)";
+}
+
+// ═══════════════════════════════════════════════════════
+//  TABLE RENDER
+// ═══════════════════════════════════════════════════════
+function getPairDisplayName(pair) {
+  const volMatch = pair.match(/^1HZ(\d+)V$/);
+  if (volMatch) return "VOL " + volMatch[1];
+  return pair.replace("frx","").replace("cry","");
+}
+
+function buildRowsHTML(data) {
+  return data.map(d => {
+        const name   = getPairDisplayName(d.pair);
+        const arrow  = d.col === "R" ? "↓" : "↑";
+      const arrowCls = d.col === "R" ? "cell-arrow-r" : "cell-arrow-g";
+      const rowCls   = d.col === "R" ? "row-red" : "row-green";
+      const pctCls   = d.pct >= 80 ? "pct-high" : d.pct >= 60 ? "pct-med" : "pct-low";
+      const barCls   = d.pct >= 80 ? "bar-g" : d.pct >= 60 ? "bar-a" : "bar-r";
+      const barW     = Math.min(100, d.pct);
+      const badgeCls = d.type === "REV" ? "badge-rev" : "badge-mom";
+      const typeLbl  = d.type;
+  
+      return `<tr class="${rowCls}">
+        <td class="cell-pair"><span class="${arrowCls}">${arrow}</span> ${name}</td>
+      <td><span class="${badgeCls}">${typeLbl}</span></td>
+      <td class="cell-dim">C${d.c}</td>
+      <td class="cell-dim">R${d.r}</td>
+      <td class="cell-streak">X${d.s1}→X${d.s2}</td>
+      <td class="cell-dim">${d.c1}</td>
+      <td class="cell-dim">${d.c2}</td>
+      <td>
+        <span class="cell-pct ${pctCls}">${d.pct}%</span>
+        <span class="pct-bar-wrap"><span class="pct-bar-fill ${barCls}" style="width:${barW}%"></span></span>
+      </td>
+    </tr>`;
+  }).join("");
+}
+
+function buildPaneHTML(label, data, countId) {
+  if (data.length === 0) {
+    return `<div class="split-pane">
+      <div class="split-pane-header"><span>${label}</span><span id="${countId}">0</span></div>
+      <div class="split-pane-body"><div class="state-empty" style="min-height:120px;"><div class="state-icon" style="font-size:22px;">○</div><div class="state-title" style="font-size:11px;">No signals</div></div></div>
+    </div>`;
+  }
+  const rows = buildRowsHTML(data);
+  return `<div class="split-pane">
+    <div class="split-pane-header"><span>${label}</span><span id="${countId}">${data.length}</span></div>
+    <div class="split-pane-body"><table>
+      <thead><tr>
+        <th>PAIR</th><th>TYPE</th><th>CYCLE</th><th>ROW</th><th>STREAK</th><th>C1</th><th>C2</th><th>PROB%</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>
+  </div>`;
+}
+
+function renderTable() {
+  const minPct    = parseInt(document.getElementById("filterPct").value) || 0;
+  const minStreak = parseInt(document.getElementById("filterStreak").value) || 1;
+  const minC1     = parseInt(document.getElementById("filterC1").value) || 1;
+
+  const filterFn = x => x.pct >= minPct && x.s1 >= minStreak && x.c1 >= minC1;
+  const sortFn   = (a, b) => (b.pct * b.c1) - (a.pct * a.c1);
+
+  const revData = allRevs.filter(filterFn).sort(sortFn).slice(0, 100);
+  const momData = allMoms.filter(filterFn).sort(sortFn).slice(0, 100);
+
+  document.getElementById("resultCount").textContent = `Showing ${revData.length} REV, ${momData.length} MOM`;
+
+  const area = document.getElementById("tableArea");
+
+  if (revData.length === 0 && momData.length === 0) {
+    area.innerHTML = `<div class="state-empty"><div class="state-icon">○</div><div class="state-title">No signals at current filters</div><div>Try lowering Min % or adjusting filters</div></div>`;
+    return;
+  }
+
+  area.innerHTML = `<div class="split-table-wrap">
+    ${buildPaneHTML("REVERSAL", revData, "revCount")}
+    ${buildPaneHTML("MOMENTUM", momData, "momCount")}
+  </div>`;
+}
+</script>
+</body>
+</html>
