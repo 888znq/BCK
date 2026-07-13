@@ -614,16 +614,26 @@
     flex-wrap: wrap;
   }
   .filter-bar input {
-      background: var(--panel);
-      border: 1px solid var(--border2);
-      color: var(--text);
-      padding: 5px 10px;
-      border-radius: 4px;
-      font-family: var(--mono);
-      font-size: 13px;
-      outline: none;
-      width: 120px;
-    }
+        background: var(--panel);
+        border: 1px solid var(--border2);
+        color: var(--text);
+        padding: 5px 10px;
+        border-radius: 4px;
+        font-family: var(--mono);
+        font-size: 13px;
+        outline: none;
+        width: 120px;
+      }
+      .filter-bar select {
+        background: var(--panel);
+        border: 1px solid var(--border2);
+        color: var(--text);
+        padding: 5px 10px;
+        border-radius: 4px;
+        font-family: var(--mono);
+        font-size: 13px;
+        outline: none;
+      }
     .filter-bar input:focus { border-color: var(--green); }
     .filter-bar label { font-size: 11px; color: var(--text-dim); white-space: nowrap; }
   .filter-bar span { color: var(--border2); }
@@ -826,13 +836,13 @@
     <hr class="divider"/>
 
     <!-- MIN % -->
-    <div>
-      <div class="section-label">Signal Filter</div>
-      <div class="field">
-              <label>Min probability %</label>
-                            <input type="number" id="minPct" value="85" min="0" max="100"/>
-      </div>
-    </div>
+        <div>
+          <div class="section-label">Signal Filter</div>
+          <div class="field">
+                  <label>Min probability %</label>
+                                <input type="number" id="minPct" value="85" min="0" max="100"/>
+          </div>
+        </div>
 
     <hr class="divider"/>
 
@@ -898,16 +908,30 @@
 
     <!-- FILTER BAR -->
     <div class="filter-bar" id="filterBar" style="display:none;">
-      <label>Min %</label>
-      <input type="number" id="filterPct" placeholder="100" min="0" max="100"/>
-      <span>|</span>
-      <label>Streak ≥</label>
-      <input type="number" id="filterStreak" placeholder="1" min="1"/>
-      <span>|</span>
-      <label>C1 ≥</label>
-      <input type="number" id="filterC1" placeholder="1" min="1"/>
-      <div class="result-count" id="resultCount">—</div>
-    </div>
+          <label>Min %</label>
+          <input type="number" id="filterPct" placeholder="100" min="0" max="100"/>
+          <span>|</span>
+          <label>Level</label>
+          <select id="levelFilter">
+            <option value="__ALL__" selected>ALL LEVELS</option>
+            <option value="1-2">X1→X2</option>
+            <option value="2-3">X2→X3</option>
+            <option value="3-4">X3→X4</option>
+            <option value="4-5">X4→X5</option>
+            <option value="5-6">X5→X6</option>
+            <option value="6-7">X6→X7</option>
+            <option value="7-8">X7→X8</option>
+            <option value="8-9">X8→X9</option>
+            <option value="9-10">X9→X10</option>
+          </select>
+          <span style="display:none;">|</span>
+          <label style="display:none;">Streak ≥</label>
+          <input type="number" id="filterStreak" placeholder="1" min="1" style="display:none;"/>
+          <span style="display:none;">|</span>
+          <label style="display:none;">C1 ≥</label>
+          <input type="number" id="filterC1" placeholder="1" min="1" style="display:none;"/>
+          <div class="result-count" id="resultCount">—</div>
+        </div>
 
     <!-- TABLE AREA -->
     <div class="table-area" id="tableArea">
@@ -1113,6 +1137,25 @@ document.getElementById("cycleMax").addEventListener("input", updateCycleLabel);
 ["filterPct","filterStreak","filterC1"].forEach(id => {
   document.getElementById(id).addEventListener("input", renderTable);
 });
+document.getElementById("levelFilter").addEventListener("change", renderTable);
+
+// ── LEVEL FILTER HELPERS ──
+function parseLevelFilter(selectEl) {
+  if (!selectEl) return null;
+  var v = selectEl.value;
+  if (!v || v === "__ALL__") return null;
+  var nums = v.split("-").map(Number);
+  if (nums.length < 2 || isNaN(nums[0]) || isNaN(nums[1])) return null;
+  return [{ s1: nums[0], s2: nums[1] }];
+}
+
+function matchesLevelFilter(d, levels) {
+  if (!levels) return true;
+  for (var i = 0; i < levels.length; i++) {
+    if (d.s1 === levels[i].s1 && d.s2 === levels[i].s2) return true;
+  }
+  return false;
+}
 
 // ═══════════════════════════════════════════════════════
 //  HELPERS
@@ -1627,7 +1670,7 @@ async function runScan() {
   await sleep(30);
 
   const filtRevs = wallFilter(allRevs, minPct);
-  const filtMoms = wallFilter(allMoms, minPct);
+    const filtMoms = wallFilter(allMoms, minPct);
 
   setProgress(100, "Complete", `Done — ${filtRevs.length} REV  |  ${filtMoms.length} MOM`);
 
@@ -1670,9 +1713,10 @@ function exportAllSignalsCSV() {
   var minStreakF = parseInt(document.getElementById("filterStreak").value)  || 1;
   var minC1F     = parseInt(document.getElementById("filterC1").value)      || 1;
 
-  var data = src
-    .filter(function(x) { return x.pct >= minPctF && x.s1 >= minStreakF && x.c1 >= minC1F; })
-    .sort(function(a, b) { return (b.pct * b.c1) - (a.pct * a.c1); });
+  var levelsF = parseLevelFilter(document.getElementById("levelFilter"));
+    var data = src
+      .filter(function(x) { return x.pct >= minPctF && x.s1 >= minStreakF && x.c1 >= minC1F && matchesLevelFilter(x, levelsF); })
+      .sort(function(a, b) { return (b.pct * b.c1) - (a.pct * a.c1); });
 
   var headers = [
       "PAIR","TYPE","DIRECTION","CYCLE","ROW",
@@ -1796,8 +1840,9 @@ function renderTable() {
   const minPct    = parseInt(document.getElementById("filterPct").value) || 0;
   const minStreak = parseInt(document.getElementById("filterStreak").value) || 1;
   const minC1     = parseInt(document.getElementById("filterC1").value) || 1;
+  const levels    = parseLevelFilter(document.getElementById("levelFilter"));
 
-  const filterFn = x => x.pct >= minPct && x.s1 >= minStreak && x.c1 >= minC1;
+  const filterFn = x => x.pct >= minPct && x.s1 >= minStreak && x.c1 >= minC1 && matchesLevelFilter(x, levels);
   const sortFn   = (a, b) => (b.pct * b.c1) - (a.pct * a.c1);
 
   const revData = allRevs.filter(filterFn).sort(sortFn).slice(0, 100);
