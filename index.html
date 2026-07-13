@@ -492,15 +492,16 @@
     }
   
     table { table-layout: fixed; width: 100%; }
-      .table-wrap { width: 100%; }
-      th:nth-child(1), td:nth-child(1) { width: 14%; }
-      th:nth-child(2), td:nth-child(2) { width: 9%; }
-      th:nth-child(3), td:nth-child(3) { width: 10%; }
-      th:nth-child(4), td:nth-child(4) { width: 9%; }
-      th:nth-child(5), td:nth-child(5) { width: 12%; }
-      th:nth-child(6), td:nth-child(6) { width: 8%; }
-      th:nth-child(7), td:nth-child(7) { width: 8%; }
-      th:nth-child(8), td:nth-child(8) { width: 30%; }
+          .table-wrap { width: 100%; }
+          th:nth-child(1), td:nth-child(1) { width: 14%; }
+          th:nth-child(2), td:nth-child(2) { width: 9%; }
+          th:nth-child(3), td:nth-child(3) { width: 10%; }
+          th:nth-child(4), td:nth-child(4) { width: 9%; }
+          th:nth-child(5), td:nth-child(5) { width: 12%; }
+          th:nth-child(6), td:nth-child(6) { width: 8%; }
+          th:nth-child(7), td:nth-child(7) { width: 8%; }
+          th:nth-child(8), td:nth-child(8) { width: 8%; }
+          th:nth-child(9), td:nth-child(9) { width: 22%; }
 
   .cell-pair { font-weight: 400; letter-spacing: 0.03em; font-size: 13px; }
         .cell-arrow-g { color: var(--sig-green); }
@@ -1277,6 +1278,18 @@ function applyCumulative(hist, maxS) {
   }
   return res;
 }
+function computeGapMapFromEvents(events) {
+  var maxRun = [], curRun = [];
+  for (var i = 0; i < events.length; i++) {
+    var L = events[i];
+    for (var s = 1; s < L; s++) {
+      curRun[s] = (curRun[s] || 0) + 1;
+      if (curRun[s] > (maxRun[s] || 0)) maxRun[s] = curRun[s];
+    }
+    curRun[L] = 0;
+  }
+  return maxRun;
+}
 self.onmessage = function(e) {
   var prices = e.data.prices;
   var minC   = e.data.minC;
@@ -1290,9 +1303,11 @@ self.onmessage = function(e) {
     var rowStreak = new Int32Array(c);
     var rowCol    = new Int32Array(c).fill(-2);
     var shg_max   = new Int32Array(c);
-    var shr_max   = new Int32Array(c);
-    var shg       = new Array(c).fill(null);
-    var shr       = new Array(c).fill(null);
+        var shr_max   = new Int32Array(c);
+        var shg       = new Array(c).fill(null);
+        var shr       = new Array(c).fill(null);
+        var termLenG  = new Array(c).fill(null);
+        var termLenR  = new Array(c).fill(null);
     for (var i = 0; i < n; i++) {
       var p     = prices[i];
       var prevP = i >= c ? prices[i - c] : -1.0;
@@ -1317,56 +1332,68 @@ self.onmessage = function(e) {
         newS = 0;
       }
       if (newS === 1 && rowStreak[row] > 0 && rowColor[row] !== 0 && rowCol[row] === col - 1) {
-        var s = rowStreak[row];
-        if (rowColor[row] === 1) {
-          if (!shg[row]) shg[row] = {};
-          shg[row][s] = (shg[row][s] || 0) + 1;
-          if (s > shg_max[row]) shg_max[row] = s;
-        } else {
-          if (!shr[row]) shr[row] = {};
-          shr[row][s] = (shr[row][s] || 0) + 1;
-          if (s > shr_max[row]) shr_max[row] = s;
-        }
-      }
+              var s = rowStreak[row];
+              if (rowColor[row] === 1) {
+                if (!shg[row]) shg[row] = {};
+                shg[row][s] = (shg[row][s] || 0) + 1;
+                if (s > shg_max[row]) shg_max[row] = s;
+                if (!termLenG[row]) termLenG[row] = [];
+                termLenG[row].push(s);
+              } else {
+                if (!shr[row]) shr[row] = {};
+                shr[row][s] = (shr[row][s] || 0) + 1;
+                if (s > shr_max[row]) shr_max[row] = s;
+                if (!termLenR[row]) termLenR[row] = [];
+                termLenR[row].push(s);
+              }
+            }
       rowColor[row]  = newC;
       rowStreak[row] = newS;
       rowCol[row]    = col;
     }
     for (var row2 = 0; row2 < c; row2++) {
-      var ll = rowStreak[row2];
-      if (ll < 1 || rowColor[row2] === 0) continue;
-      if (rowColor[row2] === 1) {
-        if (!shg[row2]) shg[row2] = {};
-        shg[row2][ll] = (shg[row2][ll] || 0) + 1;
-        if (ll > shg_max[row2]) shg_max[row2] = ll;
-      } else {
-        if (!shr[row2]) shr[row2] = {};
-        shr[row2][ll] = (shr[row2][ll] || 0) + 1;
-        if (ll > shr_max[row2]) shr_max[row2] = ll;
-      }
-    }
-    for (var r = 0; r < c; r++) {
-      for (var ci = 0; ci < 2; ci++) {
-        var raw  = ci === 0 ? shg[r] : shr[r];
-        var maxS = ci === 0 ? shg_max[r] : shr_max[r];
-        if (!raw || maxS === 0) continue;
-        var colColor = ci === 0 ? "G" : "R";
-        var cum = applyCumulative(raw, maxS);
-        var keys = Object.keys(cum);
-        for (var ki = 0; ki < keys.length; ki++) {
-          var sk = +keys[ki];
-          if (sk < 1) continue;
-          var c1 = cum[sk];
-          var c2 = cum[sk + 1] || 0;
-          var pctRev = c1 ? 100 - Math.round((c2 / c1) * 100) : 0;
-          var pctMom = c1 ? Math.round((c2 / c1) * 100) : 0;
-          revs.push({ pair: pair, c: c, r: r, s1: sk, s2: sk+1, c1: c1, c2: c2, pct: pctRev, col: colColor, type: "REV" });
-          if (c1 > 1) {
-            moms.push({ pair: pair, c: c, r: r, s1: sk, s2: sk+1, c1: c1, c2: c2, pct: pctMom, col: colColor, type: "MOM" });
+          var ll = rowStreak[row2];
+          if (ll < 1 || rowColor[row2] === 0) continue;
+          if (rowColor[row2] === 1) {
+            if (!shg[row2]) shg[row2] = {};
+            shg[row2][ll] = (shg[row2][ll] || 0) + 1;
+            if (ll > shg_max[row2]) shg_max[row2] = ll;
+            if (!termLenG[row2]) termLenG[row2] = [];
+            termLenG[row2].push(ll);
+          } else {
+            if (!shr[row2]) shr[row2] = {};
+            shr[row2][ll] = (shr[row2][ll] || 0) + 1;
+            if (ll > shr_max[row2]) shr_max[row2] = ll;
+            if (!termLenR[row2]) termLenR[row2] = [];
+            termLenR[row2].push(ll);
           }
         }
-      }
-    }
+    for (var r = 0; r < c; r++) {
+          var gapMapG = computeGapMapFromEvents(termLenG[r] || []);
+          var gapMapR = computeGapMapFromEvents(termLenR[r] || []);
+          for (var ci = 0; ci < 2; ci++) {
+            var raw  = ci === 0 ? shg[r] : shr[r];
+            var maxS = ci === 0 ? shg_max[r] : shr_max[r];
+            if (!raw || maxS === 0) continue;
+            var colColor = ci === 0 ? "G" : "R";
+            var gapMap = ci === 0 ? gapMapG : gapMapR;
+            var cum = applyCumulative(raw, maxS);
+            var keys = Object.keys(cum);
+            for (var ki = 0; ki < keys.length; ki++) {
+              var sk = +keys[ki];
+              if (sk < 1) continue;
+              var c1 = cum[sk];
+              var c2 = cum[sk + 1] || 0;
+              var pctRev = c1 ? 100 - Math.round((c2 / c1) * 100) : 0;
+              var pctMom = c1 ? Math.round((c2 / c1) * 100) : 0;
+              var gapVal = gapMap[sk] || 0;
+              revs.push({ pair: pair, c: c, r: r, s1: sk, s2: sk+1, c1: c1, c2: c2, pct: pctRev, col: colColor, type: "REV", gap: gapVal });
+              if (c1 > 1) {
+                moms.push({ pair: pair, c: c, r: r, s1: sk, s2: sk+1, c1: c1, c2: c2, pct: pctMom, col: colColor, type: "MOM" });
+              }
+            }
+          }
+        }
   }
   self.postMessage({ revs: revs, moms: moms });
 };
@@ -1648,26 +1675,27 @@ function exportAllSignalsCSV() {
     .sort(function(a, b) { return (b.pct * b.c1) - (a.pct * a.c1); });
 
   var headers = [
-    "PAIR","TYPE","DIRECTION","CYCLE","ROW",
-    "STREAK_FROM","STREAK_TO","C1_OCCURRENCES","C2_OCCURRENCES",
-    "PROBABILITY_%","REVERSAL_PROB_%","MOMENTUM_PROB_%",
-    "SCORE","SIGNAL_STRENGTH"
-  ];
-
-  var rows = data.map(function(d) {
-      var name      = getPairDisplayName(d.pair);
-      var direction = d.col === "R" ? "BEARISH" : "BULLISH";
-    var revPct    = d.c1 ? 100 - Math.round((d.c2 / d.c1) * 100) : 0;
-    var momPct    = d.c1 ? Math.round((d.c2 / d.c1) * 100) : 0;
-    var score     = Math.round(d.pct * d.c1);
-    var strength  = d.pct >= 90 ? "STRONG" : d.pct >= 75 ? "MODERATE" : d.pct >= 60 ? "WEAK" : "SPECULATIVE";
-    return [
-      name, d.type, direction, d.c, d.r,
-      d.s1, d.s2, d.c1, d.c2,
-      d.pct, revPct, momPct,
-      score, strength
-    ].join(",");
-  });
+      "PAIR","TYPE","DIRECTION","CYCLE","ROW",
+      "STREAK_FROM","STREAK_TO","C1_OCCURRENCES","C2_OCCURRENCES","MAX_FALSE_GAP",
+      "PROBABILITY_%","REVERSAL_PROB_%","MOMENTUM_PROB_%",
+      "SCORE","SIGNAL_STRENGTH"
+    ];
+  
+    var rows = data.map(function(d) {
+        var name      = getPairDisplayName(d.pair);
+        var direction = d.col === "R" ? "BEARISH" : "BULLISH";
+      var revPct    = d.c1 ? 100 - Math.round((d.c2 / d.c1) * 100) : 0;
+      var momPct    = d.c1 ? Math.round((d.c2 / d.c1) * 100) : 0;
+      var score     = Math.round(d.pct * d.c1);
+      var strength  = d.pct >= 90 ? "STRONG" : d.pct >= 75 ? "MODERATE" : d.pct >= 60 ? "WEAK" : "SPECULATIVE";
+      var gapVal    = d.gap || 0;
+      return [
+        name, d.type, direction, d.c, d.r,
+        d.s1, d.s2, d.c1, d.c2, gapVal,
+        d.pct, revPct, momPct,
+        score, strength
+      ].join(",");
+    });
 
   var csv = [headers.join(",")].concat(rows).join("\n");
   var filename = "wallspectrum_ALL_signals_" + new Date().toISOString().slice(0,10) + ".csv";
@@ -1725,6 +1753,8 @@ function buildRowsHTML(data) {
       const barW     = Math.min(100, d.pct);
       const badgeCls = d.type === "REV" ? "badge-rev" : "badge-mom";
       const typeLbl  = d.type;
+      const gapCell  = (d.type === "REV") ? `G${d.gap || 0}` : "—";
+      const gapStyle = (d.type === "REV" && (d.gap || 0) >= 3) ? "color:var(--amber);" : "";
   
       return `<tr class="${rowCls}">
         <td class="cell-pair"><span class="${arrowCls}">${arrow}</span> ${name}</td>
@@ -1734,6 +1764,7 @@ function buildRowsHTML(data) {
       <td class="cell-streak">X${d.s1}→X${d.s2}</td>
       <td class="cell-dim">${d.c1}</td>
       <td class="cell-dim">${d.c2}</td>
+      <td class="cell-dim" style="${gapStyle}">${gapCell}</td>
       <td>
         <span class="cell-pct ${pctCls}">${d.pct}%</span>
         <span class="pct-bar-wrap"><span class="pct-bar-fill ${barCls}" style="width:${barW}%"></span></span>
@@ -1753,11 +1784,11 @@ function buildPaneHTML(label, data, countId) {
   return `<div class="split-pane">
     <div class="split-pane-header"><span>${label}</span><span id="${countId}">${data.length}</span></div>
     <div class="split-pane-body"><table>
-      <thead><tr>
-        <th>PAIR</th><th>TYPE</th><th>CYCLE</th><th>ROW</th><th>STREAK</th><th>C1</th><th>C2</th><th>PROB%</th>
-      </tr></thead>
-      <tbody>${rows}</tbody>
-    </table></div>
+          <thead><tr>
+            <th>PAIR</th><th>TYPE</th><th>CYCLE</th><th>ROW</th><th>STREAK</th><th>C1</th><th>C2</th><th>GAP</th><th>PROB%</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table></div>
   </div>`;
 }
 
