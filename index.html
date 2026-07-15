@@ -492,16 +492,17 @@
     }
   
     table { table-layout: fixed; width: 100%; }
-          .table-wrap { width: 100%; }
-          th:nth-child(1), td:nth-child(1) { width: 14%; }
-          th:nth-child(2), td:nth-child(2) { width: 9%; }
-          th:nth-child(3), td:nth-child(3) { width: 10%; }
-          th:nth-child(4), td:nth-child(4) { width: 9%; }
-          th:nth-child(5), td:nth-child(5) { width: 12%; }
-          th:nth-child(6), td:nth-child(6) { width: 8%; }
-          th:nth-child(7), td:nth-child(7) { width: 8%; }
-          th:nth-child(8), td:nth-child(8) { width: 8%; }
-          th:nth-child(9), td:nth-child(9) { width: 22%; }
+              .table-wrap { width: 100%; }
+              th:nth-child(1),  td:nth-child(1)  { width: 12%; }
+              th:nth-child(2),  td:nth-child(2)  { width: 10%; }
+              th:nth-child(3),  td:nth-child(3)  { width: 8%; }
+              th:nth-child(4),  td:nth-child(4)  { width: 9%; }
+              th:nth-child(5),  td:nth-child(5)  { width: 8%; }
+              th:nth-child(6),  td:nth-child(6)  { width: 11%; }
+              th:nth-child(7),  td:nth-child(7)  { width: 7%; }
+              th:nth-child(8),  td:nth-child(8)  { width: 7%; }
+              th:nth-child(9),  td:nth-child(9)  { width: 7%; }
+              th:nth-child(10), td:nth-child(10) { width: 21%; }
 
   .cell-pair { font-weight: 400; letter-spacing: 0.03em; font-size: 13px; }
         .cell-arrow-g { color: var(--sig-green); }
@@ -640,26 +641,34 @@
   .result-count { margin-left: auto; font-family: var(--mono); font-size: 10px; color: var(--text-dim); }
 
   /* ── DAY SUMMARY BAR ── */
-  .day-summary {
-        padding: 8px 24px;
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        background: rgba(255,255,255,0.06);
-        border-bottom: 1px solid var(--border);
-      font-family: var(--mono);
-      font-size: 10px;
-      color: var(--text-dim);
-      flex-wrap: wrap;
-      display: none !important;
+    .day-summary {
+          padding: 8px 24px;
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          background: rgba(255,255,255,0.06);
+          border-bottom: 1px solid var(--border);
+        font-family: var(--mono);
+        font-size: 10px;
+        color: var(--text-dim);
+        flex-wrap: wrap;
+        display: none;
+      }
+      .day-summary.visible { display: flex; }
+    .day-chip {
+      padding: 3px 8px;
+      border-radius: 3px;
+      border: 1px solid var(--border2);
+      color: var(--text-mid);
+      cursor: pointer;
+      transition: all 0.12s;
     }
-    .day-summary.visible { display: none !important; }
-  .day-chip {
-    padding: 3px 8px;
-    border-radius: 3px;
-    border: 1px solid var(--border2);
-    color: var(--text-mid);
-  }
+    .day-chip:hover { border-color: var(--green); color: var(--text); }
+    .day-chip.active {
+      border-color: var(--green);
+      background: rgba(255,255,255,0.1);
+      color: var(--green);
+    }
 
   /* ── SCROLLBAR ── */
   ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -912,19 +921,24 @@
           <input type="number" id="filterPct" placeholder="100" min="0" max="100"/>
           <span>|</span>
           <label>Level</label>
-          <select id="levelFilter">
-            <option value="__ALL__" selected>ALL LEVELS</option>
-            <option value="1-2">X1→X2</option>
-            <option value="2-3">X2→X3</option>
-            <option value="3-4">X3→X4</option>
-            <option value="4-5">X4→X5</option>
-            <option value="5-6">X5→X6</option>
-            <option value="6-7">X6→X7</option>
-            <option value="7-8">X7→X8</option>
-            <option value="8-9">X8→X9</option>
-            <option value="9-10">X9→X10</option>
-          </select>
-          <span style="display:none;">|</span>
+                    <select id="levelFilter">
+                      <option value="__ALL__" selected>ALL LEVELS</option>
+                      <option value="1-2">X1→X2</option>
+                      <option value="2-3">X2→X3</option>
+                      <option value="3-4">X3→X4</option>
+                      <option value="4-5">X4→X5</option>
+                      <option value="5-6">X5→X6</option>
+                      <option value="6-7">X6→X7</option>
+                      <option value="7-8">X7→X8</option>
+                      <option value="8-9">X8→X9</option>
+                      <option value="9-10">X9→X10</option>
+                    </select>
+                    <span>|</span>
+                    <label>Day</label>
+                    <select id="dayFilter">
+                      <option value="__ALL__" selected>ALL DAYS</option>
+                    </select>
+                    <span style="display:none;">|</span>
           <label style="display:none;">Streak ≥</label>
           <input type="number" id="filterStreak" placeholder="1" min="1" style="display:none;"/>
           <span style="display:none;">|</span>
@@ -1138,6 +1152,7 @@ document.getElementById("cycleMax").addEventListener("input", updateCycleLabel);
   document.getElementById(id).addEventListener("input", renderTable);
 });
 document.getElementById("levelFilter").addEventListener("change", renderTable);
+document.getElementById("dayFilter").addEventListener("change", renderTable);
 
 // ── LEVEL FILTER HELPERS ──
 function parseLevelFilter(selectEl) {
@@ -1155,6 +1170,20 @@ function matchesLevelFilter(d, levels) {
     if (d.s1 === levels[i].s1 && d.s2 === levels[i].s2) return true;
   }
   return false;
+}
+
+function matchesDayFilter(d, dayVal) {
+  if (!dayVal || dayVal === "__ALL__") return true;
+  return d.date === dayVal;
+}
+
+function selectDayChip(iso) {
+  var sel = document.getElementById("dayFilter");
+  sel.value = (sel.value === iso) ? "__ALL__" : iso;
+  document.querySelectorAll(".day-chip").forEach(function(c) {
+    c.classList.toggle("active", c.dataset.date === sel.value);
+  });
+  renderTable();
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1630,30 +1659,38 @@ async function runScan() {
         totalTicks += real;
       }
   
-      // ── Run streak scan for this pair ──
-      var totalCores = Math.min(navigator.hardwareConcurrency || 4, 16);
-      var scanBase = 60 + (pi / totalPairs) * 28;
-      var scanSlice = (1 / totalPairs) * 28;
-      setProgress(scanBase, `[${pi+1}/${totalPairs}] ${curPair}  scanning ${totalCores} cores…`, `Cycles C${cycleMin}–C${cycleMax}`);
-      await sleep(10);
-  
-      var combined = [];
-      for (var di2 = 0; di2 < allDayPrices.length; di2++) {
-        if (allDayPrices[di2]) {
-          for (var pi2 = 0; pi2 < allDayPrices[di2].length; pi2++) {
-            combined.push(allDayPrices[di2][pi2]);
+      // ── Run streak scan for this pair, PER DAY (each day scanned & kept separate) ──
+            var totalCores = Math.min(navigator.hardwareConcurrency || 4, 16);
+            var scanBase = 60 + (pi / totalPairs) * 28;
+            var scanSlice = (1 / totalPairs) * 28;
+      
+            for (var di2 = 0; di2 < allDayPrices.length; di2++) {
+              if (cancelFlag) break;
+              var dayPrices2 = allDayPrices[di2];
+              if (!dayPrices2) continue;
+              var dayLabel2 = days[di2].toISOString().slice(0, 10);
+              var dayFrac2  = allDayPrices.length ? (di2 / allDayPrices.length) : 0;
+      
+              setProgress(scanBase + dayFrac2 * scanSlice,
+                `[${pi+1}/${totalPairs}] ${curPair}  scanning day ${di2+1}/${allDayPrices.length} (${dayLabel2})…`,
+                `Cycles C${cycleMin}–C${cycleMax}`);
+      
+              var dayScanResult = await workerScan(dayPrices2, cycleMin, cycleMax, curPair, function(frac) {
+                setProgress(scanBase + (dayFrac2 + frac / allDayPrices.length) * scanSlice,
+                  `[${pi+1}/${totalPairs}] ${curPair}  ${dayLabel2}  scanning… ${Math.round(frac * 100)}%`,
+                  `C${cycleMin}–C${cycleMax}  [${totalCores} workers]`);
+              });
+      
+              for (var _i = 0; _i < dayScanResult[0].length; _i++) {
+                dayScanResult[0][_i].date = dayLabel2;
+                allRevs.push(dayScanResult[0][_i]);
+              }
+              for (var _j = 0; _j < dayScanResult[1].length; _j++) {
+                dayScanResult[1][_j].date = dayLabel2;
+                allMoms.push(dayScanResult[1][_j]);
+              }
+            }
           }
-        }
-      }
-  
-      var scanResult = await workerScan(combined, cycleMin, cycleMax, curPair, function(frac) {
-        setProgress(scanBase + frac * scanSlice,
-          `[${pi+1}/${totalPairs}] ${curPair}  scanning… ${Math.round(frac * 100)}%`,
-          `C${cycleMin}–C${cycleMax}  [${totalCores} workers]`);
-      });
-      for (var _i = 0; _i < scanResult[0].length; _i++) allRevs.push(scanResult[0][_i]);
-      for (var _j = 0; _j < scanResult[1].length; _j++) allMoms.push(scanResult[1][_j]);
-    }
 
   if (!cancelFlag) {
     lastCacheKey = newCacheKey;
@@ -1679,13 +1716,21 @@ async function runScan() {
   document.getElementById("statTicks").textContent = fmtK(totalTicks);
   document.getElementById("statSigs").textContent  = filtRevs.length + filtMoms.length;
 
-  // Show day summary
-  const summaryEl = document.getElementById("daySummary");
-  summaryEl.innerHTML = days.map(d => {
-    const lbl = d.toISOString().slice(5,10).replace("-","/");
-    return `<span class="day-chip">${lbl}</span>`;
-  }).join(" ");
-  summaryEl.classList.add("visible");
+  // Show day summary — click a day chip to isolate that day's results
+    const summaryEl = document.getElementById("daySummary");
+    const dayFilterSel = document.getElementById("dayFilter");
+    dayFilterSel.innerHTML = '<option value="__ALL__">ALL DAYS</option>' + days.map(d => {
+      const iso = d.toISOString().slice(0, 10);
+      return `<option value="${iso}">${iso}</option>`;
+    }).join("");
+    dayFilterSel.value = "__ALL__";
+  
+    summaryEl.innerHTML = days.map(d => {
+      const iso = d.toISOString().slice(0, 10);
+      const lbl = iso.slice(5,10).replace("-","/");
+      return `<span class="day-chip" data-date="${iso}" onclick="selectDayChip('${iso}')">${lbl}</span>`;
+    }).join(" ");
+    summaryEl.classList.add("visible");
 
   // Show tabs and table
   document.getElementById("tabBar").style.display     = "flex";
@@ -1714,32 +1759,34 @@ function exportAllSignalsCSV() {
   var minC1F     = parseInt(document.getElementById("filterC1").value)      || 1;
 
   var levelsF = parseLevelFilter(document.getElementById("levelFilter"));
-    var data = src
-      .filter(function(x) { return x.pct >= minPctF && x.s1 >= minStreakF && x.c1 >= minC1F && matchesLevelFilter(x, levelsF); })
-      .sort(function(a, b) { return (b.pct * b.c1) - (a.pct * a.c1); });
-
-  var headers = [
-      "PAIR","TYPE","DIRECTION","CYCLE","ROW",
-      "STREAK_FROM","STREAK_TO","C1_OCCURRENCES","C2_OCCURRENCES","MAX_FALSE_GAP",
-      "PROBABILITY_%","REVERSAL_PROB_%","MOMENTUM_PROB_%",
-      "SCORE","SIGNAL_STRENGTH"
-    ];
+      var dayValF = document.getElementById("dayFilter") ? document.getElementById("dayFilter").value : "__ALL__";
+      var data = src
+        .filter(function(x) { return x.pct >= minPctF && x.s1 >= minStreakF && x.c1 >= minC1F && matchesLevelFilter(x, levelsF) && matchesDayFilter(x, dayValF); })
+        .sort(function(a, b) { return (b.pct * b.c1) - (a.pct * a.c1); });
   
-    var rows = data.map(function(d) {
-        var name      = getPairDisplayName(d.pair);
-        var direction = d.col === "R" ? "BEARISH" : "BULLISH";
-      var revPct    = d.c1 ? 100 - Math.round((d.c2 / d.c1) * 100) : 0;
-      var momPct    = d.c1 ? Math.round((d.c2 / d.c1) * 100) : 0;
-      var score     = Math.round(d.pct * d.c1);
-      var strength  = d.pct >= 90 ? "STRONG" : d.pct >= 75 ? "MODERATE" : d.pct >= 60 ? "WEAK" : "SPECULATIVE";
-      var gapVal    = d.gap || 0;
-      return [
-        name, d.type, direction, d.c, d.r,
-        d.s1, d.s2, d.c1, d.c2, gapVal,
-        d.pct, revPct, momPct,
-        score, strength
-      ].join(",");
-    });
+    var headers = [
+        "PAIR","DATE","TYPE","DIRECTION","CYCLE","ROW",
+        "STREAK_FROM","STREAK_TO","C1_OCCURRENCES","C2_OCCURRENCES","MAX_FALSE_GAP",
+        "PROBABILITY_%","REVERSAL_PROB_%","MOMENTUM_PROB_%",
+        "SCORE","SIGNAL_STRENGTH"
+      ];
+    
+      var rows = data.map(function(d) {
+          var name      = getPairDisplayName(d.pair);
+          var direction = d.col === "R" ? "BEARISH" : "BULLISH";
+        var revPct    = d.c1 ? 100 - Math.round((d.c2 / d.c1) * 100) : 0;
+        var momPct    = d.c1 ? Math.round((d.c2 / d.c1) * 100) : 0;
+        var score     = Math.round(d.pct * d.c1);
+        var strength  = d.pct >= 90 ? "STRONG" : d.pct >= 75 ? "MODERATE" : d.pct >= 60 ? "WEAK" : "SPECULATIVE";
+        var gapVal    = d.gap || 0;
+        var dateVal   = d.date || "";
+        return [
+          name, dateVal, d.type, direction, d.c, d.r,
+          d.s1, d.s2, d.c1, d.c2, gapVal,
+          d.pct, revPct, momPct,
+          score, strength
+        ].join(",");
+      });
 
   var csv = [headers.join(",")].concat(rows).join("\n");
   var filename = "wallspectrum_ALL_signals_" + new Date().toISOString().slice(0,10) + ".csv";
@@ -1799,9 +1846,11 @@ function buildRowsHTML(data) {
       const typeLbl  = d.type;
       const gapCell  = (d.type === "REV") ? `G${d.gap || 0}` : "—";
       const gapStyle = (d.type === "REV" && (d.gap || 0) >= 3) ? "color:var(--amber);" : "";
+      const dateCell = d.date || "—";
   
       return `<tr class="${rowCls}">
         <td class="cell-pair"><span class="${arrowCls}">${arrow}</span> ${name}</td>
+      <td class="cell-dim">${dateCell}</td>
       <td><span class="${badgeCls}">${typeLbl}</span></td>
       <td class="cell-dim">C${d.c}</td>
       <td class="cell-dim">R${d.r}</td>
@@ -1825,24 +1874,25 @@ function buildPaneHTML(label, data, countId) {
     </div>`;
   }
   const rows = buildRowsHTML(data);
-  return `<div class="split-pane">
-    <div class="split-pane-header"><span>${label}</span><span id="${countId}">${data.length}</span></div>
-    <div class="split-pane-body"><table>
-          <thead><tr>
-            <th>PAIR</th><th>TYPE</th><th>CYCLE</th><th>ROW</th><th>STREAK</th><th>C1</th><th>C2</th><th>GAP</th><th>PROB%</th>
-          </tr></thead>
-          <tbody>${rows}</tbody>
-        </table></div>
-  </div>`;
-}
+    return `<div class="split-pane">
+      <div class="split-pane-header"><span>${label}</span><span id="${countId}">${data.length}</span></div>
+      <div class="split-pane-body"><table>
+            <thead><tr>
+              <th>PAIR</th><th>DATE</th><th>TYPE</th><th>CYCLE</th><th>ROW</th><th>STREAK</th><th>C1</th><th>C2</th><th>GAP</th><th>PROB%</th>
+            </tr></thead>
+            <tbody>${rows}</tbody>
+          </table></div>
+    </div>`;
+  }
 
 function renderTable() {
   const minPct    = parseInt(document.getElementById("filterPct").value) || 0;
   const minStreak = parseInt(document.getElementById("filterStreak").value) || 1;
   const minC1     = parseInt(document.getElementById("filterC1").value) || 1;
   const levels    = parseLevelFilter(document.getElementById("levelFilter"));
+  const dayVal    = document.getElementById("dayFilter") ? document.getElementById("dayFilter").value : "__ALL__";
 
-  const filterFn = x => x.pct >= minPct && x.s1 >= minStreak && x.c1 >= minC1 && matchesLevelFilter(x, levels);
+  const filterFn = x => x.pct >= minPct && x.s1 >= minStreak && x.c1 >= minC1 && matchesLevelFilter(x, levels) && matchesDayFilter(x, dayVal);
   const sortFn   = (a, b) => (b.pct * b.c1) - (a.pct * a.c1);
 
   const revData = allRevs.filter(filterFn).sort(sortFn).slice(0, 100);
