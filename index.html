@@ -537,17 +537,15 @@
     }
   
     table { table-layout: fixed; width: 100%; }
-              .table-wrap { width: 100%; }
-              th:nth-child(1),  td:nth-child(1)  { width: 12%; }
-              th:nth-child(2),  td:nth-child(2)  { width: 10%; }
-              th:nth-child(3),  td:nth-child(3)  { width: 8%; }
-              th:nth-child(4),  td:nth-child(4)  { width: 9%; }
-              th:nth-child(5),  td:nth-child(5)  { width: 8%; }
-              th:nth-child(6),  td:nth-child(6)  { width: 11%; }
-              th:nth-child(7),  td:nth-child(7)  { width: 7%; }
-              th:nth-child(8),  td:nth-child(8)  { width: 7%; }
-              th:nth-child(9),  td:nth-child(9)  { width: 7%; }
-              th:nth-child(10), td:nth-child(10) { width: 21%; }
+                  .table-wrap { width: 100%; }
+                  th:nth-child(1),  td:nth-child(1)  { width: 18%; }
+                  th:nth-child(2),  td:nth-child(2)  { width: 12%; }
+                  th:nth-child(3),  td:nth-child(3)  { width: 12%; }
+                  th:nth-child(4),  td:nth-child(4)  { width: 16%; }
+                  th:nth-child(5),  td:nth-child(5)  { width: 10%; }
+                  th:nth-child(6),  td:nth-child(6)  { width: 10%; }
+                  th:nth-child(7),  td:nth-child(7)  { width: 10%; }
+                  th:nth-child(8),  td:nth-child(8)  { width: 12%; }
 
   .cell-pair { font-weight: 400; letter-spacing: 0.03em; font-size: 13px; }
         .cell-arrow-g { color: var(--sig-green); }
@@ -716,10 +714,7 @@
     }
 
   /* ── SCROLLBAR ── */
-  ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
-    ::-webkit-scrollbar-thumb:hover { background: #5cffa8; }
+    ::-webkit-scrollbar { display: none; }
 
   /* ── TOAST ── */
   #toast {
@@ -958,8 +953,7 @@
               MOMENTUM <span class="tab-count" id="momCount">0</span>
             </div>
       <div class="tab-spacer"></div>
-            <button class="export-btn" id="exportCsvBtn" onclick="exportAllSignalsCSV()" style="display:none;">⬇ EXPORT ALL SIGNALS</button>
-          </div>
+                </div>
 
     <!-- FILTER BAR -->
     <div class="filter-bar" id="filterBar" style="display:none;">
@@ -989,9 +983,10 @@
           <input type="number" id="filterStreak" placeholder="1" min="1" style="display:none;"/>
           <span style="display:none;">|</span>
           <label style="display:none;">C1 ≥</label>
-          <input type="number" id="filterC1" placeholder="1" min="1" style="display:none;"/>
-          <div class="result-count" id="resultCount">—</div>
-        </div>
+                    <input type="number" id="filterC1" placeholder="1" min="1" style="display:none;"/>
+                    <div class="result-count" id="resultCount">—</div>
+                    <button class="export-btn" id="exportCsvBtn" onclick="exportAllSignalsCSV()" style="display:none; margin-left: 12px;">⬇ EXPORT CSV</button>
+                  </div>
 
     <!-- TABLE AREA -->
     <div class="table-area" id="tableArea">
@@ -1896,22 +1891,22 @@ async function runScan() {
     resetRunBtn();
 }
 
-function exportAllSignalsCSV() {
-  var revSrc = allRevs || [];
-  var momSrc = allMoms || [];
-  var combined = revSrc.concat(momSrc);
-  var src = combined;
-  if (!src || src.length === 0) { toast("No signals to export", "err"); return; }
-
+async function exportAllSignalsCSV() {
   var minPctF    = parseInt(document.getElementById("filterPct").value)    || 0;
   var minStreakF = parseInt(document.getElementById("filterStreak").value)  || 1;
   var minC1F     = parseInt(document.getElementById("filterC1").value)      || 1;
 
   var levelsF = parseLevelFilter(document.getElementById("levelFilter"));
-      var dayValF = document.getElementById("dayFilter") ? document.getElementById("dayFilter").value : "__ALL__";
-      var data = src
-        .filter(function(x) { return x.pct >= minPctF && x.s1 >= minStreakF && x.c1 >= minC1F && matchesLevelFilter(x, levelsF) && matchesDayFilter(x, dayValF); })
-        .sort(function(a, b) { return (b.pct * b.c1) - (a.pct * a.c1); });
+  var dayValF = document.getElementById("dayFilter") ? document.getElementById("dayFilter").value : "__ALL__";
+
+  var filterFn = function(x) { return x.pct >= minPctF && x.s1 >= minStreakF && x.c1 >= minC1F && matchesLevelFilter(x, levelsF) && matchesDayFilter(x, dayValF); };
+  var sortFn = function(a, b) { return (b.pct * b.c1) - (a.pct * a.c1); };
+
+  var revData = (allRevs || []).filter(filterFn).sort(sortFn).slice(0, 100);
+  var momData = (allMoms || []).filter(filterFn).sort(sortFn).slice(0, 100);
+  var data = revData.concat(momData);
+
+  if (data.length === 0) { toast("No signals to export", "err"); return; }
   
     var headers = [
         "PAIR","DATE","TYPE","DIRECTION","CYCLE","ROW",
@@ -1939,11 +1934,26 @@ function exportAllSignalsCSV() {
 
   var csv = [headers.join(",")].concat(rows).join("\n");
   var filename = "wallspectrum_ALL_signals_" + new Date().toISOString().slice(0,10) + ".csv";
-    downloadCSV(csv, filename);
+    await downloadCSV(csv, filename);
     toast("Exported " + data.length + " signals to CSV", "ok");
   }
   
-  function downloadCSV(csv, filename) {
+  async function downloadCSV(csv, filename) {
+    if (window.showSaveFilePicker) {
+      try {
+        const handle = await window.showSaveFilePicker({
+          suggestedName: filename,
+          types: [{ description: 'CSV File', accept: { 'text/csv': ['.csv'] } }],
+        });
+        const writable = await handle.createWritable();
+        await writable.write(csv);
+        await writable.close();
+      } catch (e) {
+        if (e.name !== 'AbortError') toast("Save failed: " + e.message, "err");
+      }
+      return;
+    }
+    // Fallback for browsers that don't support the File System Access API
     try {
       var blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
       var url  = URL.createObjectURL(blob);
@@ -1998,20 +2008,17 @@ function buildRowsHTML(data) {
       const dateCell = d.date || "—";
   
       return `<tr class="${rowCls}">
-        <td class="cell-pair"><span class="${arrowCls}">${arrow}</span> ${name}</td>
-      <td class="cell-dim">${dateCell}</td>
-      <td><span class="${badgeCls}">${typeLbl}</span></td>
-      <td class="cell-dim">C${d.c}</td>
-      <td class="cell-dim">R${d.r}</td>
-      <td class="cell-streak">X${d.s1}→X${d.s2}</td>
-      <td class="cell-dim">${d.c1}</td>
-      <td class="cell-dim">${d.c2}</td>
-      <td class="cell-dim" style="${gapStyle}">${gapCell}</td>
-      <td>
-        <span class="cell-pct ${pctCls}">${d.pct}%</span>
-        <span class="pct-bar-wrap"><span class="pct-bar-fill ${barCls}" style="width:${barW}%"></span></span>
-      </td>
-    </tr>`;
+              <td class="cell-pair"><span class="${arrowCls}">${arrow}</span> ${name}</td>
+            <td class="cell-dim">C${d.c}</td>
+            <td class="cell-dim">R${d.r}</td>
+            <td class="cell-streak">X${d.s1}→X${d.s2}</td>
+            <td class="cell-dim">${d.c1}</td>
+                  <td class="cell-dim">${d.c2}</td>
+                  <td class="cell-dim" style="${gapStyle}">${gapCell}</td>
+                  <td>
+                    <span class="cell-pct ${pctCls}">${d.pct}%</span>
+                  </td>
+                </tr>`;
   }).join("");
 }
 
@@ -2026,11 +2033,11 @@ function buildPaneHTML(label, data, countId) {
     return `<div class="split-pane">
       <div class="split-pane-header"><span>${label}</span><span id="${countId}">${data.length}</span></div>
       <div class="split-pane-body"><table>
-            <thead><tr>
-              <th>PAIR</th><th>DATE</th><th>TYPE</th><th>CYCLE</th><th>ROW</th><th>STREAK</th><th>C1</th><th>C2</th><th>GAP</th><th>PROB%</th>
-            </tr></thead>
-            <tbody>${rows}</tbody>
-          </table></div>
+                  <thead><tr>
+                    <th>PAIR</th><th>CYCLE</th><th>ROW</th><th>STREAK</th><th>C1</th><th>C2</th><th>GAP</th><th>PROB%</th>
+                  </tr></thead>
+                  <tbody>${rows}</tbody>
+                </table></div>
     </div>`;
   }
 
