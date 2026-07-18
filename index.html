@@ -746,7 +746,7 @@
                     <input type="text" id="pairInput" value="frxAUDCAD" placeholder="frxAUDCAD"/>
                   </div>
                   <div class="field">
-                    <select id="pairSelect">
+                    <select id="pairSelect" multiple size="10">
                                           <option value="__ALL__" selected>ALL PAIRS</option>
                                           <option value="frxAUDCAD">AUD/CAD</option>
                                           <option value="frxAUDCHF">AUD/CHF</option>
@@ -1104,25 +1104,36 @@ var allPairsMode = true;
 
 function getSelectedPairs() {
   if (allPairsMode) return [];
-  const v = document.getElementById("pairSelect").value;
-  return v && v !== "__ALL__" ? [v] : [];
+  const sel = document.getElementById("pairSelect");
+  return Array.from(sel.selectedOptions)
+    .map(o => o.value)
+    .filter(v => v && v !== "__ALL__");
 }
 
-// Pair select — native single-line dropdown, defaults to ALL PAIRS
+// Pair select — native multi-select dropdown (ctrl/cmd-click or drag to pick several), defaults to ALL PAIRS
 document.getElementById("pairSelect").addEventListener("change", function() {
-  const v = this.value;
-  if (v === "__ALL__") {
+  let selected = Array.from(this.selectedOptions).map(o => o.value);
+  if (selected.length > 1 && selected.includes("__ALL__")) {
+    const allOpt = this.querySelector('option[value="__ALL__"]');
+    if (allOpt) allOpt.selected = false;
+    selected = selected.filter(v => v !== "__ALL__");
+  }
+  if (selected.length === 0 || (selected.length === 1 && selected[0] === "__ALL__")) {
     allPairsMode = true;
+    Array.from(this.options).forEach(o => { o.selected = (o.value === "__ALL__"); });
     document.getElementById("pairInput").value = "ALL (" + ALL_PAIRS.length + " pairs)";
   } else {
     allPairsMode = false;
-    document.getElementById("pairInput").value = v;
+    document.getElementById("pairInput").value = selected.length === 1
+      ? selected[0]
+      : selected.length + " pairs: " + selected.join(", ");
   }
 });
 
 document.getElementById("pairInput").addEventListener("input", () => {
   allPairsMode = false;
-  document.getElementById("pairSelect").value = "__ALL__";
+  const sel = document.getElementById("pairSelect");
+  Array.from(sel.options).forEach(o => { o.selected = false; });
 });
 
 // Initialise the visible pair input to reflect the ALL PAIRS default
