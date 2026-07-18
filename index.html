@@ -1201,13 +1201,26 @@ function buildPairDropdownPanel() {
   panel.querySelectorAll(".pair-dropdown-item").forEach(function(item) {
     item.addEventListener("click", function(e) {
       var chk = item.querySelector("input[type='checkbox']");
-      if (e.target !== chk) chk.checked = !chk.checked;
-      var val = item.dataset.value;
-      var opt = Array.from(selectEl.options).find(function(o) { return o.value === val; });
-      if (opt) opt.selected = chk.checked;
-      item.classList.toggle("checked", chk.checked);
-      selectEl.dispatchEvent(new Event("change"));
-      syncPairDropdownChecks();
+            if (e.target !== chk) chk.checked = !chk.checked;
+            var val = item.dataset.value;
+      
+            if (val === "__ALL__") {
+              // Checking ALL PAIRS clears every other selection; unchecking just clears itself.
+              Array.from(selectEl.options).forEach(function(o) {
+                o.selected = (o.value === "__ALL__") ? chk.checked : false;
+              });
+            } else {
+              var opt = Array.from(selectEl.options).find(function(o) { return o.value === val; });
+              if (opt) opt.selected = chk.checked;
+              if (chk.checked) {
+                var allOpt = selectEl.querySelector('option[value="__ALL__"]');
+                if (allOpt) allOpt.selected = false;
+              }
+            }
+      
+            item.classList.toggle("checked", chk.checked);
+            selectEl.dispatchEvent(new Event("change"));
+            syncPairDropdownChecks();
     });
   });
 }
