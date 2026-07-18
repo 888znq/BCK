@@ -197,21 +197,66 @@
       }
   .pair-chip:hover { border-color: var(--border2); color: var(--text); }
   .pair-chip.active {
-        border-color: var(--green);
-            background: rgba(255,255,255,0.1);
-            color: var(--green);
-          }
+          border-color: var(--green);
+              background: rgba(255,255,255,0.1);
+              color: var(--green);
+            }
+    
+      #pairSelect { height: auto; }
+      #pairSelect option {
+        padding: 4px 6px;
+        font-family: var(--mono);
+        font-size: 12px;
+      }
+      #pairSelect option:checked {
+        background: rgba(255,255,255,0.15);
+        color: var(--green);
+      }
   
-    #pairSelect { height: auto; }
-    #pairSelect option {
-      padding: 4px 6px;
-      font-family: var(--mono);
-      font-size: 12px;
-    }
-    #pairSelect option:checked {
-      background: rgba(255,255,255,0.15);
-      color: var(--green);
-    }
+      .pair-select-wrap { position: relative; display: flex; align-items: center; gap: 6px; }
+      .pair-select-wrap input { flex: 1; min-width: 0; }
+      .pair-dropdown-toggle {
+        background: var(--panel);
+        border: 1px solid var(--border2);
+        color: var(--text-mid);
+        border-radius: 4px;
+        padding: 9px 10px;
+        font-family: var(--mono);
+        font-size: 12px;
+        cursor: pointer;
+        flex-shrink: 0;
+        transition: all 0.12s;
+      }
+      .pair-dropdown-toggle:hover { border-color: var(--green); color: var(--text); }
+      .pair-dropdown-panel {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        background: var(--panel);
+        border: 1px solid var(--border2);
+        border-radius: 6px;
+        padding: 6px;
+        max-height: 320px;
+        overflow-y: auto;
+        box-shadow: 0 -8px 24px rgba(0,0,0,0.5);
+        width: 220px;
+      }
+      .pair-dropdown-panel.open { display: block; }
+      .pair-dropdown-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 8px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-family: var(--mono);
+        font-size: 12px;
+        color: var(--text-mid);
+      }
+      .pair-dropdown-item:hover { background: rgba(255,255,255,0.08); color: var(--text); }
+      .pair-dropdown-item.checked { color: var(--green); }
+      .pair-dropdown-item input[type="checkbox"] { accent-color: var(--green); cursor: pointer; }
+      .pair-dropdown-item.all-pairs { border-bottom: 1px solid var(--border); margin-bottom: 4px; padding-bottom: 8px; }
 
   .divider {
       border: none;
@@ -742,11 +787,15 @@
     <div>
       <div class="section-label">Instrument</div>
       <div class="field">
-                    <label>Custom pair</label>
-                    <input type="text" id="pairInput" value="frxAUDCAD" placeholder="frxAUDCAD"/>
-                  </div>
-                  <div class="field">
-                    <select id="pairSelect" multiple size="10">
+                          <label>Custom pair</label>
+                          <div class="pair-select-wrap">
+                            <input type="text" id="pairInput" value="frxAUDCAD" placeholder="frxAUDCAD"/>
+                            <button type="button" class="pair-dropdown-toggle" id="pairDropdownToggle" title="Select pairs">▾</button>
+                          </div>
+                        </div>
+                        <div class="field">
+                          <div class="pair-dropdown-panel" id="pairDropdownPanel"></div>
+                          <select id="pairSelect" multiple size="10" style="display:none;">
                                           <option value="__ALL__" selected>ALL PAIRS</option>
                                           <option value="frxAUDCAD">AUD/CAD</option>
                                           <option value="frxAUDCHF">AUD/CHF</option>
@@ -1134,10 +1183,89 @@ document.getElementById("pairInput").addEventListener("input", () => {
   allPairsMode = false;
   const sel = document.getElementById("pairSelect");
   Array.from(sel.options).forEach(o => { o.selected = false; });
+  syncPairDropdownChecks();
 });
 
 // Initialise the visible pair input to reflect the ALL PAIRS default
 document.getElementById("pairInput").value = "ALL (" + ALL_PAIRS.length + " pairs)";
+
+// ── Custom pair dropdown (opens upward, escapes sidebar clipping) ──
+function buildPairDropdownPanel() {
+  var panel = document.getElementById("pairDropdownPanel");
+  var selectEl = document.getElementById("pairSelect");
+  var opts = Array.from(selectEl.options);
+  panel.innerHTML = opts.map(function(o) {
+    var isAll = o.value === "__ALL__";
+    return '<div class="pair-dropdown-item' + (isAll ? ' all-pairs' : '') + (o.selected ? ' checked' : '') + '" data-value="' + o.value + '">' +
+      '<input type="checkbox" id="pairChk_' + o.value + '" ' + (o.selected ? 'checked' : '') + '/>' +
+      '<label for="pairChk_' + o.value + '">' + o.textContent + '</label></div>';
+  }).join("");
+
+  panel.querySelectorAll(".pair-dropdown-item").forEach(function(item) {
+    item.addEventListener("click", function(e) {
+      var chk = item.querySelector("input[type='checkbox']");
+      if (e.target !== chk) chk.checked = !chk.checked;
+      var val = item.dataset.value;
+      var opt = Array.from(selectEl.options).find(function(o) { return o.value === val; });
+      if (opt) opt.selected = chk.checked;
+      item.classList.toggle("checked", chk.checked);
+      selectEl.dispatchEvent(new Event("change"));
+      syncPairDropdownChecks();
+    });
+  });
+}
+
+function syncPairDropdownChecks() {
+  var selectEl = document.getElementById("pairSelect");
+  var panel = document.getElementById("pairDropdownPanel");
+  Array.from(selectEl.options).forEach(function(o) {
+    var chk = panel.querySelector('#pairChk_' + CSS.escape(o.value));
+    if (chk) {
+      chk.checked = o.selected;
+      chk.closest(".pair-dropdown-item").classList.toggle("checked", o.selected);
+    }
+  });
+}
+
+function positionPairDropdownUpward() {
+  var panel = document.getElementById("pairDropdownPanel");
+  var anchor = document.getElementById("pairDropdownToggle");
+  var rect = anchor.getBoundingClientRect();
+  panel.style.left = rect.left + "px";
+  panel.style.bottom = (window.innerHeight - rect.top + 6) + "px";
+  panel.style.top = "auto";
+}
+
+document.getElementById("pairDropdownToggle").addEventListener("click", function(e) {
+  e.stopPropagation();
+  var panel = document.getElementById("pairDropdownPanel");
+  var isOpen = panel.classList.contains("open");
+  if (isOpen) {
+    panel.classList.remove("open");
+  } else {
+    positionPairDropdownUpward();
+    panel.classList.add("open");
+  }
+});
+
+document.addEventListener("click", function(e) {
+  var panel = document.getElementById("pairDropdownPanel");
+  var toggle = document.getElementById("pairDropdownToggle");
+  if (panel.classList.contains("open") && !panel.contains(e.target) && e.target !== toggle) {
+    panel.classList.remove("open");
+  }
+});
+
+window.addEventListener("resize", function() {
+  var panel = document.getElementById("pairDropdownPanel");
+  if (panel.classList.contains("open")) positionPairDropdownUpward();
+});
+
+// Move panel out from under .field so it escapes the ".field label{display:none}" /
+// ".field input{width:100%,border,padding}" cascade that was stripping labels and
+// turning checkboxes into blank stretched boxes.
+document.body.appendChild(document.getElementById("pairDropdownPanel"));
+buildPairDropdownPanel();
   
   // Time presets
 document.querySelectorAll("[data-preset]").forEach(chip => {
