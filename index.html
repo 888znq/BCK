@@ -789,14 +789,14 @@
       <div class="field">
                           <label>Custom pair</label>
                           <div class="pair-select-wrap">
-                            <input type="text" id="pairInput" value="frxAUDCAD" placeholder="frxAUDCAD"/>
+                            <input type="text" id="pairInput" value="frxEURUSD" placeholder="frxEURUSD"/>
                             <button type="button" class="pair-dropdown-toggle" id="pairDropdownToggle" title="Select pairs">▾</button>
                           </div>
                         </div>
                         <div class="field">
                           <div class="pair-dropdown-panel" id="pairDropdownPanel"></div>
                           <select id="pairSelect" multiple size="10" style="display:none;">
-                                          <option value="__ALL__" selected>ALL PAIRS</option>
+                                          <option value="__ALL__">ALL PAIRS</option>
                                           <option value="frxAUDCAD">AUD/CAD</option>
                                           <option value="frxAUDCHF">AUD/CHF</option>
                                           <option value="frxAUDJPY">AUD/JPY</option>
@@ -808,7 +808,7 @@
                                           <option value="frxEURGBP">EUR/GBP</option>
                                           <option value="frxEURJPY">EUR/JPY</option>
                                           <option value="frxEURNZD">EUR/NZD</option>
-                                          <option value="frxEURUSD">EUR/USD</option>
+                                          <option value="frxEURUSD" selected>EUR/USD</option>
                                           <option value="frxGBPAUD">GBP/AUD</option>
                                           <option value="frxGBPCAD">GBP/CAD</option>
                                           <option value="frxGBPCHF">GBP/CHF</option>
@@ -881,11 +881,11 @@
       <div class="field-row">
         <div class="field">
                   <label>Min cycle (C)</label>
-                  <input type="number" id="cycleMin" value="180" min="1" max="500"/>
+                  <input type="number" id="cycleMin" value="60" min="1" max="500"/>
                           </div>
                           <div class="field">
                             <label>Max cycle (C)</label>
-                            <input type="number" id="cycleMax" value="240" min="1" max="500"/>
+                            <input type="number" id="cycleMax" value="180" min="1" max="500"/>
                 </div>
               </div>
               <p class="hint">Range C<span id="cMinLabel">180</span>–C<span id="cMaxLabel">240</span> &nbsp;(<span id="cycleCountLabel">61</span> cycle(s))</p>
@@ -898,7 +898,7 @@
           <div class="section-label">Signal Filter</div>
           <div class="field">
                   <label>Min probability %</label>
-                                <input type="number" id="minPct" value="85" min="0" max="100"/>
+                                <input type="number" id="minPct" value="90" min="0" max="100"/>
           </div>
         </div>
 
@@ -1149,7 +1149,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 var ALL_PAIRS = Array.from(document.querySelectorAll("#pairSelect option[value]:not([value='__ALL__'])"))
   .map(o => o.value);
-var allPairsMode = true;
+var allPairsMode = false;
 
 function getSelectedPairs() {
   if (allPairsMode) return [];
@@ -1186,8 +1186,8 @@ document.getElementById("pairInput").addEventListener("input", () => {
   syncPairDropdownChecks();
 });
 
-// Initialise the visible pair input to reflect the ALL PAIRS default
-document.getElementById("pairInput").value = "ALL (" + ALL_PAIRS.length + " pairs)";
+// Initialise the visible pair input to reflect the EUR/USD default
+document.getElementById("pairInput").value = "frxEURUSD";
 
 // ── Custom pair dropdown (opens upward, escapes sidebar clipping) ──
 function buildPairDropdownPanel() {
