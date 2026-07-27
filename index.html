@@ -870,9 +870,13 @@
                     <span>|</span>
                     <label>Day</label>
                     <select id="dayFilter">
-                      <option value="__ALL__" selected>ALL DAYS</option>
-                    </select>
-                    <span style="display:none;">|</span>
+                                          <option value="__ALL__" selected>ALL DAYS</option>
+                                        </select>
+                                        <span>|</span>
+                                        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;white-space:nowrap;">
+                                          <input type="checkbox" id="r0OnlyToggle" style="width:auto;margin:0;"/> R0 ONLY (NORMAL CANDLES)
+                                        </label>
+                                        <span style="display:none;">|</span>
           <label style="display:none;">Streak ≥</label>
           <input type="number" id="filterStreak" placeholder="1" min="1" style="display:none;"/>
           <span style="display:none;">|</span>
@@ -1046,6 +1050,7 @@ document.getElementById("cycleMax").addEventListener("input", updateCycleLabel);
 });
 document.getElementById("levelFilter").addEventListener("change", renderTable);
 document.getElementById("dayFilter").addEventListener("change", renderTable);
+document.getElementById("r0OnlyToggle").addEventListener("change", renderTable);
 
 // ── LEVEL FILTER HELPERS ──
 function parseLevelFilter(selectEl) {
@@ -1086,6 +1091,11 @@ function matchesDayFilter(d, dayVal) {
     return getWeekStartISO(d.date) === ws;
   }
   return d.date === dayVal;
+}
+
+function matchesR0Filter(d, r0Only) {
+  if (!r0Only) return true;
+  return d.r === 0;
 }
 
 function selectDayChip(iso) {
@@ -1482,18 +1492,14 @@ async function runScan() {
   if (scanRunning) { cancelFlag = true; return; }
 
   // ── Collect inputs ──
-    const selectedChipPairs = getSelectedPairs();
-    const pairsToScan = (allPairsMode
-          ? ALL_PAIRS
-          : (selectedChipPairs.length > 0
-              ? selectedChipPairs
-              : [document.getElementById("pairInput").value.trim() || "cryBTCUSD"]))
-          .map(p => p.trim());
+    const pairsToScan = getSelectedPairs().map(p => p.trim());
         const pair        = pairsToScan[0]; // kept for single-pair backward compat label
-    const dateFrom = document.getElementById("dateFrom").value;
-  const dateTo   = document.getElementById("dateTo").value;
-  const timeFrom = document.getElementById("timeFrom").value || "00:00";
-  const timeTo   = document.getElementById("timeTo").value   || "20:57";
+        const weekStartISO = document.getElementById("weekSelect").value;
+        const weekDays  = getMondayFridayDays(weekStartISO);
+        const dateFrom  = fmtISO(weekDays[0]);
+        const dateTo    = fmtISO(weekDays[4]);
+        const timeFrom  = "05:30";
+        const timeTo    = "05:30";
   const cycleMin = Math.max(1, parseInt(document.getElementById("cycleMin").value) || 60);
     const cycleMax = Math.max(cycleMin, parseInt(document.getElementById("cycleMax").value) || 120);
   const minPct   = parseInt(document.getElementById("minPct").value) || 100;
@@ -1700,12 +1706,13 @@ async function runScan() {
 
   // Show tabs and table
   document.getElementById("tabBar").style.display     = "flex";
-  document.getElementById("filterBar").style.display  = "flex";
-  document.getElementById("filterPct").value          = minPct;
-  document.getElementById("revCount").textContent     = filtRevs.length;
-  document.getElementById("momCount").textContent     = filtMoms.length;
-
-  renderTable();
+    document.getElementById("filterBar").style.display  = "flex";
+    document.getElementById("filterPct").value          = minPct;
+    document.getElementById("revCount").textContent     = filtRevs.length;
+    document.getElementById("momCount").textContent     = filtMoms.length;
+    document.getElementById("r0OnlyToggle").checked     = (cycleMin === cycleMax);
+  
+    renderTable();
     document.getElementById("exportCsvBtn").style.display = "inline-block";
     setTimeout(() => document.getElementById("progressWrap").classList.remove("visible"), 2000);
   
@@ -1715,13 +1722,14 @@ async function runScan() {
 
 async function exportAllSignalsCSV() {
   var minPctF    = parseInt(document.getElementById("filterPct").value)    || 0;
-  var minStreakF = parseInt(document.getElementById("filterStreak").value)  || 1;
-  var minC1F     = parseInt(document.getElementById("filterC1").value)      || 1;
-
-  var levelsF = parseLevelFilter(document.getElementById("levelFilter"));
-  var dayValF = document.getElementById("dayFilter") ? document.getElementById("dayFilter").value : "__ALL__";
-
-  var filterFn = function(x) { return x.pct >= minPctF && x.s1 >= minStreakF && x.c1 >= minC1F && matchesLevelFilter(x, levelsF) && matchesDayFilter(x, dayValF); };
+    var minStreakF = parseInt(document.getElementById("filterStreak").value)  || 1;
+    var minC1F     = parseInt(document.getElementById("filterC1").value)      || 1;
+  
+    var levelsF = parseLevelFilter(document.getElementById("levelFilter"));
+    var dayValF = document.getElementById("dayFilter") ? document.getElementById("dayFilter").value : "__ALL__";
+    var r0OnlyF = document.getElementById("r0OnlyToggle") ? document.getElementById("r0OnlyToggle").checked : false;
+  
+    var filterFn = function(x) { return x.pct >= minPctF && x.s1 >= minStreakF && x.c1 >= minC1F && matchesLevelFilter(x, levelsF) && matchesDayFilter(x, dayValF) && matchesR0Filter(x, r0OnlyF); };
   var sortFn = function(a, b) { return (b.pct * b.c1) - (a.pct * a.c1); };
 
   var revData = (allRevs || []).filter(filterFn).sort(sortFn).slice(0, 100);
@@ -1869,8 +1877,9 @@ function renderTable() {
   const minC1     = parseInt(document.getElementById("filterC1").value) || 1;
   const levels    = parseLevelFilter(document.getElementById("levelFilter"));
   const dayVal    = document.getElementById("dayFilter") ? document.getElementById("dayFilter").value : "__ALL__";
+  const r0Only    = document.getElementById("r0OnlyToggle") ? document.getElementById("r0OnlyToggle").checked : false;
 
-  const filterFn = x => x.pct >= minPct && x.s1 >= minStreak && x.c1 >= minC1 && matchesLevelFilter(x, levels) && matchesDayFilter(x, dayVal);
+  const filterFn = x => x.pct >= minPct && x.s1 >= minStreak && x.c1 >= minC1 && matchesLevelFilter(x, levels) && matchesDayFilter(x, dayVal) && matchesR0Filter(x, r0Only);
   const sortFn   = (a, b) => (b.pct * b.c1) - (a.pct * a.c1);
 
   const revData = allRevs.filter(filterFn).sort(sortFn).slice(0, 100);
