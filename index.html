@@ -828,18 +828,20 @@
     <hr class="divider"/>
 
     <!-- DATE RANGE -->
-        <div>
-          <div class="section-label">Week Selection</div>
-          <div class="field-row">
-            <div class="field">
-                      <label>Week Of</label>
-                      <input type="date" id="weekPicker"/>
-                    </div>
-            <input type="date" id="dateFrom" style="display:none"/>
-            <input type="date" id="dateTo" style="display:none"/>
-          </div>
-          <p class="hint" id="dayCountHint">Weekdays selected: —</p>
+    <div>
+      <div class="section-label">Date Range (All days)</div>
+      <div class="field-row">
+        <div class="field">
+          <label>From</label>
+          <input type="date" id="dateFrom"/>
         </div>
+        <div class="field">
+          <label>To</label>
+          <input type="date" id="dateTo"/>
+        </div>
+      </div>
+      <p class="hint" id="dayCountHint">Weekdays selected: —</p>
+    </div>
 
     <hr class="divider"/>
 
@@ -962,28 +964,22 @@
           <span>|</span>
           <label>Level</label>
                     <select id="levelFilter">
-                                        <option value="__ALL__" selected>ALL LEVELS</option>
-                                        <option value="1-2">X1→X2</option>
-                                        <option value="2-3">X2→X3</option>
-                                        <option value="3-4">X3→X4</option>
-                                        <option value="4-5">X4→X5</option>
-                                        <option value="5-6">X5→X6</option>
-                                        <option value="6-7">X6→X7</option>
-                                        <option value="7-8">X7→X8</option>
-                                        <option value="8-9">X8→X9</option>
-                                        <option value="9-10">X9→X10</option>
-                                      </select>
-                                      <span>|</span>
-                                      <label>Week</label>
-                                      <select id="weekFilter">
-                                        <option value="__ALL__" selected>ALL WEEKS</option>
-                                      </select>
-                                      <span>|</span>
-                                      <label>Day</label>
-                                        <select id="dayFilter">
-                                          <option value="__COMBINED__" selected>COMBINED (ALL DAYS)</option>
-                                          <option value="__ALL__">SEPARATE (ALL DAYS)</option>
-                                        </select>
+                      <option value="__ALL__" selected>ALL LEVELS</option>
+                      <option value="1-2">X1→X2</option>
+                      <option value="2-3">X2→X3</option>
+                      <option value="3-4">X3→X4</option>
+                      <option value="4-5">X4→X5</option>
+                      <option value="5-6">X5→X6</option>
+                      <option value="6-7">X6→X7</option>
+                      <option value="7-8">X7→X8</option>
+                      <option value="8-9">X8→X9</option>
+                      <option value="9-10">X9→X10</option>
+                    </select>
+                    <span>|</span>
+                    <label>Day</label>
+                    <select id="dayFilter">
+                      <option value="__ALL__" selected>ALL DAYS</option>
+                    </select>
                     <span style="display:none;">|</span>
           <label style="display:none;">Streak ≥</label>
           <input type="number" id="filterStreak" placeholder="1" min="1" style="display:none;"/>
@@ -1124,8 +1120,11 @@ async function clearPersistedCache() {
 //  INIT
 // ═══════════════════════════════════════════════════════
 document.addEventListener("DOMContentLoaded", () => {
-  document.getElementById("weekPicker").value = new Date().toISOString().slice(0, 10);
-  applyWeekPicker();
+  const today = new Date();
+  const fmt = d => d.toISOString().slice(0, 10);
+  document.getElementById("dateFrom").value = fmt(today);
+  document.getElementById("dateTo").value   = fmt(today);
+  updateDayCount();
   updateCycleLabel();
   startClock();
 
@@ -1286,8 +1285,9 @@ document.querySelectorAll("[data-preset]").forEach(chip => {
   });
 });
 
-// Week change
-document.getElementById("weekPicker").addEventListener("change", applyWeekPicker);
+// Date change
+document.getElementById("dateFrom").addEventListener("change", updateDayCount);
+document.getElementById("dateTo").addEventListener("change",   updateDayCount);
 
 // Cycle labels
 document.getElementById("cycleMin").addEventListener("input", updateCycleLabel);
@@ -1298,7 +1298,6 @@ document.getElementById("cycleMax").addEventListener("input", updateCycleLabel);
   document.getElementById(id).addEventListener("input", renderTable);
 });
 document.getElementById("levelFilter").addEventListener("change", renderTable);
-document.getElementById("weekFilter").addEventListener("change", renderTable);
 document.getElementById("dayFilter").addEventListener("change", renderTable);
 
 // ── LEVEL FILTER HELPERS ──
@@ -1320,41 +1319,17 @@ function matchesLevelFilter(d, levels) {
 }
 
 function matchesDayFilter(d, dayVal) {
-  if (!dayVal || dayVal === "__ALL__" || dayVal === "__COMBINED__") return true;
+  if (!dayVal || dayVal === "__ALL__") return true;
   return d.date === dayVal;
 }
 
 function selectDayChip(iso) {
   var sel = document.getElementById("dayFilter");
-  sel.value = (sel.value === iso) ? "__COMBINED__" : iso;
+  sel.value = (sel.value === iso) ? "__ALL__" : iso;
   document.querySelectorAll(".day-chip").forEach(function(c) {
     c.classList.toggle("active", c.dataset.date === sel.value);
   });
   renderTable();
-}
-
-function aggregateSignals(data) {
-  var map = {};
-  for (var i = 0; i < data.length; i++) {
-    var d = data[i];
-    var key = d.pair + "|" + d.type + "|" + d.c + "|" + d.r + "|" + d.s1 + "|" + d.s2 + "|" + d.col;
-    if (!map[key]) {
-      map[key] = { pair: d.pair, c: d.c, r: d.r, s1: d.s1, s2: d.s2, col: d.col, type: d.type, c1: 0, c2: 0, gap: 0, date: "COMBINED" };
-    }
-    map[key].c1 += d.c1;
-    map[key].c2 += d.c2;
-    if (d.gap > map[key].gap) map[key].gap = d.gap;
-  }
-  var res = Object.values(map);
-  for (var j = 0; j < res.length; j++) {
-    var r = res[j];
-    if (r.type === "REV") {
-      r.pct = r.c1 ? 100 - Math.round((r.c2 / r.c1) * 100) : 0;
-    } else {
-      r.pct = r.c1 ? Math.round((r.c2 / r.c1) * 100) : 0;
-    }
-  }
-  return res;
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1370,53 +1345,15 @@ function startClock() {
   setInterval(tick, 1000);
 }
 
-function computeWeekRange(dateStr) {
-  const d = new Date(dateStr + "T00:00:00Z");
-  const dow = d.getUTCDay() || 7; // Monday=1..Sunday=7
-  const monday = new Date(d);
-  monday.setUTCDate(d.getUTCDate() - dow + 1);
-  const friday = new Date(monday);
-  friday.setUTCDate(monday.getUTCDate() + 4);
-  const fmt = x => x.toISOString().slice(0, 10);
-  return [fmt(monday), fmt(friday)];
-}
-
-function applyWeekPicker() {
-  const wp = document.getElementById("weekPicker").value;
-  if (!wp) return;
-  const [from, to] = computeWeekRange(wp);
-  document.getElementById("dateFrom").value = from;
-  document.getElementById("dateTo").value   = to;
-  updateDayCount();
-}
-
 function getWeekdays(from, to) {
   const days = [];
   const cur = new Date(from + "T00:00:00Z");
   const end = new Date(to   + "T00:00:00Z");
   while (cur <= end) {
-    const dow = cur.getUTCDay();
-    if (dow !== 0 && dow !== 6) { // Skip Sunday (0) and Saturday (6)
-      days.push(new Date(cur));
-    }
+    days.push(new Date(cur));
     cur.setUTCDate(cur.getUTCDate() + 1);
   }
   return days;
-}
-
-function getWeekId(dateObj) {
-  const d = new Date(dateObj);
-  const day = d.getUTCDay();
-  const diff = d.getUTCDate() - day + (day === 0 ? -6 : 1);
-  d.setUTCDate(diff);
-  return d.toISOString().slice(0, 10);
-}
-
-function matchesWeekFilter(d, weekVal) {
-  if (!weekVal || weekVal === "__ALL__") return true;
-  if (d.date === "COMBINED") return true;
-  const wId = getWeekId(new Date(d.date + "T00:00:00Z"));
-  return wId === weekVal;
 }
 
 function updateDayCount() {
@@ -1926,29 +1863,13 @@ async function runScan() {
   document.getElementById("statSigs").textContent  = filtRevs.length + filtMoms.length;
 
   // Show day summary — click a day chip to isolate that day's results
-      const summaryEl = document.getElementById("daySummary");
-      const dayFilterSel = document.getElementById("dayFilter");
-      dayFilterSel.innerHTML = '<option value="__COMBINED__">COMBINED (ALL DAYS)</option><option value="__ALL__">SEPARATE (ALL DAYS)</option>' + days.map(d => {
-        const iso = d.toISOString().slice(0, 10);
-        return `<option value="${iso}">${iso}</option>`;
-      }).join("");
-      dayFilterSel.value = "__COMBINED__";
-  
-      const weekMap = {};
-      days.forEach(d => {
-        const wId = getWeekId(d);
-        if (!weekMap[wId]) weekMap[wId] = [];
-        weekMap[wId].push(d);
-      });
-      const weeks = Object.keys(weekMap).sort();
-      const weekFilterSel = document.getElementById("weekFilter");
-      weekFilterSel.innerHTML = '<option value="__ALL__">ALL WEEKS</option>' + weeks.map((wId, i) => {
-        const wDays = weekMap[wId];
-        const start = wDays[0].toISOString().slice(5, 10).replace("-", "/");
-        const end = wDays[wDays.length - 1].toISOString().slice(5, 10).replace("-", "/");
-        return `<option value="${wId}">Week ${i + 1} (${start} - ${end})</option>`;
-      }).join("");
-      weekFilterSel.value = "__ALL__";
+    const summaryEl = document.getElementById("daySummary");
+    const dayFilterSel = document.getElementById("dayFilter");
+    dayFilterSel.innerHTML = '<option value="__ALL__">ALL DAYS</option>' + days.map(d => {
+      const iso = d.toISOString().slice(0, 10);
+      return `<option value="${iso}">${iso}</option>`;
+    }).join("");
+    dayFilterSel.value = "__ALL__";
   
     summaryEl.innerHTML = days.map(d => {
       const iso = d.toISOString().slice(0, 10);
@@ -1978,24 +1899,13 @@ async function exportAllSignalsCSV() {
   var minC1F     = parseInt(document.getElementById("filterC1").value)      || 1;
 
   var levelsF = parseLevelFilter(document.getElementById("levelFilter"));
-    var dayValF = document.getElementById("dayFilter") ? document.getElementById("dayFilter").value : "__COMBINED__";
-    var weekValF = document.getElementById("weekFilter") ? document.getElementById("weekFilter").value : "__ALL__";
-    var isCombined = (dayValF === "__COMBINED__");
-  
-    var baseFilter = function(x) { return x.s1 >= minStreakF && matchesLevelFilter(x, levelsF) && matchesWeekFilter(x, weekValF) && matchesDayFilter(x, dayValF); };
-  var finalFilter = function(x) { return x.pct >= minPctF && x.c1 >= minC1F; };
+  var dayValF = document.getElementById("dayFilter") ? document.getElementById("dayFilter").value : "__ALL__";
+
+  var filterFn = function(x) { return x.pct >= minPctF && x.s1 >= minStreakF && x.c1 >= minC1F && matchesLevelFilter(x, levelsF) && matchesDayFilter(x, dayValF); };
   var sortFn = function(a, b) { return (b.pct * b.c1) - (a.pct * a.c1); };
 
-  var baseRevs = (allRevs || []).filter(baseFilter);
-  var baseMoms = (allMoms || []).filter(baseFilter);
-
-  if (isCombined) {
-    baseRevs = aggregateSignals(baseRevs);
-    baseMoms = aggregateSignals(baseMoms);
-  }
-
-  var revData = baseRevs.filter(finalFilter).sort(sortFn).slice(0, 100);
-  var momData = baseMoms.filter(finalFilter).sort(sortFn).slice(0, 100);
+  var revData = (allRevs || []).filter(filterFn).sort(sortFn).slice(0, 100);
+  var momData = (allMoms || []).filter(filterFn).sort(sortFn).slice(0, 100);
   var data = revData.concat(momData);
 
   if (data.length === 0) { toast("No signals to export", "err"); return; }
@@ -2138,25 +2048,13 @@ function renderTable() {
   const minStreak = parseInt(document.getElementById("filterStreak").value) || 1;
   const minC1     = parseInt(document.getElementById("filterC1").value) || 1;
   const levels    = parseLevelFilter(document.getElementById("levelFilter"));
-  const dayVal    = document.getElementById("dayFilter") ? document.getElementById("dayFilter").value : "__COMBINED__";
-  const weekVal   = document.getElementById("weekFilter") ? document.getElementById("weekFilter").value : "__ALL__";
-  const isCombined = (dayVal === "__COMBINED__");
+  const dayVal    = document.getElementById("dayFilter") ? document.getElementById("dayFilter").value : "__ALL__";
 
-  const baseFilter = x => x.s1 >= minStreak && matchesLevelFilter(x, levels) && matchesWeekFilter(x, weekVal) && matchesDayFilter(x, dayVal);
-  
-  let baseRevs = allRevs.filter(baseFilter);
-  let baseMoms = allMoms.filter(baseFilter);
-
-  if (isCombined) {
-    baseRevs = aggregateSignals(baseRevs);
-    baseMoms = aggregateSignals(baseMoms);
-  }
-
-  const finalFilter = x => x.pct >= minPct && x.c1 >= minC1;
+  const filterFn = x => x.pct >= minPct && x.s1 >= minStreak && x.c1 >= minC1 && matchesLevelFilter(x, levels) && matchesDayFilter(x, dayVal);
   const sortFn   = (a, b) => (b.pct * b.c1) - (a.pct * a.c1);
 
-  const revData = baseRevs.filter(finalFilter).sort(sortFn).slice(0, 100);
-  const momData = baseMoms.filter(finalFilter).sort(sortFn).slice(0, 100);
+  const revData = allRevs.filter(filterFn).sort(sortFn).slice(0, 100);
+  const momData = allMoms.filter(filterFn).sort(sortFn).slice(0, 100);
 
   document.getElementById("resultCount").textContent = `Showing ${revData.length} REV, ${momData.length} MOM`;
 
