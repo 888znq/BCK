@@ -118,11 +118,10 @@
           }
         .sidebar > div { display: flex; flex-direction: column; justify-content: flex-start; padding-top: 4px; min-width: 0; overflow: hidden; }
       .sidebar > div:nth-child(1)  { flex: 3 1 420px; }
-      .sidebar > div:nth-child(3)  { flex: 1 1 190px; }
-      .sidebar > div:nth-child(5)  { flex: 1 1 200px; padding-left: 8px; }
-      .sidebar > div:nth-child(7)  { flex: 1 1 170px; }
-      .sidebar > div:nth-child(9)  { flex: 1 1 160px; }
-      .sidebar > div:nth-child(11) { flex: 2 1 260px; }
+            .sidebar > div:nth-child(3)  { flex: 1 1 190px; }
+            .sidebar > div:nth-child(5)  { flex: 1 1 170px; }
+            .sidebar > div:nth-child(7)  { flex: 1 1 160px; }
+            .sidebar > div:nth-child(9)  { flex: 2 1 260px; }
 
   .section-label {
           display: none;
@@ -213,50 +212,7 @@
         color: var(--green);
       }
   
-      .pair-select-wrap { position: relative; display: flex; align-items: center; gap: 6px; }
-      .pair-select-wrap input { flex: 1; min-width: 0; }
-      .pair-dropdown-toggle {
-        background: var(--panel);
-        border: 1px solid var(--border2);
-        color: var(--text-mid);
-        border-radius: 4px;
-        padding: 9px 10px;
-        font-family: var(--mono);
-        font-size: 12px;
-        cursor: pointer;
-        flex-shrink: 0;
-        transition: all 0.12s;
-      }
-      .pair-dropdown-toggle:hover { border-color: var(--green); color: var(--text); }
-      .pair-dropdown-panel {
-        display: none;
-        position: fixed;
-        z-index: 1000;
-        background: var(--panel);
-        border: 1px solid var(--border2);
-        border-radius: 6px;
-        padding: 6px;
-        max-height: 320px;
-        overflow-y: auto;
-        box-shadow: 0 -8px 24px rgba(0,0,0,0.5);
-        width: 220px;
-      }
-      .pair-dropdown-panel.open { display: block; }
-      .pair-dropdown-item {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 6px 8px;
-        border-radius: 4px;
-        cursor: pointer;
-        font-family: var(--mono);
-        font-size: 12px;
-        color: var(--text-mid);
-      }
-      .pair-dropdown-item:hover { background: rgba(255,255,255,0.08); color: var(--text); }
-      .pair-dropdown-item.checked { color: var(--green); }
-      .pair-dropdown-item input[type="checkbox"] { accent-color: var(--green); cursor: pointer; }
-      .pair-dropdown-item.all-pairs { border-bottom: 1px solid var(--border); margin-bottom: 4px; padding-bottom: 8px; }
+      
 
   .divider {
       border: none;
@@ -779,95 +735,31 @@
   <aside class="sidebar">
 
     <!-- PAIR -->
-    <div>
-      <div class="section-label">Instrument</div>
-      <div class="field">
-                          <label>Custom pair</label>
-                          <div class="pair-select-wrap">
-                            <input type="text" id="pairInput" value="frxEURUSD" placeholder="frxEURUSD"/>
-                            <button type="button" class="pair-dropdown-toggle" id="pairDropdownToggle" title="Select pairs">▾</button>
-                          </div>
-                        </div>
-                        <div class="field">
-                          <div class="pair-dropdown-panel" id="pairDropdownPanel"></div>
-                          <select id="pairSelect" multiple size="10" style="display:none;">
-                                          <option value="__ALL__">ALL PAIRS</option>
-                                          <option value="frxAUDCAD">AUD/CAD</option>
-                                          <option value="frxAUDCHF">AUD/CHF</option>
-                                          <option value="frxAUDJPY">AUD/JPY</option>
-                                          <option value="frxAUDNZD">AUD/NZD</option>
-                                          <option value="frxAUDUSD">AUD/USD</option>
-                                                                                    <option value="cryBTCUSD">BTC/USD</option>
-                                                                                    <option value="cryETHUSD">ETH/USD</option>
-                                                                                    <option value="frxEURAUD">EUR/AUD</option>
-                                          <option value="frxEURCAD">EUR/CAD</option>
-                                          <option value="frxEURCHF">EUR/CHF</option>
-                                          <option value="frxEURGBP">EUR/GBP</option>
-                                          <option value="frxEURJPY">EUR/JPY</option>
-                                          <option value="frxEURNZD">EUR/NZD</option>
-                                          <option value="frxEURUSD" selected>EUR/USD</option>
-                                          <option value="frxGBPAUD">GBP/AUD</option>
-                                          <option value="frxGBPCAD">GBP/CAD</option>
-                                          <option value="frxGBPCHF">GBP/CHF</option>
-                                          <option value="frxGBPJPY">GBP/JPY</option>
-                                          <option value="frxGBPNZD">GBP/NZD</option>
-                                          <option value="frxGBPUSD">GBP/USD</option>
-                                          <option value="frxNZDJPY">NZD/JPY</option>
-                                          <option value="frxNZDUSD">NZD/USD</option>
-                                          <option value="frxUSDCAD">USD/CAD</option>
-                                          <option value="frxUSDCHF">USD/CHF</option>
-                                          <option value="frxUSDJPY">USD/JPY</option>
-                                          
-                                          <option value="frxXAGUSD">XAG/USD</option>
-                                          <option value="frxXAUUSD">XAU/USD</option>
-                                          <option value="frxXPTUSD">XPT/USD</option>
-                                          </select>
-                  </div>
+        <div>
+          <div class="section-label">Instrument</div>
+          <div class="field">
+                              <label>Instrument</label>
+                              <input type="text" id="pairInput" value="EUR/USD" readonly/>
+                            </div>
+              </div>
+    
+        <hr class="divider"/>
+
+    <!-- WEEK SELECT -->
+        <div>
+          <div class="section-label">Trading Week (Mon 05:30 – Sat 05:30 IST)</div>
+          <div class="field-row">
+            <div class="field">
+              <label>Week</label>
+              <select id="weekSelect"></select>
+            </div>
           </div>
-
-    <hr class="divider"/>
-
-    <!-- DATE RANGE -->
-    <div>
-      <div class="section-label">Date Range (All days)</div>
-      <div class="field-row">
-        <div class="field">
-          <label>From</label>
-          <input type="date" id="dateFrom"/>
+          <p class="hint" id="dayCountHint">Days selected: —</p>
         </div>
-        <div class="field">
-          <label>To</label>
-          <input type="date" id="dateTo"/>
-        </div>
-      </div>
-      <p class="hint" id="dayCountHint">Weekdays selected: —</p>
-    </div>
+    
+        <hr class="divider"/>
 
-    <hr class="divider"/>
-
-    <!-- TIME WINDOW -->
-    <div>
-      <div class="section-label">Tick Time Window (IST)</div>
-      <div class="field-row">
-        <div class="field">
-          <label>Start time</label>
-          <input type="time" id="timeFrom" value="10:30"/>
-                  </div>
-                  <div class="field">
-                    <label>End time</label>
-                    <input type="time" id="timeTo" value="22:30"/>
-        </div>
-      </div>
-      <p class="hint">Enter times in IST. Equal start/end = full 24h day (00:00–00:00 UTC). Ticks are only fetched in this window each day</p>
-      <div class="pair-grid" style="margin-top:6px">
-        <div class="pair-chip" data-preset="00:00-20:57" title="Full session" style="display:none">Full Session</div>
-                <div class="pair-chip" data-preset="08:00-10:00" title="London open" style="display:none">London Open</div>
-                <div class="pair-chip" data-preset="13:00-15:00" title="NY open" style="display:none">NY Open</div>
-                <div class="pair-chip" data-preset="10:00-12:00" title="Mid morning" style="display:none">Mid Morning</div>
-      </div>
-    </div>
-
-    <hr class="divider"/>
+    
 
     <!-- CYCLE RANGE -->
     <div>
@@ -1120,10 +1012,7 @@ async function clearPersistedCache() {
 //  INIT
 // ═══════════════════════════════════════════════════════
 document.addEventListener("DOMContentLoaded", () => {
-  const today = new Date();
-  const fmt = d => d.toISOString().slice(0, 10);
-  document.getElementById("dateFrom").value = fmt(today);
-  document.getElementById("dateTo").value   = fmt(today);
+  populateWeekSelect();
   updateDayCount();
   updateCycleLabel();
   startClock();
@@ -1141,153 +1030,11 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
-var ALL_PAIRS = Array.from(document.querySelectorAll("#pairSelect option[value]:not([value='__ALL__'])"))
-  .map(o => o.value);
-var allPairsMode = false;
-
-function getSelectedPairs() {
-  if (allPairsMode) return [];
-  const sel = document.getElementById("pairSelect");
-  return Array.from(sel.selectedOptions)
-    .map(o => o.value)
-    .filter(v => v && v !== "__ALL__");
-}
-
-// Pair select — native multi-select dropdown (ctrl/cmd-click or drag to pick several), defaults to ALL PAIRS
-document.getElementById("pairSelect").addEventListener("change", function() {
-  let selected = Array.from(this.selectedOptions).map(o => o.value);
-  if (selected.length > 1 && selected.includes("__ALL__")) {
-    const allOpt = this.querySelector('option[value="__ALL__"]');
-    if (allOpt) allOpt.selected = false;
-    selected = selected.filter(v => v !== "__ALL__");
-  }
-  if (selected.length === 0 || (selected.length === 1 && selected[0] === "__ALL__")) {
-    allPairsMode = true;
-    Array.from(this.options).forEach(o => { o.selected = (o.value === "__ALL__"); });
-    document.getElementById("pairInput").value = "ALL (" + ALL_PAIRS.length + " pairs)";
-  } else {
-    allPairsMode = false;
-    document.getElementById("pairInput").value = selected.length === 1
-      ? selected[0]
-      : selected.length + " pairs: " + selected.join(", ");
-  }
-});
-
-document.getElementById("pairInput").addEventListener("input", () => {
-  allPairsMode = false;
-  const sel = document.getElementById("pairSelect");
-  Array.from(sel.options).forEach(o => { o.selected = false; });
-  syncPairDropdownChecks();
-});
-
-// Initialise the visible pair input to reflect the EUR/USD default
-document.getElementById("pairInput").value = "frxEURUSD";
-
-// ── Custom pair dropdown (opens upward, escapes sidebar clipping) ──
-function buildPairDropdownPanel() {
-  var panel = document.getElementById("pairDropdownPanel");
-  var selectEl = document.getElementById("pairSelect");
-  var opts = Array.from(selectEl.options);
-  panel.innerHTML = opts.map(function(o) {
-    var isAll = o.value === "__ALL__";
-    return '<div class="pair-dropdown-item' + (isAll ? ' all-pairs' : '') + (o.selected ? ' checked' : '') + '" data-value="' + o.value + '">' +
-      '<input type="checkbox" id="pairChk_' + o.value + '" ' + (o.selected ? 'checked' : '') + '/>' +
-      '<label for="pairChk_' + o.value + '">' + o.textContent + '</label></div>';
-  }).join("");
-
-  panel.querySelectorAll(".pair-dropdown-item").forEach(function(item) {
-    item.addEventListener("click", function(e) {
-      var chk = item.querySelector("input[type='checkbox']");
-            if (e.target !== chk) chk.checked = !chk.checked;
-            var val = item.dataset.value;
-      
-            if (val === "__ALL__") {
-              // Checking ALL PAIRS clears every other selection; unchecking just clears itself.
-              Array.from(selectEl.options).forEach(function(o) {
-                o.selected = (o.value === "__ALL__") ? chk.checked : false;
-              });
-            } else {
-              var opt = Array.from(selectEl.options).find(function(o) { return o.value === val; });
-              if (opt) opt.selected = chk.checked;
-              if (chk.checked) {
-                var allOpt = selectEl.querySelector('option[value="__ALL__"]');
-                if (allOpt) allOpt.selected = false;
-              }
-            }
-      
-            item.classList.toggle("checked", chk.checked);
-            selectEl.dispatchEvent(new Event("change"));
-            syncPairDropdownChecks();
-    });
-  });
-}
-
-function syncPairDropdownChecks() {
-  var selectEl = document.getElementById("pairSelect");
-  var panel = document.getElementById("pairDropdownPanel");
-  Array.from(selectEl.options).forEach(function(o) {
-    var chk = panel.querySelector('#pairChk_' + CSS.escape(o.value));
-    if (chk) {
-      chk.checked = o.selected;
-      chk.closest(".pair-dropdown-item").classList.toggle("checked", o.selected);
-    }
-  });
-}
-
-function positionPairDropdownUpward() {
-  var panel = document.getElementById("pairDropdownPanel");
-  var anchor = document.getElementById("pairDropdownToggle");
-  var rect = anchor.getBoundingClientRect();
-  panel.style.left = rect.left + "px";
-  panel.style.bottom = (window.innerHeight - rect.top + 6) + "px";
-  panel.style.top = "auto";
-}
-
-document.getElementById("pairDropdownToggle").addEventListener("click", function(e) {
-  e.stopPropagation();
-  var panel = document.getElementById("pairDropdownPanel");
-  var isOpen = panel.classList.contains("open");
-  if (isOpen) {
-    panel.classList.remove("open");
-  } else {
-    positionPairDropdownUpward();
-    panel.classList.add("open");
-  }
-});
-
-document.addEventListener("click", function(e) {
-  var panel = document.getElementById("pairDropdownPanel");
-  var toggle = document.getElementById("pairDropdownToggle");
-  if (panel.classList.contains("open") && !panel.contains(e.target) && e.target !== toggle) {
-    panel.classList.remove("open");
-  }
-});
-
-window.addEventListener("resize", function() {
-  var panel = document.getElementById("pairDropdownPanel");
-  if (panel.classList.contains("open")) positionPairDropdownUpward();
-});
-
-// Move panel out from under .field so it escapes the ".field label{display:none}" /
-// ".field input{width:100%,border,padding}" cascade that was stripping labels and
-// turning checkboxes into blank stretched boxes.
-document.body.appendChild(document.getElementById("pairDropdownPanel"));
-buildPairDropdownPanel();
+var ALL_PAIRS = ["frxEURUSD"];
+function getSelectedPairs() { return ["frxEURUSD"]; }
   
-  // Time presets
-document.querySelectorAll("[data-preset]").forEach(chip => {
-  chip.addEventListener("click", () => {
-    document.querySelectorAll("[data-preset]").forEach(c => c.classList.remove("active"));
-    chip.classList.add("active");
-    const [f, t] = chip.dataset.preset.split("-");
-    document.getElementById("timeFrom").value = f;
-    document.getElementById("timeTo").value   = t;
-  });
-});
-
-// Date change
-document.getElementById("dateFrom").addEventListener("change", updateDayCount);
-document.getElementById("dateTo").addEventListener("change",   updateDayCount);
+  // Week change
+  document.getElementById("weekSelect").addEventListener("change", updateDayCount);
 
 // Cycle labels
 document.getElementById("cycleMin").addEventListener("input", updateCycleLabel);
@@ -1318,8 +1065,26 @@ function matchesLevelFilter(d, levels) {
   return false;
 }
 
+function getWeekStartISO(dateISO) {
+  var d = new Date(dateISO + "T00:00:00Z");
+  var day = d.getUTCDay();
+  var diff = (day === 0 ? -6 : 1 - day);
+  d.setUTCDate(d.getUTCDate() + diff);
+  return d.toISOString().slice(0, 10);
+}
+
+function getWeekEndISO(weekStartISO) {
+  var d = new Date(weekStartISO + "T00:00:00Z");
+  d.setUTCDate(d.getUTCDate() + 6);
+  return d.toISOString().slice(0, 10);
+}
+
 function matchesDayFilter(d, dayVal) {
   if (!dayVal || dayVal === "__ALL__") return true;
+  if (dayVal.indexOf("week:") === 0) {
+    var ws = dayVal.slice(5);
+    return getWeekStartISO(d.date) === ws;
+  }
   return d.date === dayVal;
 }
 
@@ -1356,12 +1121,54 @@ function getWeekdays(from, to) {
   return days;
 }
 
+function getMondayUTC(d) {
+  const day = d.getUTCDay();
+  const diff = (day === 0 ? -6 : 1 - day);
+  const monday = new Date(d);
+  monday.setUTCDate(monday.getUTCDate() + diff);
+  monday.setUTCHours(0, 0, 0, 0);
+  return monday;
+}
+
+function fmtISO(d) { return d.toISOString().slice(0, 10); }
+
+function getMondayFridayDays(mondayISO) {
+  const days = [];
+  const mon = new Date(mondayISO + "T00:00:00Z");
+  for (let i = 0; i < 5; i++) {
+    const d = new Date(mon);
+    d.setUTCDate(d.getUTCDate() + i);
+    days.push(d);
+  }
+  return days;
+}
+
+function populateWeekSelect() {
+  const sel = document.getElementById("weekSelect");
+  const now = new Date();
+  const thisMonday = getMondayUTC(now);
+  const weeks = [];
+  for (let i = 0; i < 12; i++) {
+    const mon = new Date(thisMonday);
+    mon.setUTCDate(mon.getUTCDate() - 7 * i);
+    weeks.push(mon);
+  }
+  sel.innerHTML = weeks.map((mon, i) => {
+    const fri = new Date(mon);
+    fri.setUTCDate(fri.getUTCDate() + 4);
+    const label = fmtISO(mon) + " → " + fmtISO(fri) + (i === 0 ? "  (current week)" : "");
+    return `<option value="${fmtISO(mon)}">${label}</option>`;
+  }).join("");
+  sel.value = fmtISO(thisMonday);
+}
+
 function updateDayCount() {
-  const from = document.getElementById("dateFrom").value;
-  const to   = document.getElementById("dateTo").value;
-  if (!from || !to) { document.getElementById("dayCountHint").textContent = "Days selected: —"; return; }
-  const days = getWeekdays(from, to);
-  document.getElementById("dayCountHint").textContent = `Days selected: ${days.length}`;
+  const wk = document.getElementById("weekSelect").value;
+  if (!wk) { document.getElementById("dayCountHint").textContent = "Days selected: —"; return; }
+  const days = getMondayFridayDays(wk);
+  const mon = days[0], fri = days[4];
+  document.getElementById("dayCountHint").textContent =
+    `Mon ${mon.toISOString().slice(5,10)} → Fri ${fri.toISOString().slice(5,10)}  (Mon 05:30–Sat 05:30 IST)`;
 }
 
 function updateCycleLabel() {
@@ -1864,12 +1671,25 @@ async function runScan() {
 
   // Show day summary — click a day chip to isolate that day's results
     const summaryEl = document.getElementById("daySummary");
-    const dayFilterSel = document.getElementById("dayFilter");
-    dayFilterSel.innerHTML = '<option value="__ALL__">ALL DAYS</option>' + days.map(d => {
-      const iso = d.toISOString().slice(0, 10);
-      return `<option value="${iso}">${iso}</option>`;
-    }).join("");
-    dayFilterSel.value = "__ALL__";
+        const dayFilterSel = document.getElementById("dayFilter");
+        const weeksMapForFilter = {};
+        days.forEach(d => {
+          const iso = d.toISOString().slice(0, 10);
+          const ws = getWeekStartISO(iso);
+          if (!weeksMapForFilter[ws]) weeksMapForFilter[ws] = [];
+          weeksMapForFilter[ws].push(iso);
+        });
+        const weekStartsForFilter = Object.keys(weeksMapForFilter).sort();
+        dayFilterSel.innerHTML = '<option value="__ALL__">ALL DAYS</option>' +
+          weekStartsForFilter.map(ws => {
+            const we = getWeekEndISO(ws);
+            return `<option value="week:${ws}">FULL WEEK (${ws} → ${we})</option>`;
+          }).join("") +
+          days.map(d => {
+            const iso = d.toISOString().slice(0, 10);
+            return `<option value="${iso}">${iso}</option>`;
+          }).join("");
+        dayFilterSel.value = "__ALL__";
   
     summaryEl.innerHTML = days.map(d => {
       const iso = d.toISOString().slice(0, 10);
