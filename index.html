@@ -1008,7 +1008,9 @@
 // ═══════════════════════════════════════════════════════
 //  STATE
 // ═══════════════════════════════════════════════════════
-const WS_URL    = "wss://ws.derivws.com/websockets/v3?app_id=1089";
+const WS_URL    = "wss://api.derivws.com/trading/v1/options/ws/public";
+const WS_URL_LEGACY = "wss://ws.derivws.com/websockets/v3?app_id=1089";
+var wsFailCount = 0;
 const CHUNK_S   = 3600;
 const SCAN_END  = 75420;  // kept for backward compat, overridden by time window
 
@@ -1026,7 +1028,7 @@ var lastCacheKey = null; // tracks pair+dateRange+timeWindow combo
 
 // ── INDEXEDDB PERSISTENCE (tick cache survives page reloads) ──
 const IDB_NAME    = "wallspectrum_cache";
-const IDB_VERSION = 1;
+const IDB_VERSION = 2;
 const IDB_STORE   = "ticks";
 var idbReady = null;
 
@@ -1035,11 +1037,13 @@ function idbOpen() {
   idbReady = new Promise((resolve, reject) => {
     const req = indexedDB.open(IDB_NAME, IDB_VERSION);
     req.onupgradeneeded = () => {
-      const db = req.result;
-      if (!db.objectStoreNames.contains(IDB_STORE)) {
-        db.createObjectStore(IDB_STORE);
-      }
-    };
+          var db = req.result;
+          if (db.objectStoreNames.contains(IDB_STORE)) {
+            db.deleteObjectStore(IDB_STORE);
+          }
+          db.createObjectStore(IDB_STORE);
+        };
+        req.onblocked = () => reject(new Error("IndexedDB upgrade blocked"));
     req.onsuccess = () => resolve(req.result);
     req.onerror   = () => reject(req.error);
   }).catch(err => { console.warn("IndexedDB unavailable, falling back to in-memory cache only", err); return null; });
@@ -1396,36 +1400,170 @@ function fmtK(n) {
 // ═══════════════════════════════════════════════════════
 //  WEBSOCKET TICK FETCH
 // ═══════════════════════════════════════════════════════
-function fetchChunk(pair, t0, t1) {
-  return new Promise(resolve => {
-    let ws;
-    const result = {};
-    const cleanup = () => { try { ws.close(); } catch(e){} };
-    const timeout = setTimeout(() => { cleanup(); resolve(result); }, 25000);
+var RL_PER_MIN   = 200;
+var RL_PER_HOUR  = 13500;
+var RL_GAP_MS    = 150;
+var rlMinStamps  = [];
+var rlHourStamps = [];
+var rlPauseUntil = 0;
+var rlNextSend   = 0;
+var wsShared     = null;
+var wsOpening    = null;
+var wsPending    = {};
+var wsReqSeq     = 0;
 
+async function rlAcquire() {
+  while (true) {
+    if (cancelFlag) return false;
+    var now = Date.now();
+    while (rlMinStamps.length && now - rlMinStamps[0] >= 60000) rlMinStamps.shift();
+    while (rlHourStamps.length && now - rlHourStamps[0] >= 3600000) rlHourStamps.shift();
+    var wait = 0;
+    if (now < rlPauseUntil) wait = Math.max(wait, rlPauseUntil - now);
+    if (now < rlNextSend) wait = Math.max(wait, rlNextSend - now);
+    if (rlMinStamps.length >= RL_PER_MIN) wait = Math.max(wait, 60000 - (now - rlMinStamps[0]) + 50);
+    if (rlHourStamps.length >= RL_PER_HOUR) wait = Math.max(wait, 3600000 - (now - rlHourStamps[0]) + 50);
+    if (wait <= 0) {
+      rlMinStamps.push(now);
+      rlHourStamps.push(now);
+      rlNextSend = now + RL_GAP_MS;
+      return true;
+    }
+    if (wait > 1500) {
+      var logEl = document.getElementById("logLine");
+      if (logEl) logEl.textContent = "Deriv rate limit pacing - resuming in " + Math.ceil(wait / 1000) + "s";
+    }
+    await sleep(Math.min(wait, 1000));
+  }
+}
+
+function wsFailPendingFor(sock, code) {
+  var ids = Object.keys(wsPending);
+  for (var i = 0; i < ids.length; i++) {
+    var p = wsPending[ids[i]];
+    if (!p || p.sock !== sock) continue;
+    delete wsPending[ids[i]];
+    clearTimeout(p.timer);
+    p.done({ error: { code: code, message: code } });
+  }
+}
+
+function wsGetConn() {
+  if (wsShared && wsShared.readyState === 1) return Promise.resolve(wsShared);
+  if (wsOpening) return wsOpening;
+  wsOpening = new Promise(function(resolve) {
+    var sock = null;
+    var settled = false;
+    var openTimer = setTimeout(function() {
+      if (settled) return;
+      settled = true;
+      try { sock.close(); } catch (e1) {}
+      resolve(null);
+    }, 10000);
     try {
-      ws = new WebSocket(WS_URL);
-      ws.onopen = () => ws.send(JSON.stringify({
-        ticks_history: pair,
-        start: t0, end: t1,
-        count: 5000,
-        style: "ticks"
-      }));
-      ws.onmessage = ev => {
-        const d = JSON.parse(ev.data);
-        if (d.history) {
-          for (let i = 0; i < d.history.times.length; i++) {
-            result[+d.history.times[i]] = +d.history.prices[i];
-          }
-          clearTimeout(timeout); cleanup(); resolve(result);
-        } else if (d.error) {
-          clearTimeout(timeout); cleanup(); resolve(result);
-        }
-      };
-      ws.onerror = () => { clearTimeout(timeout); cleanup(); resolve(result); };
-      ws.onclose = () => { clearTimeout(timeout); resolve(result); };
-    } catch(e) { clearTimeout(timeout); resolve(result); }
+      sock = new WebSocket((wsFailCount % 2 === 0) ? WS_URL : WS_URL_LEGACY);
+    } catch (e0) {
+      settled = true;
+      clearTimeout(openTimer);
+      resolve(null);
+      return;
+    }
+    sock.onopen = function() {
+      if (settled) return;
+      settled = true;
+      clearTimeout(openTimer);
+      wsShared = sock;
+      resolve(sock);
+    };
+    sock.onmessage = function(ev) {
+      var d;
+      try { d = JSON.parse(ev.data); } catch (e2) { return; }
+      var rid = d.req_id || (d.echo_req && d.echo_req.req_id);
+      if (!rid || !wsPending[rid]) return;
+      var p = wsPending[rid];
+      delete wsPending[rid];
+      clearTimeout(p.timer);
+      p.done(d);
+    };
+    sock.onerror = function() {
+      if (settled) return;
+      settled = true;
+      clearTimeout(openTimer);
+      resolve(null);
+    };
+    sock.onclose = function() {
+      if (wsShared === sock) wsShared = null;
+      if (!settled) {
+        settled = true;
+        clearTimeout(openTimer);
+        resolve(null);
+      }
+      wsFailPendingFor(sock, "ConnectionClosed");
+    };
+  }).then(function(s) {
+    wsOpening = null;
+    if (!s) wsFailCount++;
+        return s;
   });
+  return wsOpening;
+}
+
+function wsRequest(payload, timeoutMs) {
+  return wsGetConn().then(function(sock) {
+    if (!sock) return { error: { code: "ConnectionFailed", message: "ConnectionFailed" } };
+    return new Promise(function(resolve) {
+      wsReqSeq++;
+      var rid = wsReqSeq;
+      var timer = setTimeout(function() {
+        delete wsPending[rid];
+        if (wsShared === sock) wsShared = null;
+        try { sock.close(); } catch (e3) {}
+        resolve({ error: { code: "Timeout", message: "Timeout" } });
+      }, timeoutMs);
+      wsPending[rid] = { timer: timer, done: resolve, sock: sock };
+      payload.req_id = rid;
+      try {
+        sock.send(JSON.stringify(payload));
+      } catch (e4) {
+        delete wsPending[rid];
+        clearTimeout(timer);
+        resolve({ error: { code: "SendFailed", message: "SendFailed" } });
+      }
+    });
+  });
+}
+
+async function fetchChunk(pair, t0, t1) {
+  var maxTry = 6;
+  for (var attempt = 0; attempt < maxTry; attempt++) {
+    if (cancelFlag) return null;
+    var gotSlot = await rlAcquire();
+    if (!gotSlot) return null;
+    var d = await wsRequest({ ticks_history: pair, start: t0, end: t1, count: 5000, style: "ticks" }, 25000);
+    if (cancelFlag) return null;
+    if (d && d.history && d.history.times && d.history.prices) {
+      var result = {};
+      for (var i = 0; i < d.history.times.length; i++) {
+        result[+d.history.times[i]] = +d.history.prices[i];
+      }
+      return result;
+    }
+    var err = (d && (d.error || (d.errors && d.errors[0]))) || null;
+    if (!err) return {};
+    var code = String(err.code || err.status || "");
+    var msg  = String(err.message || "");
+    if (/rate.?limit|429|too.?many/i.test(code + " " + msg)) {
+      var backoff = Math.min(65000, 15000 * Math.pow(2, attempt)) + Math.floor(Math.random() * 1500);
+      rlPauseUntil = Math.max(rlPauseUntil, Date.now() + backoff);
+      continue;
+    }
+    if (/Timeout|ConnectionClosed|ConnectionFailed|SendFailed|InternalServerError|ServiceUnavailable|50[0-9]/i.test(code)) {
+      await sleep((/ConnectionFailed/i.test(code) ? 2000 : 500) * (attempt + 1));
+      continue;
+    }
+    return {};
+  }
+  return null;
 }
 
 async function loadTicksForDay(pair, dayEpoch, hFrom, hTo, logCb) {
@@ -1451,8 +1589,14 @@ async function loadTicksForDay(pair, dayEpoch, hFrom, hTo, logCb) {
     if (cancelFlag) return null;
     const batch = chunks.slice(i, i + WORKERS);
     if (logCb) logCb(`chunks ${i+1}–${Math.min(i+WORKERS, chunks.length)}/${chunks.length}  [${WORKERS} parallel]`);
-    const results = await Promise.all(batch.map(([cs, ce]) => fetchChunk(pair, cs, ce)));
-    results.forEach(res => Object.assign(tickMap, res));
+    var results = await Promise.all(batch.map(([cs, ce]) => fetchChunk(pair, cs, ce)));
+        if (cancelFlag) return null;
+        if (results.some(res => res === null)) {
+          if (logCb) logCb("rate limit or fetch failure - day skipped, not cached");
+          toast("Deriv rate limit hit - " + pair + " day skipped, re-run to retry", "err", 4000);
+          return null;
+        }
+        results.forEach(res => Object.assign(tickMap, res));
     completed += batch.length;
   }
 
