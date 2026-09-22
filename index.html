@@ -1008,7 +1008,7 @@
 // ═══════════════════════════════════════════════════════
 //  STATE
 // ═══════════════════════════════════════════════════════
-const WS_URL    = "wss://api.derivws.com/trading/v1/options/ws/public";
+const WS_URL    = "wss://ws.derivws.com/websockets/v3?app_id=1089";
 const CHUNK_S   = 3600;
 const SCAN_END  = 75420;  // kept for backward compat, overridden by time window
 
@@ -1026,7 +1026,7 @@ var lastCacheKey = null; // tracks pair+dateRange+timeWindow combo
 
 // ── INDEXEDDB PERSISTENCE (tick cache survives page reloads) ──
 const IDB_NAME    = "wallspectrum_cache";
-const IDB_VERSION = 2;
+const IDB_VERSION = 1;
 const IDB_STORE   = "ticks";
 var idbReady = null;
 
@@ -1035,11 +1035,11 @@ function idbOpen() {
   idbReady = new Promise((resolve, reject) => {
     const req = indexedDB.open(IDB_NAME, IDB_VERSION);
     req.onupgradeneeded = () => {
-          var db = req.result;
-          if (!db.objectStoreNames.contains(IDB_STORE)) {
-            db.createObjectStore(IDB_STORE);
-          }
-        };
+      const db = req.result;
+      if (!db.objectStoreNames.contains(IDB_STORE)) {
+        db.createObjectStore(IDB_STORE);
+      }
+    };
     req.onsuccess = () => resolve(req.result);
     req.onerror   = () => reject(req.error);
   }).catch(err => { console.warn("IndexedDB unavailable, falling back to in-memory cache only", err); return null; });
@@ -1398,10 +1398,10 @@ function fmtK(n) {
 // ═══════════════════════════════════════════════════════
 function fetchChunk(pair, t0, t1) {
   return new Promise(resolve => {
-    var ws;
-    var result = {};
-    var cleanup = () => { try { ws.close(); } catch(e){} };
-    var timeout = setTimeout(() => { cleanup(); resolve(result); }, 25000);
+    let ws;
+    const result = {};
+    const cleanup = () => { try { ws.close(); } catch(e){} };
+    const timeout = setTimeout(() => { cleanup(); resolve(result); }, 25000);
 
     try {
       ws = new WebSocket(WS_URL);
@@ -1412,9 +1412,9 @@ function fetchChunk(pair, t0, t1) {
         style: "ticks"
       }));
       ws.onmessage = ev => {
-        var d = JSON.parse(ev.data);
+        const d = JSON.parse(ev.data);
         if (d.history) {
-          for (var i = 0; i < d.history.times.length; i++) {
+          for (let i = 0; i < d.history.times.length; i++) {
             result[+d.history.times[i]] = +d.history.prices[i];
           }
           clearTimeout(timeout); cleanup(); resolve(result);
@@ -1451,8 +1451,8 @@ async function loadTicksForDay(pair, dayEpoch, hFrom, hTo, logCb) {
     if (cancelFlag) return null;
     const batch = chunks.slice(i, i + WORKERS);
     if (logCb) logCb(`chunks ${i+1}–${Math.min(i+WORKERS, chunks.length)}/${chunks.length}  [${WORKERS} parallel]`);
-    var results = await Promise.all(batch.map(([cs, ce]) => fetchChunk(pair, cs, ce)));
-        results.forEach(res => Object.assign(tickMap, res));
+    const results = await Promise.all(batch.map(([cs, ce]) => fetchChunk(pair, cs, ce)));
+    results.forEach(res => Object.assign(tickMap, res));
     completed += batch.length;
   }
 
