@@ -1450,10 +1450,10 @@ async function loadTicksForDay(pair, dayEpoch, hFrom, hTo, cachedPrices, logCb) 
   }
 
   let chunksToFetch = [];
-  let gapStart = -1;
-  const GAP_THRESHOLD = Math.min(/^cry/i.test(pair) ? 120 : 900, 60);
-
-  for (let i = 0; i <= (actualEnd - start); i++) {
+    let gapStart = -1;
+    const GAP_THRESHOLD = /^cry/i.test(pair) ? 120 : 900;
+  
+    for (let i = 0; i <= (actualEnd - start); i++) {
     if (prices[i] === -1.0) {
       if (gapStart === -1) gapStart = start + i;
     } else {
@@ -1982,11 +1982,11 @@ async function exportAllSignalsCSV() {
   var dayValF = document.getElementById("dayFilter") ? document.getElementById("dayFilter").value : "__ALL__";
 
   var filterFn = function(x) { return x.pct >= minPctF && x.s1 >= minStreakF && x.c1 >= minC1F && matchesLevelFilter(x, levelsF) && matchesDayFilter(x, dayValF); };
-  var sortFn = function(a, b) { return (b.pct * b.c1) - (a.pct * a.c1); };
-
-  var revData = (allRevs || []).filter(filterFn).sort(sortFn).slice(0, 100);
-  var momData = (allMoms || []).filter(filterFn).sort(sortFn).slice(0, 100);
-  var data = revData.concat(momData);
+    var sortFn = function(a, b) { return (b.pct * b.c1) - (a.pct * a.c1); };
+  
+    var revData = (allRevs || []).filter(filterFn).sort(sortFn);
+    var momData = (allMoms || []).filter(filterFn).sort(sortFn);
+    var data = revData.concat(momData);
 
   if (data.length === 0) { toast("No signals to export", "err"); return; }
   
