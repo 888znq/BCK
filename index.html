@@ -1428,41 +1428,87 @@ function fetchChunk(pair, t0, t1) {
   });
 }
 
-async function loadTicksForDay(pair, dayEpoch, hFrom, hTo, logCb) {
+async function loadTicksForDay(pair, dayEpoch, hFrom, hTo, cachedPrices, logCb) {
   const start = dayEpoch + hFrom;
   const end   = dayEpoch + hTo;
   const now   = Math.floor(Date.now() / 1000);
   const actualEnd = Math.min(end, now);
   if (actualEnd < start) return [];
 
-  const chunks = [];
-  let s = start;
-  while (s <= actualEnd) {
-    chunks.push([s, Math.min(s + CHUNK_S, actualEnd)]);
-    s += CHUNK_S + 1;
+  const length = end - start + 1;
+  let prices = new Float64Array(length);
+  prices.fill(-1.0);
+
+  if (cachedPrices && cachedPrices.length === length) {
+    for (let i = 0; i < length; i++) {
+      prices[i] = cachedPrices[i];
+    }
+  } else if (cachedPrices && cachedPrices.length > 0) {
+    for (let i = 0; i < Math.min(length, cachedPrices.length); i++) {
+      prices[i] = cachedPrices[i];
+    }
   }
 
-  const WORKERS = 8;
-  const tickMap = {};
-  let completed = 0;
+  let chunksToFetch = [];
+  let gapStart = -1;
+  const GAP_THRESHOLD = Math.min(/^cry/i.test(pair) ? 120 : 900, 60);
 
-  // Process chunks in parallel batches of WORKERS
-  for (let i = 0; i < chunks.length; i += WORKERS) {
-    if (cancelFlag) return null;
-    const batch = chunks.slice(i, i + WORKERS);
-    if (logCb) logCb(`chunks ${i+1}–${Math.min(i+WORKERS, chunks.length)}/${chunks.length}  [${WORKERS} parallel]`);
-    const results = await Promise.all(batch.map(([cs, ce]) => fetchChunk(pair, cs, ce)));
-    results.forEach(res => Object.assign(tickMap, res));
-    completed += batch.length;
+  for (let i = 0; i <= (actualEnd - start); i++) {
+    if (prices[i] === -1.0) {
+      if (gapStart === -1) gapStart = start + i;
+    } else {
+      if (gapStart !== -1) {
+        if ((start + i - 1) - gapStart >= GAP_THRESHOLD) {
+          chunksToFetch.push([gapStart, start + i - 1]);
+        }
+        gapStart = -1;
+      }
+    }
+  }
+  if (gapStart !== -1) {
+    chunksToFetch.push([gapStart, actualEnd]);
   }
 
-  const length = actualEnd - start + 1;
-  const prices = new Array(length).fill(-1.0);
-  for (const [ts, px] of Object.entries(tickMap)) {
-    const idx = +ts - start;
-    if (idx >= 0 && idx < length) prices[idx] = +px;
+  if (chunksToFetch.length > 0) {
+    const CHUNK = 900;
+    let finalChunks = [];
+    chunksToFetch.forEach(gap => {
+      for (let s = gap[0]; s <= gap[1]; s += CHUNK + 1) {
+        finalChunks.push([s, Math.min(s + CHUNK, gap[1])]);
+      }
+    });
+
+    const WORKERS = 16;
+    for (let i = 0; i < finalChunks.length; i += WORKERS) {
+      if (cancelFlag) return null;
+      const batch = finalChunks.slice(i, i + WORKERS);
+      if (logCb) logCb(`gaps: chunks ${i+1}–${Math.min(i+WORKERS, finalChunks.length)}/${finalChunks.length}`);
+
+      const results = await Promise.all(batch.map(async (cArr, idx) => {
+        let map = {};
+        let retries = 0;
+        let delay = idx * 600;
+        while (retries <= 3) {
+          if (delay) await sleep(delay);
+          map = await fetchChunk(pair, cArr[0], cArr[1]);
+          if (Object.keys(map).length > 0) break;
+          retries++;
+          delay = 2000 * retries;
+        }
+        return map;
+      }));
+
+      results.forEach(res => {
+        for (const ts in res) {
+          const idx = parseInt(ts, 10) - start;
+          if (idx >= 0 && idx < length) prices[idx] = res[ts];
+        }
+      });
+      await sleep(1300);
+    }
   }
-  return prices;
+
+  return Array.from(prices);
 }
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
@@ -1490,48 +1536,88 @@ function getWorkerBlob() {
   const code = `
 function applyCumulative(hist, maxS) {
   var cum = 0, res = {};
-  for (var i = maxS; i > 0; i--) {
-    if (hist[i]) cum += hist[i];
-    if (cum) res[i] = cum;
+  for (var i = maxS; i >= 1; i--) {
+    var v = hist[i];
+    if (v) cum += v;
+    if (cum > 0) res[i] = cum;
   }
   return res;
 }
 function computeGapMapFromEvents(events) {
-  var maxRun = [], curRun = [];
+  var curRun = [];
+  var runPeaks = [];
   for (var i = 0; i < events.length; i++) {
     var L = events[i];
-    for (var s = 1; s < L; s++) {
-      curRun[s] = (curRun[s] || 0) + 1;
-      if (curRun[s] > (maxRun[s] || 0)) maxRun[s] = curRun[s];
+    for (var s = 1; s < L; s++) { curRun[s] = (curRun[s] || 0) + 1; }
+    if (curRun[L] > 0) {
+      if (!runPeaks[L]) runPeaks[L] = [];
+      runPeaks[L].push(curRun[L]);
     }
     curRun[L] = 0;
   }
-  return maxRun;
+  var modeRun = [];
+  var modeCount = [];
+  var freqMap = [];
+  var maxLen = Math.max(curRun.length, runPeaks.length);
+  for (var s = 1; s < maxLen; s++) {
+    var freq = {};
+    if (runPeaks[s]) {
+      for (var j = 0; j < runPeaks[s].length; j++) {
+        var v = runPeaks[s][j];
+        if (v < 1) continue;
+        freq[v] = (freq[v] || 0) + 1;
+      }
+    }
+    var liveLen = curRun[s] || 0;
+    if (liveLen >= 1) freq[liveLen] = (freq[liveLen] || 0) + 1;
+    var lens = Object.keys(freq);
+    if (lens.length === 0) continue;
+    var bestLen = 0, bestCount = 0;
+    for (var k = 0; k < lens.length; k++) {
+      var lenStr = lens[k];
+      var len = lenStr | 0;
+      var cnt = freq[lenStr];
+      if (cnt > bestCount || (cnt === bestCount && len > bestLen)) {
+        bestCount = cnt;
+        bestLen = len;
+      }
+    }
+    modeRun[s] = bestLen;
+    modeCount[s] = bestCount;
+    freqMap[s] = freq;
+  }
+  return { modeRun: modeRun, curRun: curRun, modeCount: modeCount, freqMap: freqMap };
 }
+
 self.onmessage = function(e) {
   var prices = e.data.prices;
   var minC   = e.data.minC;
   var maxC   = e.data.maxC;
   var pair   = e.data.pair;
+  var startTsUtc = e.data.startTsUtc;
   var n      = prices.length;
   var revs   = [];
   var moms   = [];
+  
   for (var c = minC; c <= maxC; c++) {
-    var rowColor  = new Int32Array(c);
-    var rowStreak = new Int32Array(c);
+    var rowColor  = new Int8Array(c);
+    var rowStreak = new Int16Array(c);
     var rowCol    = new Int32Array(c).fill(-2);
-    var shg_max   = new Int32Array(c);
-        var shr_max   = new Int32Array(c);
-        var shg       = new Array(c).fill(null);
-        var shr       = new Array(c).fill(null);
-        var termLenG  = new Array(c).fill(null);
-        var termLenR  = new Array(c).fill(null);
+    var shg_max   = new Int16Array(c);
+    var shr_max   = new Int16Array(c);
+    var shg       = new Array(c).fill(null);
+    var shr       = new Array(c).fill(null);
+    var termLenG  = new Array(c).fill(null);
+    var termLenR  = new Array(c).fill(null);
+    
     for (var i = 0; i < n; i++) {
+      var totalSec = startTsUtc + i;
       var p     = prices[i];
       var prevP = i >= c ? prices[i - c] : -1.0;
-      var col   = Math.floor(i / c);
-      var row   = i % c;
+      var col   = Math.floor(totalSec / c);
+      var row   = totalSec % c;
       var newC, newS;
+      
       if (prevP === -1.0) {
         newC = p === -1.0 ? 0 : 1;
         newS = p === -1.0 ? 0 : 1;
@@ -1549,69 +1635,82 @@ self.onmessage = function(e) {
         newC = rowColor[row];
         newS = 0;
       }
+      
       if (newS === 1 && rowStreak[row] > 0 && rowColor[row] !== 0 && rowCol[row] === col - 1) {
-              var s = rowStreak[row];
-              if (rowColor[row] === 1) {
-                if (!shg[row]) shg[row] = {};
-                shg[row][s] = (shg[row][s] || 0) + 1;
-                if (s > shg_max[row]) shg_max[row] = s;
-                if (!termLenG[row]) termLenG[row] = [];
-                termLenG[row].push(s);
-              } else {
-                if (!shr[row]) shr[row] = {};
-                shr[row][s] = (shr[row][s] || 0) + 1;
-                if (s > shr_max[row]) shr_max[row] = s;
-                if (!termLenR[row]) termLenR[row] = [];
-                termLenR[row].push(s);
-              }
-            }
+         var s = rowStreak[row];
+         if (rowColor[row] === 1) {
+           if (!shg[row]) shg[row] = {};
+           shg[row][s] = (shg[row][s] || 0) + 1;
+           if (s > shg_max[row]) shg_max[row] = s;
+           if (!termLenG[row]) termLenG[row] = [];
+           termLenG[row].push(s);
+         } else {
+           if (!shr[row]) shr[row] = {};
+           shr[row][s] = (shr[row][s] || 0) + 1;
+           if (s > shr_max[row]) shr_max[row] = s;
+           if (!termLenR[row]) termLenR[row] = [];
+           termLenR[row].push(s);
+         }
+      }
       rowColor[row]  = newC;
       rowStreak[row] = newS;
       rowCol[row]    = col;
     }
-    for (var row2 = 0; row2 < c; row2++) {
-          var ll = rowStreak[row2];
-          if (ll < 1 || rowColor[row2] === 0) continue;
-          if (rowColor[row2] === 1) {
-            if (!shg[row2]) shg[row2] = {};
-            shg[row2][ll] = (shg[row2][ll] || 0) + 1;
-            if (ll > shg_max[row2]) shg_max[row2] = ll;
-            if (!termLenG[row2]) termLenG[row2] = [];
-            termLenG[row2].push(ll);
-          } else {
-            if (!shr[row2]) shr[row2] = {};
-            shr[row2][ll] = (shr[row2][ll] || 0) + 1;
-            if (ll > shr_max[row2]) shr_max[row2] = ll;
-            if (!termLenR[row2]) termLenR[row2] = [];
-            termLenR[row2].push(ll);
-          }
-        }
+    
+    for (var rowL = 0; rowL < c; rowL++) {
+      var liveLen = rowStreak[rowL];
+      if (liveLen < 1 || rowColor[rowL] === 0) continue;
+      if (rowColor[rowL] === 1) {
+        if (!shg[rowL]) shg[rowL] = {};
+        shg[rowL][liveLen] = (shg[rowL][liveLen] || 0) + 1;
+        if (liveLen > shg_max[rowL]) shg_max[rowL] = liveLen;
+        if (!termLenG[rowL]) termLenG[rowL] = [];
+        termLenG[rowL].push(liveLen);
+      } else {
+        if (!shr[rowL]) shr[rowL] = {};
+        shr[rowL][liveLen] = (shr[rowL][liveLen] || 0) + 1;
+        if (liveLen > shr_max[rowL]) shr_max[rowL] = liveLen;
+        if (!termLenR[rowL]) termLenR[rowL] = [];
+        termLenR[rowL].push(liveLen);
+      }
+    }
+    
     for (var r = 0; r < c; r++) {
-          var gapMapG = computeGapMapFromEvents(termLenG[r] || []);
-          var gapMapR = computeGapMapFromEvents(termLenR[r] || []);
-          for (var ci = 0; ci < 2; ci++) {
-            var raw  = ci === 0 ? shg[r] : shr[r];
-            var maxS = ci === 0 ? shg_max[r] : shr_max[r];
-            if (!raw || maxS === 0) continue;
-            var colColor = ci === 0 ? "G" : "R";
-            var gapMap = ci === 0 ? gapMapG : gapMapR;
-            var cum = applyCumulative(raw, maxS);
-            var keys = Object.keys(cum);
-            for (var ki = 0; ki < keys.length; ki++) {
-              var sk = +keys[ki];
-              if (sk < 1) continue;
-              var c1 = cum[sk];
-              var c2 = cum[sk + 1] || 0;
-              var pctRev = c1 ? 100 - Math.round((c2 / c1) * 100) : 0;
-              var pctMom = c1 ? Math.round((c2 / c1) * 100) : 0;
-              var gapVal = gapMap[sk] || 0;
-              revs.push({ pair: pair, c: c, r: r, s1: sk, s2: sk+1, c1: c1, c2: c2, pct: pctRev, col: colColor, type: "REV", gap: gapVal });
-              if (c1 > 1) {
-                moms.push({ pair: pair, c: c, r: r, s1: sk, s2: sk+1, c1: c1, c2: c2, pct: pctMom, col: colColor, type: "MOM" });
-              }
-            }
+      var gapDataG = computeGapMapFromEvents(termLenG[r] || []);
+      var gapDataR = computeGapMapFromEvents(termLenR[r] || []);
+      
+      for (var ci = 0; ci < 2; ci++) {
+        var raw  = ci === 0 ? shg[r] : shr[r];
+        var maxS = ci === 0 ? shg_max[r] : shr_max[r];
+        if (!raw || maxS === 0) continue;
+        
+        var colColor = ci === 0 ? "G" : "R";
+        var gapMap = ci === 0 ? gapDataG.modeRun : gapDataR.modeRun;
+        var curGapMap = ci === 0 ? gapDataG.curRun : gapDataR.curRun;
+        var gapCountMap = ci === 0 ? gapDataG.modeCount : gapDataR.modeCount;
+        var gapFreqMapAll = ci === 0 ? gapDataG.freqMap : gapDataR.freqMap;
+        
+        var cum = applyCumulative(raw, maxS);
+        for (var sStr in cum) {
+          var sk = sStr | 0;
+          if (sk < 1) continue;
+          var c1 = cum[sk];
+          var c2 = cum[sk + 1] || 0;
+          var pctRev = c1 ? 100 - Math.round((c2 / c1) * 100) : 0;
+          var pctMom = c1 ? Math.round((c2 / c1) * 100) : 0;
+          
+          var gapVal = gapMap[sk] || 0;
+          var curGapVal = curGapMap[sk] || 0;
+          var gapCountVal = (gapCountMap && gapCountMap[sk]) || 0;
+          var gapFreqObj = (gapFreqMapAll && gapFreqMapAll[sk]) || {};
+          
+          revs.push({ pair: pair, c: c, r: r, s1: sk, s2: sk+1, c1: c1, c2: c2, pct: pctRev, col: colColor, type: "REV", gap: gapVal, curGap: curGapVal, gapCount: gapCountVal, gapFreq: gapFreqObj });
+          if (c1 > 1) {
+            moms.push({ pair: pair, c: c, r: r, s1: sk, s2: sk+1, c1: c1, c2: c2, pct: pctMom, col: colColor, type: "MOM", gap: gapVal, curGap: curGapVal, gapCount: gapCountVal, gapFreq: gapFreqObj });
           }
         }
+      }
+    }
   }
   self.postMessage({ revs: revs, moms: moms });
 };
@@ -1620,7 +1719,7 @@ self.onmessage = function(e) {
   return _workerBlobURL;
 }
 
-function workerScan(prices, minC, maxC, pair, progressCb) {
+function workerScan(prices, minC, maxC, pair, startTsUtc, progressCb) {
   return new Promise(function(resolve) {
     var totalCores  = Math.min(navigator.hardwareConcurrency || 4, 16);
     var totalCycles = maxC - minC + 1;
@@ -1640,7 +1739,7 @@ function workerScan(prices, minC, maxC, pair, progressCb) {
       (function(wMin, wMax) {
         var w = new Worker(blobURL);
         var transferArr = new Float64Array(prices);
-        w.postMessage({ prices: transferArr, minC: wMin, maxC: wMax, pair: pair }, [transferArr.buffer]);
+        w.postMessage({ prices: transferArr, minC: wMin, maxC: wMax, pair: pair, startTsUtc: startTsUtc }, [transferArr.buffer]);
         w.onmessage = function(e) {
           var _r = e.data.revs; for (var _a = 0; _a < _r.length; _a++) allRevs.push(_r[_a]);
                 var _m = e.data.moms; for (var _b = 0; _b < _m.length; _b++) allMoms.push(_m[_b]);
@@ -1745,56 +1844,35 @@ async function runScan() {
             var pairFetchSlice = (1 / totalPairs) * 60;
         
             // ── Collect all prices per day (fetch or cache), 8 days parallel ──
-            var allDayPrices = new Array(days.length).fill(null);
-            var DAY_WORKERS = 8;
-        
-            var pairFullyCached = days.every(d => {
-              const dk = `${curPair}|${d.toISOString().slice(0,10)}|${secFrom}-${secTo}`;
-              return tickCache[dk] !== undefined;
-            });
-        
-            if (pairFullyCached) {
-              // ── FAST PATH: everything for this pair is already cached, skip network entirely ──
-              setProgress(pairFetchBase + pairFetchSlice,
-                `[${pi+1}/${totalPairs}] ${curPair}  using cached ticks (0 fetches)`,
-                `${curPair}  ${timeFrom}–${timeTo} IST  [CACHE HIT]`);
-              for (let di = 0; di < days.length; di++) {
-                const dateLabel = days[di].toISOString().slice(0, 10);
-                const dayKey = `${curPair}|${dateLabel}|${secFrom}-${secTo}`;
-                allDayPrices[di] = tickCache[dayKey];
-              }
-              await sleep(5);
-            } else {
-              for (let di = 0; di < days.length; di += DAY_WORKERS) {
-                if (cancelFlag) break;
-                const batch = days.slice(di, di + DAY_WORKERS);
-                const batchEnd = Math.min(di + DAY_WORKERS, days.length);
-                var fetchPct = pairFetchBase + (di / days.length) * pairFetchSlice;
-                setProgress(fetchPct,
-                  `[${pi+1}/${totalPairs}] ${curPair}  fetching days ${di+1}–${batchEnd}/${days.length}`,
-                  `${curPair}  ${timeFrom}–${timeTo} IST`);
-        
-                await Promise.all(batch.map(async (day, bi) => {
-                  const idx = di + bi;
-                  const dayEpoch = Math.floor(day.getTime() / 1000);
-                  const dateLabel = day.toISOString().slice(0, 10);
-                  const dayKey = `${curPair}|${dateLabel}|${secFrom}-${secTo}`;
-        
-                  if (tickCache[dayKey] !== undefined) {
-                                      allDayPrices[idx] = tickCache[dayKey];
-                                    } else {
-                                      const prices = await loadTicksForDay(curPair, dayEpoch, secFrom, secTo, log => {
-                                        document.getElementById("logLine").textContent = `[${pi+1}/${totalPairs}] ${curPair}  Day ${idx+1}/${days.length}  ${dateLabel}  ${log}`;
-                                      });
-                                      if (prices && !cancelFlag) {
-                                        tickCache[dayKey] = prices;
-                                        allDayPrices[idx] = prices;
-                                        idbSet(dayKey, prices); // fire-and-forget persist to disk
-                                      }
-                                    }
-                }));
-              }
-            }
+                        var allDayPrices = new Array(days.length).fill(null);
+                        var DAY_WORKERS = 8;
+                    
+                        for (let di = 0; di < days.length; di += DAY_WORKERS) {
+                          if (cancelFlag) break;
+                          const batch = days.slice(di, di + DAY_WORKERS);
+                          const batchEnd = Math.min(di + DAY_WORKERS, days.length);
+                          var fetchPct = pairFetchBase + (di / days.length) * pairFetchSlice;
+                          setProgress(fetchPct,
+                            `[${pi+1}/${totalPairs}] ${curPair}  syncing days ${di+1}–${batchEnd}/${days.length}`,
+                            `${curPair}  ${timeFrom}–${timeTo} IST`);
+                  
+                          await Promise.all(batch.map(async (day, bi) => {
+                            const idx = di + bi;
+                            const dayEpoch = Math.floor(day.getTime() / 1000);
+                            const dateLabel = day.toISOString().slice(0, 10);
+                            const dayKey = `${curPair}|${dateLabel}|${secFrom}-${secTo}`;
+                  
+                            const cachedPrices = tickCache[dayKey];
+                            const prices = await loadTicksForDay(curPair, dayEpoch, secFrom, secTo, cachedPrices, log => {
+                              document.getElementById("logLine").textContent = `[${pi+1}/${totalPairs}] ${curPair}  Day ${idx+1}/${days.length}  ${dateLabel}  ${log}`;
+                            });
+                            if (prices && !cancelFlag) {
+                              tickCache[dayKey] = prices;
+                              allDayPrices[idx] = prices;
+                              idbSet(dayKey, prices); // fire-and-forget persist to disk
+                            }
+                          }));
+                        }
   
       if (cancelFlag) break;
   
@@ -1811,21 +1889,23 @@ async function runScan() {
             var scanSlice = (1 / totalPairs) * 28;
       
             for (var di2 = 0; di2 < allDayPrices.length; di2++) {
-              if (cancelFlag) break;
-              var dayPrices2 = allDayPrices[di2];
-              if (!dayPrices2) continue;
-              var dayLabel2 = days[di2].toISOString().slice(0, 10);
-              var dayFrac2  = allDayPrices.length ? (di2 / allDayPrices.length) : 0;
-      
-              setProgress(scanBase + dayFrac2 * scanSlice,
-                `[${pi+1}/${totalPairs}] ${curPair}  scanning day ${di2+1}/${allDayPrices.length} (${dayLabel2})…`,
-                `Cycles C${cycleMin}–C${cycleMax}`);
-      
-              var dayScanResult = await workerScan(dayPrices2, cycleMin, cycleMax, curPair, function(frac) {
-                setProgress(scanBase + (dayFrac2 + frac / allDayPrices.length) * scanSlice,
-                  `[${pi+1}/${totalPairs}] ${curPair}  ${dayLabel2}  scanning… ${Math.round(frac * 100)}%`,
-                  `C${cycleMin}–C${cycleMax}  [${totalCores} workers]`);
-              });
+                          if (cancelFlag) break;
+                          var dayPrices2 = allDayPrices[di2];
+                          if (!dayPrices2) continue;
+                          var dayEpoch2 = Math.floor(days[di2].getTime() / 1000);
+                          var startTsUtc = dayEpoch2 + secFrom;
+                          var dayLabel2 = days[di2].toISOString().slice(0, 10);
+                          var dayFrac2  = allDayPrices.length ? (di2 / allDayPrices.length) : 0;
+                  
+                          setProgress(scanBase + dayFrac2 * scanSlice,
+                            `[${pi+1}/${totalPairs}] ${curPair}  scanning day ${di2+1}/${allDayPrices.length} (${dayLabel2})…`,
+                            `Cycles C${cycleMin}–C${cycleMax}`);
+                  
+                          var dayScanResult = await workerScan(dayPrices2, cycleMin, cycleMax, curPair, startTsUtc, function(frac) {
+                            setProgress(scanBase + (dayFrac2 + frac / allDayPrices.length) * scanSlice,
+                              `[${pi+1}/${totalPairs}] ${curPair}  ${dayLabel2}  scanning… ${Math.round(frac * 100)}%`,
+                              `C${cycleMin}–C${cycleMax}  [${totalCores} workers]`);
+                          });
       
               for (var _i = 0; _i < dayScanResult[0].length; _i++) {
                 dayScanResult[0][_i].date = dayLabel2;
@@ -1911,28 +1991,29 @@ async function exportAllSignalsCSV() {
   if (data.length === 0) { toast("No signals to export", "err"); return; }
   
     var headers = [
-        "PAIR","DATE","TYPE","DIRECTION","CYCLE","ROW",
-        "STREAK_FROM","STREAK_TO","C1_OCCURRENCES","C2_OCCURRENCES","MAX_FALSE_GAP",
-        "PROBABILITY_%","REVERSAL_PROB_%","MOMENTUM_PROB_%",
-        "SCORE","SIGNAL_STRENGTH"
-      ];
-    
-      var rows = data.map(function(d) {
-          var name      = getPairDisplayName(d.pair);
-          var direction = d.col === "R" ? "BEARISH" : "BULLISH";
-        var revPct    = d.c1 ? 100 - Math.round((d.c2 / d.c1) * 100) : 0;
-        var momPct    = d.c1 ? Math.round((d.c2 / d.c1) * 100) : 0;
-        var score     = Math.round(d.pct * d.c1);
-        var strength  = d.pct >= 90 ? "STRONG" : d.pct >= 75 ? "MODERATE" : d.pct >= 60 ? "WEAK" : "SPECULATIVE";
-        var gapVal    = d.gap || 0;
-        var dateVal   = d.date || "";
-        return [
-          name, dateVal, d.type, direction, d.c, d.r,
-          d.s1, d.s2, d.c1, d.c2, gapVal,
-          d.pct, revPct, momPct,
-          score, strength
-        ].join(",");
-      });
+            "PAIR","DATE","TYPE","DIRECTION","CYCLE","ROW",
+            "STREAK_FROM","STREAK_TO","C1_OCCURRENCES","C2_OCCURRENCES","GAP_MODE","GAP_COUNT",
+            "PROBABILITY_%","REVERSAL_PROB_%","MOMENTUM_PROB_%",
+            "SCORE","SIGNAL_STRENGTH"
+          ];
+        
+          var rows = data.map(function(d) {
+              var name      = getPairDisplayName(d.pair);
+              var direction = d.col === "R" ? "BEARISH" : "BULLISH";
+            var revPct    = d.c1 ? 100 - Math.round((d.c2 / d.c1) * 100) : 0;
+            var momPct    = d.c1 ? Math.round((d.c2 / d.c1) * 100) : 0;
+            var score     = Math.round(d.pct * d.c1);
+            var strength  = d.pct >= 90 ? "STRONG" : d.pct >= 75 ? "MODERATE" : d.pct >= 60 ? "WEAK" : "SPECULATIVE";
+            var gapVal    = d.gap || 0;
+            var gapCountVal = d.gapCount || 0;
+            var dateVal   = d.date || "";
+            return [
+              name, dateVal, d.type, direction, d.c, d.r,
+              d.s1, d.s2, d.c1, d.c2, gapVal, gapCountVal,
+              d.pct, revPct, momPct,
+              score, strength
+            ].join(",");
+          });
 
   var csv = [headers.join(",")].concat(rows).join("\n");
   var filename = "wallspectrum_ALL_signals_" + new Date().toISOString().slice(0,10) + ".csv";
@@ -2004,10 +2085,12 @@ function buildRowsHTML(data) {
       const barCls   = d.pct >= 80 ? "bar-g" : d.pct >= 60 ? "bar-a" : "bar-r";
       const barW     = Math.min(100, d.pct);
       const badgeCls = d.type === "REV" ? "badge-rev" : "badge-mom";
-      const typeLbl  = d.type;
-      const gapCell  = (d.type === "REV") ? `G${d.gap || 0}` : "—";
-      const gapStyle = (d.type === "REV" && (d.gap || 0) >= 3) ? "color:var(--amber);" : "";
-      const dateCell = d.date || "—";
+            const typeLbl  = d.type;
+            const gapVal   = d.gap || 0;
+            const gapCount = d.gapCount || 0;
+            const gapCell  = (d.type === "REV") ? `F${gapVal}-${gapCount}` : "—";
+            const gapStyle = (d.type === "REV" && gapVal >= 3) ? "color:var(--amber);" : "";
+            const dateCell = d.date || "—";
   
       return `<tr class="${rowCls}">
               <td class="cell-pair"><span class="${arrowCls}">${arrow}</span> ${name}</td>
