@@ -424,12 +424,20 @@
       }
     .tab-spacer { flex: 1; }
     .split-table-wrap {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1px;
-      background: var(--border);
-      height: 100%;
-    }
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 1px;
+          background: var(--border);
+          height: 100%;
+        }
+        .repeats-section {
+          border-top: 2px solid var(--border2);
+          background: var(--bg);
+          padding-bottom: 6px;
+        }
+        .repeats-section .split-pane-header {
+          background: var(--panel);
+        }
     .split-pane {
       background: var(--bg);
       display: flex;
@@ -987,8 +995,15 @@
           <label style="display:none;">C1 ≥</label>
                     <input type="number" id="filterC1" placeholder="1" min="1" style="display:none;"/>
                     <div class="result-count" id="resultCount">—</div>
-                    <button class="export-btn" id="exportCsvBtn" onclick="exportAllSignalsCSV()" style="display:none; margin-left: 12px;">⬇ EXPORT CSV</button>
-                  </div>
+                                        <button class="export-btn" id="exportCsvBtn" onclick="exportAllSignalsCSV()" style="display:none; margin-left: 12px;">⬇ EXPORT CSV</button>
+                                                            <button class="export-btn" id="exportTableFormatBtn" onclick="exportAllSignalsTableFormat()" style="display:none; margin-left: 8px;">⬇ EXPORT ALL (TABLE)</button>
+                                                            <span>|</span>
+                                                            <label>Rep Days≥</label>
+                                                            <input type="number" id="repMinDays" value="2" min="2" style="width:48px;"/>
+                                                            <label>Rep C1≥</label>
+                                                            <input type="number" id="repMinC1" value="2" min="1" style="width:48px;"/>
+                                                            <button class="export-btn" id="exportRepeatsBtn" onclick="exportRepeatsCSV()" style="display:none; margin-left: 8px;">⬇ EXPORT REPEATS</button>
+                                                          </div>
 
     <!-- TABLE AREA -->
     <div class="table-area" id="tableArea">
@@ -1294,7 +1309,7 @@ document.getElementById("cycleMin").addEventListener("input", updateCycleLabel);
 document.getElementById("cycleMax").addEventListener("input", updateCycleLabel);
 
 // Filter bar inputs → re-render
-["filterPct","filterStreak","filterC1"].forEach(id => {
+["filterPct","filterStreak","filterC1","repMinDays","repMinC1"].forEach(id => {
   document.getElementById(id).addEventListener("input", renderTable);
 });
 document.getElementById("levelFilter").addEventListener("change", renderTable);
@@ -1966,8 +1981,9 @@ async function runScan() {
   document.getElementById("momCount").textContent     = filtMoms.length;
 
   renderTable();
-    document.getElementById("exportCsvBtn").style.display = "inline-block";
-    setTimeout(() => document.getElementById("progressWrap").classList.remove("visible"), 2000);
+      document.getElementById("exportCsvBtn").style.display = "inline-block";
+      document.getElementById("exportTableFormatBtn").style.display = "inline-block";
+      setTimeout(() => document.getElementById("progressWrap").classList.remove("visible"), 2000);
   
     toast(`Scan complete — ${filtRevs.length + filtMoms.length} signals`, "ok");
     resetRunBtn();
@@ -2016,12 +2032,48 @@ async function exportAllSignalsCSV() {
           });
 
   var csv = [headers.join(",")].concat(rows).join("\n");
-  var filename = "wallspectrum_ALL_signals_" + new Date().toISOString().slice(0,10) + ".csv";
-    await downloadCSV(csv, filename);
-    toast("Exported " + data.length + " signals to CSV", "ok");
-  }
+    var filename = "wallspectrum_ALL_signals_" + new Date().toISOString().slice(0,10) + ".csv";
+      await downloadCSV(csv, filename);
+      toast("Exported " + data.length + " signals to CSV", "ok");
+    }
   
-  async function downloadCSV(csv, filename) {
+    async function exportAllSignalsTableFormat() {
+      var minPctF    = parseInt(document.getElementById("filterPct").value)    || 0;
+      var minStreakF = parseInt(document.getElementById("filterStreak").value)  || 1;
+      var minC1F     = parseInt(document.getElementById("filterC1").value)      || 1;
+      var levelsF = parseLevelFilter(document.getElementById("levelFilter"));
+      var dayValF = document.getElementById("dayFilter") ? document.getElementById("dayFilter").value : "__ALL__";
+  
+      var filterFn = function(x) { return x.pct >= minPctF && x.s1 >= minStreakF && x.c1 >= minC1F && matchesLevelFilter(x, levelsF) && matchesDayFilter(x, dayValF); };
+      var sortFn = function(a, b) { return (b.pct * b.c1) - (a.pct * a.c1); };
+  
+      var revData = (allRevs || []).filter(filterFn).sort(sortFn);
+      var momData = (allMoms || []).filter(filterFn).sort(sortFn);
+  
+      if (revData.length === 0 && momData.length === 0) { toast("No signals to export", "err"); return; }
+  
+      var headers = ["TYPE","PAIR","CYCLE","ROW","STREAK","C1","C2","GAP","PROB%"];
+  
+      function rowsFor(data) {
+        return data.map(function(d) {
+          var name     = getPairDisplayName(d.pair);
+          var arrow    = d.col === "R" ? "DOWN" : "UP";
+          var streak   = "X" + d.s1 + "->X" + d.s2;
+          var gapVal   = d.gap || 0;
+          var gapCount = d.gapCount || 0;
+          var gapCell  = (d.type === "REV") ? ("F" + gapVal + "-" + gapCount) : "-";
+          return [d.type, arrow + " " + name, "C" + d.c, "R" + d.r, streak, d.c1, d.c2, gapCell, d.pct + "%"].join(",");
+        });
+      }
+  
+      var rowsAll = rowsFor(revData).concat(rowsFor(momData));
+      var csvAll = [headers.join(",")].concat(rowsAll).join("\n");
+      var filenameAll = "wallspectrum_signals_table_format_" + new Date().toISOString().slice(0,10) + ".csv";
+      await downloadCSV(csvAll, filenameAll);
+      toast("Exported " + rowsAll.length + " signals (table format)", "ok");
+    }
+  
+    async function downloadCSV(csv, filename) {
     if (window.showSaveFilePicker) {
       try {
         const handle = await window.showSaveFilePicker({
@@ -2126,6 +2178,105 @@ function buildPaneHTML(label, data, countId) {
     </div>`;
   }
 
+function computeRepeatingWalls() {
+  const minPct     = parseInt(document.getElementById("filterPct").value) || 0;
+  const minStreak  = parseInt(document.getElementById("filterStreak").value) || 1;
+  const levels     = parseLevelFilter(document.getElementById("levelFilter"));
+  const repMinDays = Math.max(2, parseInt(document.getElementById("repMinDays").value) || 2);
+  const repMinC1   = Math.max(1, parseInt(document.getElementById("repMinC1").value) || 1);
+
+  const passesBase = x => x.pct >= minPct && x.s1 >= minStreak && matchesLevelFilter(x, levels) && x.c1 >= repMinC1 && !!x.date;
+
+  const combined = (allRevs || []).filter(passesBase).concat((allMoms || []).filter(passesBase));
+
+  const groups = new Map(); // key -> { rows: [], days: Set, sample: obj }
+  combined.forEach(function(d) {
+    const key = d.pair + "|" + d.type + "|" + d.c + "|" + d.r + "|" + d.col + "|" + d.s1 + "-" + d.s2;
+    let g = groups.get(key);
+    if (!g) { g = { rows: [], days: new Set(), sample: d }; groups.set(key, g); }
+    g.rows.push(d);
+    g.days.add(d.date);
+  });
+
+  const out = [];
+  groups.forEach(function(g) {
+    if (g.days.size < repMinDays) return;
+    const sample     = g.sample;
+    const daysSorted = Array.from(g.days).sort();
+    const avgPct     = Math.round(g.rows.reduce(function(s, r) { return s + r.pct; }, 0) / g.rows.length);
+    const rowsByDay  = g.rows.slice().sort(function(a, b) { return a.date < b.date ? -1 : (a.date > b.date ? 1 : 0); });
+    out.push({
+      pair: sample.pair, type: sample.type, col: sample.col,
+      c: sample.c, r: sample.r, s1: sample.s1, s2: sample.s2,
+      daysSeen: g.days.size, dayList: daysSorted,
+      totalOcc: g.rows.length, avgPct: avgPct,
+      c1List: rowsByDay.map(function(r) { return r.c1; })
+    });
+  });
+
+  out.sort(function(a, b) {
+    return (b.daysSeen - a.daysSeen) || (b.totalOcc - a.totalOcc) || (b.avgPct - a.avgPct);
+  });
+  return out;
+}
+
+function buildRepeatsRowsHTML(list) {
+  return list.map(function(g) {
+    const name     = getPairDisplayName(g.pair);
+    const arrow    = g.col === "R" ? "↓" : "↑";
+    const arrowCls = g.col === "R" ? "cell-arrow-r" : "cell-arrow-g";
+    const rowCls   = g.col === "R" ? "row-red" : "row-green";
+    const badgeCls = g.type === "REV" ? "badge-rev" : "badge-mom";
+    const pctCls   = g.avgPct >= 80 ? "pct-high" : g.avgPct >= 60 ? "pct-med" : "pct-low";
+    return `<tr class="${rowCls}">
+              <td class="cell-pair"><span class="${arrowCls}">${arrow}</span> ${name}</td>
+              <td><span class="${badgeCls}">${g.type}</span></td>
+              <td class="cell-dim">C${g.c}</td>
+              <td class="cell-dim">R${g.r}</td>
+              <td class="cell-streak">X${g.s1}→X${g.s2}</td>
+              <td class="cell-streak">${g.daysSeen}</td>
+              <td class="cell-dim" style="white-space:normal;font-size:10px;">${g.dayList.join(", ")}</td>
+              <td class="cell-dim">${g.totalOcc}</td>
+              <td class="cell-dim" style="white-space:normal;font-size:10px;">${g.c1List.join(", ")}</td>
+              <td><span class="cell-pct ${pctCls}">${g.avgPct}%</span></td>
+            </tr>`;
+  }).join("");
+}
+
+async function exportRepeatsCSV() {
+  const repeats = computeRepeatingWalls();
+  if (repeats.length === 0) { toast("No repeats to export", "err"); return; }
+  const headers = ["PAIR","TYPE","DIRECTION","CYCLE","ROW","STREAK_FROM","STREAK_TO","DAYS_SEEN","DAY_LIST","TOTAL_OCCURRENCES","AVG_PROB%","C1_PER_DAY"];
+  const rows = repeats.map(function(g) {
+    const name      = getPairDisplayName(g.pair);
+    const direction = g.col === "R" ? "BEARISH" : "BULLISH";
+    return [name, g.type, direction, g.c, g.r, g.s1, g.s2, g.daysSeen, g.dayList.join("|"), g.totalOcc, g.avgPct, g.c1List.join("|")].join(",");
+  });
+  const csv = [headers.join(",")].concat(rows).join("\n");
+  const filename = "wallspectrum_repeats_" + new Date().toISOString().slice(0,10) + ".csv";
+  await downloadCSV(csv, filename);
+  toast("Exported " + repeats.length + " repeating wall(s) to CSV", "ok");
+}
+
+function buildRepeatsSectionHTML() {
+  const repMinDaysVal = document.getElementById("repMinDays").value || 2;
+  const repMinC1Val   = document.getElementById("repMinC1").value || 2;
+  const repeats = computeRepeatingWalls().slice(0, 300);
+  document.getElementById("exportRepeatsBtn").style.display = repeats.length ? "inline-block" : "none";
+
+  const body = repeats.length === 0
+    ? `<div class="state-empty" style="min-height:100px;"><div class="state-icon" style="font-size:20px;">○</div><div class="state-title" style="font-size:11px;">No repeats at current thresholds</div></div>`
+    : `<table>
+          <thead><tr><th>PAIR</th><th>TYPE</th><th>CYCLE</th><th>ROW</th><th>STREAK</th><th>DAYS</th><th>DAY LIST</th><th>TOTAL</th><th>C1 PER DAY</th><th>AVG%</th></tr></thead>
+          <tbody>${buildRepeatsRowsHTML(repeats)}</tbody>
+        </table>`;
+
+  return `<div class="repeats-section">
+      <div class="split-pane-header"><span>🔁 CROSS-DAY REPEATS (same cycle/row/streak/result, ≥${repMinDaysVal} days, C1≥${repMinC1Val})</span><span>${repeats.length}</span></div>
+      ${body}
+    </div>`;
+}
+
 function renderTable() {
   const minPct    = parseInt(document.getElementById("filterPct").value) || 0;
   const minStreak = parseInt(document.getElementById("filterStreak").value) || 1;
@@ -2142,16 +2293,17 @@ function renderTable() {
   document.getElementById("resultCount").textContent = `Showing ${revData.length} REV, ${momData.length} MOM`;
 
   const area = document.getElementById("tableArea");
+  const repeatsHTML = buildRepeatsSectionHTML();
 
   if (revData.length === 0 && momData.length === 0) {
-    area.innerHTML = `<div class="state-empty"><div class="state-icon">○</div><div class="state-title">No signals at current filters</div><div>Try lowering Min % or adjusting filters</div></div>`;
+    area.innerHTML = `<div class="state-empty"><div class="state-icon">○</div><div class="state-title">No signals at current filters</div><div>Try lowering Min % or adjusting filters</div></div>` + repeatsHTML;
     return;
   }
 
   area.innerHTML = `<div class="split-table-wrap">
     ${buildPaneHTML("REVERSAL", revData, "revCount")}
     ${buildPaneHTML("MOMENTUM", momData, "momCount")}
-  </div>`;
+  </div>` + repeatsHTML;
 }
 </script>
 </body>
