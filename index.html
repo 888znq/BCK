@@ -865,9 +865,26 @@ th:nth-child(1), td:nth-child(1) { width: 16%; }
                                                                                     
                                                                                     
                                                                                                                               
-                                                                                                                              <option value="frxEURUSD" selected>EUR/USD</option>
-                                                                                                                              <option value="frxXAGUSD">XAG/USD</option>
-                                                                                                                              <option value="frxXAUUSD">XAU/USD</option>
+                                                                                                                              <option value="frxAUDCAD">AUD/CAD</option>
+                                                                                                                                                                                                                                                            <option value="frxAUDCHF">AUD/CHF</option>
+                                                                                                                                                                                                                                                            <option value="frxAUDJPY">AUD/JPY</option>
+                                                                                                                                                                                                                                                            <option value="frxAUDUSD">AUD/USD</option>
+                                                                                                                                                                                                                                                            <option value="frxEURAUD">EUR/AUD</option>
+                                                                                                                                                                                                                                                            <option value="frxEURCAD">EUR/CAD</option>
+                                                                                                                                                                                                                                                            <option value="frxEURCHF">EUR/CHF</option>
+                                                                                                                                                                                                                                                            <option value="frxEURGBP">EUR/GBP</option>
+                                                                                                                                                                                                                                                            <option value="frxEURJPY">EUR/JPY</option>
+                                                                                                                                                                                                                                                            <option value="frxEURUSD" selected>EUR/USD</option>
+                                                                                                                                                                                                                                                            <option value="frxGBPAUD">GBP/AUD</option>
+                                                                                                                                                                                                                                                            <option value="frxGBPCAD">GBP/CAD</option>
+                                                                                                                                                                                                                                                            <option value="frxGBPCHF">GBP/CHF</option>
+                                                                                                                                                                                                                                                            <option value="frxGBPJPY">GBP/JPY</option>
+                                                                                                                                                                                                                                                            <option value="frxGBPUSD">GBP/USD</option>
+                                                                                                                                                                                                                                                            <option value="frxUSDCAD">USD/CAD</option>
+                                                                                                                                                                                                                                                            <option value="frxUSDCHF">USD/CHF</option>
+                                                                                                                                                                                                                                                            <option value="frxUSDJPY">USD/JPY</option>
+                                                                                                                              <!-- XAG removed -->
+                                                                                                                              <!-- XAU removed -->
                                                                                                                               
                                                                                                                               </select>
                   </div>
@@ -1252,7 +1269,9 @@ document.getElementById("pairInput").addEventListener("input", () => {
 });
 
 // Initialise the visible pair input to reflect the EUR/USD default
-document.getElementById("pairInput").value = "frxEURUSD";
+allPairsMode = true;
+Array.from(document.getElementById("pairSelect").options).forEach(function(o) { o.selected = (o.value === "__ALL__"); });
+document.getElementById("pairInput").value = "ALL (" + ALL_PAIRS.length + " pairs)";
 
 // ── Custom pair dropdown (opens upward, escapes sidebar clipping) ──
 function buildPairDropdownPanel() {
