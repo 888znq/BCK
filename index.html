@@ -781,6 +781,11 @@ th:nth-child(1), td:nth-child(1) { width: 16%; }
   .sidebar > div:nth-child(7)  { flex: 1 1 200px; }
   .sidebar > div:nth-child(9)  { flex: 1 1 200px; }
   .sidebar > div:nth-child(11) { flex: 2 1 320px; }
+.sidebar > div:nth-child(3) .field-row { gap: 4px; }
+.sidebar > div:nth-child(3) .field { margin-bottom: 2px; }
+.sidebar > div:nth-child(3) .field input { padding: 5px 10px; }
+.skip-wk { display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 11px; color: var(--text-mid); cursor: pointer; user-select: none; margin-top: 2px; }
+.skip-wk input { accent-color: var(--green); cursor: pointer; margin: 0; }
 .split-table-wrap th:nth-child(8), .split-table-wrap td:nth-child(8) { display: none; }
   .split-table-wrap th:nth-child(1), .split-table-wrap td:nth-child(1) { width: 18%; }
   .split-table-wrap th:nth-child(2), .split-table-wrap td:nth-child(2) { width: 11%; }
@@ -883,7 +888,8 @@ th:nth-child(1), td:nth-child(1) { width: 16%; }
           <input type="date" id="dateTo"/>
         </div>
       </div>
-      <p class="hint" id="dayCountHint">Weekdays selected: —</p>
+      <label class="skip-wk" title="Skip Saturday and Sunday"><input type="checkbox" id="skipWeekends" checked/> Skip Sat/Sun</label>
+            <p class="hint" id="dayCountHint">Weekdays selected: —</p>
     </div>
 
     <hr class="divider"/>
@@ -1042,6 +1048,7 @@ th:nth-child(1), td:nth-child(1) { width: 16%; }
           <label style="display:none;">C1 ≥</label>
                     <input type="number" id="filterC1" placeholder="1" min="1" style="display:none;"/>
                     <button class="export-btn" id="r0Btn" onclick="toggleR0Only()" style="margin-left: 12px;">R0</button>
+                                        <button class="export-btn" id="poolBtn" onclick="togglePooled()" style="margin-left: 8px;">POOL</button>
                     <div class="result-count" id="resultCount">—</div>
                                         <button class="export-btn" id="exportCsvBtn" onclick="exportAllSignalsCSV()" style="display:none; margin-left: 12px;">⬇ EXPORT CSV</button>
                                                             <button class="export-btn" id="exportTableFormatBtn" onclick="exportAllSignalsTableFormat()" style="display:none; margin-left: 8px;">⬇ EXPORT ALL (TABLE)</button>
@@ -1352,6 +1359,8 @@ document.querySelectorAll("[data-preset]").forEach(chip => {
 document.getElementById("dateFrom").addEventListener("change", updateDayCount);
 document.getElementById("dateTo").addEventListener("change",   updateDayCount);
 
+document.getElementById("skipWeekends").addEventListener("change", updateDayCount);
+
 // Cycle labels
 document.getElementById("cycleMin").addEventListener("input", updateCycleLabel);
 document.getElementById("cycleMax").addEventListener("input", updateCycleLabel);
@@ -1398,6 +1407,67 @@ function toggleR0Only() {
   renderTable();
 }
 
+var showPooled = false;
+
+function syncPoolBtn() {
+  var pb = document.getElementById("poolBtn");
+  if (pb) {
+    pb.style.background = showPooled ? "var(--green)" : "transparent";
+    pb.style.color = showPooled ? "#000432" : "var(--cyan)";
+  }
+}
+
+function togglePooled() {
+  showPooled = !showPooled;
+  var b = document.getElementById("poolBtn");
+  if (b) {
+    b.style.background = showPooled ? "var(--green)" : "transparent";
+    b.style.color = showPooled ? "#000432" : "var(--cyan)";
+  }
+  renderTable();
+}
+
+function computePooledWalls() {
+  var minStreakP = parseInt(document.getElementById("filterStreak").value) || 1;
+  var minC1P     = parseInt(document.getElementById("filterC1").value) || 1;
+  var levelsP    = parseLevelFilter(document.getElementById("levelFilter"));
+  var dayValP    = document.getElementById("dayFilter") ? document.getElementById("dayFilter").value : "__ALL__";
+  var dateTag    = (dayValP && dayValP !== "__ALL__") ? dayValP : "";
+  var groups = new Map();
+
+  (allRevs || []).forEach(function(d) {
+    if (d.s1 < minStreakP) return;
+    if (!matchesLevelFilter(d, levelsP)) return;
+    if (!matchesDayFilter(d, dayValP)) return;
+    var key = d.pair + "|" + d.c + "|" + d.r + "|" + d.col + "|" + d.s1 + "-" + d.s2;
+    var g = groups.get(key);
+    if (!g) {
+      g = { pair: d.pair, c: d.c, r: d.r, col: d.col, s1: d.s1, s2: d.s2, c1: 0, c2: 0, days: new Set() };
+      groups.set(key, g);
+    }
+    g.c1 += d.c1;
+    g.c2 += d.c2;
+    g.days.add(d.date || "");
+  });
+
+  var pooledRevs = [];
+  var pooledMoms = [];
+  groups.forEach(function(g) {
+    if (g.c1 < minC1P) return;
+    var base = {
+      pair: g.pair, c: g.c, r: g.r, col: g.col, s1: g.s1, s2: g.s2,
+      c1: g.c1, c2: g.c2, seg: g.days.size + "d",
+      gap: 0, gapCount: 0, date: dateTag, pooled: true
+    };
+    var revPct = 100 - Math.round((g.c2 / g.c1) * 100);
+    var momPct = Math.round((g.c2 / g.c1) * 100);
+    pooledRevs.push(Object.assign({}, base, { type: "REV", pct: revPct }));
+    if (g.c1 > 1) pooledMoms.push(Object.assign({}, base, { type: "MOM", pct: momPct }));
+  });
+
+  return { revs: pooledRevs, moms: pooledMoms };
+}
+
 function selectDayChip(iso) {
   var sel = document.getElementById("dayFilter");
   sel.value = (sel.value === iso) ? "__ALL__" : iso;
@@ -1421,11 +1491,12 @@ function startClock() {
 }
 
 function getWeekdays(from, to) {
-  const days = [];
+  var days = [];
+    var skipWk = !!(document.getElementById("skipWeekends") && document.getElementById("skipWeekends").checked);
   const cur = new Date(from + "T00:00:00Z");
   const end = new Date(to   + "T00:00:00Z");
   while (cur <= end) {
-    days.push(new Date(cur));
+    if (!skipWk || (cur.getUTCDay() !== 0 && cur.getUTCDay() !== 6)) days.push(new Date(cur));
     cur.setUTCDate(cur.getUTCDate() + 1);
   }
   return days;
@@ -2071,7 +2142,11 @@ async function runScan() {
     }).join(" ");
     summaryEl.classList.add("visible");
 
-  // Show tabs and table
+  // Auto-pool across days when the range has more than one day
+    showPooled = days.length > 1;
+    syncPoolBtn();
+  
+    // Show tabs and table
   document.getElementById("tabBar").style.display     = "flex";
   document.getElementById("filterBar").style.display  = "flex";
   document.getElementById("filterPct").value          = minPct;
@@ -2238,7 +2313,7 @@ function buildRowsHTML(data) {
             const typeLbl  = d.type;
             const gapVal   = d.gap || 0;
             const gapCount = d.gapCount || 0;
-            const gapCell  = (d.type === "REV") ? `F${gapVal}-${gapCount}` : "—";
+            const gapCell  = (d.type === "REV" && !d.pooled) ? `F${gapVal}-${gapCount}` : "—";
             const gapStyle = (d.type === "REV" && gapVal >= 3) ? "color:var(--amber);" : "";
             const dateCell = d.date || "—";
   
@@ -2386,10 +2461,17 @@ function renderTable() {
   var filterFn = function(x) { return x.pct >= minPct && x.s1 >= minStreak && x.c1 >= minC1 && matchesLevelFilter(x, levels) && matchesDayFilter(x, dayVal) && (!showR0Only || x.r === 0); };
   const sortFn   = (a, b) => (b.pct * b.c1) - (a.pct * a.c1);
 
-  const revData = allRevs.filter(filterFn).sort(sortFn).slice(0, 100);
-  const momData = allMoms.filter(filterFn).sort(sortFn).slice(0, 100);
+  var srcRevs = allRevs;
+    var srcMoms = allMoms;
+    if (showPooled) {
+      var pooledSrc = computePooledWalls();
+      srcRevs = pooledSrc.revs;
+      srcMoms = pooledSrc.moms;
+    }
+    const revData = srcRevs.filter(filterFn).sort(sortFn).slice(0, 100);
+  const momData = srcMoms.filter(filterFn).sort(sortFn).slice(0, 100);
 
-  document.getElementById("resultCount").textContent = `Showing ${revData.length} REV, ${momData.length} MOM`;
+  document.getElementById("resultCount").textContent = `Showing ${revData.length} REV, ${momData.length} MOM` + (showPooled ? " (POOLED)" : "");
 
   const area = document.getElementById("tableArea");
   const repeatsHTML = buildRepeatsSectionHTML();
