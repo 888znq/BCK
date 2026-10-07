@@ -888,7 +888,7 @@ th:nth-child(1), td:nth-child(1) { width: 16%; }
           <input type="date" id="dateTo"/>
         </div>
       </div>
-      <label class="skip-wk" title="Skip Saturday and Sunday"><input type="checkbox" id="skipWeekends" checked/> Skip Sat/Sun</label>
+      <!-- Sat/Sun always skipped -->
             <p class="hint" id="dayCountHint">Weekdays selected: —</p>
     </div>
 
@@ -904,10 +904,10 @@ th:nth-child(1), td:nth-child(1) { width: 16%; }
                   </div>
                   <div class="field">
                     <label>End time</label>
-                    <input type="time" id="timeTo" value="05:30"/>
+                    <input type="time" id="timeTo" value="02:20"/>
         </div>
       </div>
-      <p class="hint">Enter times in IST. Equal start/end = full 24h day (00:00–00:00 UTC). Ticks are only fetched in this window each day</p>
+      <p class="hint">Enter times in IST. Deriv session is 05:30–02:20 IST (00:00–20:50 UTC). Equal start/end = full session. Ticks are only fetched in this window each day</p>
       <div class="pair-grid" style="margin-top:6px">
         <div class="pair-chip" data-preset="00:00-20:57" title="Full session" style="display:none">Full Session</div>
                 <div class="pair-chip" data-preset="08:00-10:00" title="London open" style="display:none">London Open</div>
@@ -1080,6 +1080,7 @@ th:nth-child(1), td:nth-child(1) { width: 16%; }
 // ═══════════════════════════════════════════════════════
 const WS_URL    = "wss://api.derivws.com/trading/v1/options/ws/public?app_id=1089";
 const CHUNK_S   = 3600;
+var SESSION_END_SEC = 75000;
 const SCAN_END  = 75420;  // kept for backward compat, overridden by time window
 
 let allRevs  = [];
@@ -1359,7 +1360,7 @@ document.querySelectorAll("[data-preset]").forEach(chip => {
 document.getElementById("dateFrom").addEventListener("change", updateDayCount);
 document.getElementById("dateTo").addEventListener("change",   updateDayCount);
 
-document.getElementById("skipWeekends").addEventListener("change", updateDayCount);
+// weekends always skipped, no toggle
 
 // Cycle labels
 document.getElementById("cycleMin").addEventListener("input", updateCycleLabel);
@@ -1439,10 +1440,10 @@ function computePooledWalls() {
     if (d.s1 < minStreakP) return;
     if (!matchesLevelFilter(d, levelsP)) return;
     if (!matchesDayFilter(d, dayValP)) return;
-    var key = d.pair + "|" + d.c + "|" + d.r + "|" + d.col + "|" + d.s1 + "-" + d.s2;
+    var key = d.pair + "|" + d.c + "|" + d.r + "|" + d.col + "|" + d.s1 + "-" + d.s2 + "|" + (d.seg || "");
     var g = groups.get(key);
     if (!g) {
-      g = { pair: d.pair, c: d.c, r: d.r, col: d.col, s1: d.s1, s2: d.s2, c1: 0, c2: 0, days: new Set() };
+      g = { pair: d.pair, c: d.c, r: d.r, col: d.col, s1: d.s1, s2: d.s2, seg: (d.seg || ""), c1: 0, c2: 0, days: new Set() };
       groups.set(key, g);
     }
     g.c1 += d.c1;
@@ -1456,7 +1457,7 @@ function computePooledWalls() {
     if (g.c1 < minC1P) return;
     var base = {
       pair: g.pair, c: g.c, r: g.r, col: g.col, s1: g.s1, s2: g.s2,
-      c1: g.c1, c2: g.c2, seg: g.days.size + "d",
+      c1: g.c1, c2: g.c2, seg: (g.seg ? g.seg + " " : "") + g.days.size + "d",
       gap: 0, gapCount: 0, date: dateTag, pooled: true
     };
     var revPct = 100 - Math.round((g.c2 / g.c1) * 100);
@@ -1492,7 +1493,7 @@ function startClock() {
 
 function getWeekdays(from, to) {
   var days = [];
-    var skipWk = !!(document.getElementById("skipWeekends") && document.getElementById("skipWeekends").checked);
+    var skipWk = true;
   const cur = new Date(from + "T00:00:00Z");
   const end = new Date(to   + "T00:00:00Z");
   while (cur <= end) {
@@ -1983,20 +1984,22 @@ async function runScan() {
     const IST_OFFSET_SEC = 5.5 * 3600; // 19800
     const [fH, fM] = timeFrom.split(":").map(Number);
     const [tH, tM] = timeTo.split(":").map(Number);
-    const istFromSec = fH * 3600 + fM * 60;
-    const istToSec   = tH * 3600 + tM * 60;
+    const istFromSec = ((fH * 3600 + fM * 60 - 19800 + 86400) % 86400) + 19800;
+    const istToSec   = ((tH * 3600 + tM * 60 - 19800 + 86400) % 86400) + 19800;
 
     let secFrom, secTo;
     if (istFromSec === istToSec) {
       // Equal start/end = full 24h day, anchored to UTC 00:00–24:00
       secFrom = istFromSec - IST_OFFSET_SEC;
-      secTo   = secFrom + 86400;
+      secFrom = 0;
+            secTo   = SESSION_END_SEC;
     } else {
       secFrom = istFromSec - IST_OFFSET_SEC;
       secTo   = istToSec   - IST_OFFSET_SEC;
       if (secTo <= secFrom) secTo += 86400; // IST window crosses UTC midnight
     }
-    if (secTo <= secFrom) { toast("End time must be after start time", "err"); return; }
+    if (secTo > SESSION_END_SEC) secTo = SESSION_END_SEC;
+        if (secTo <= secFrom) { toast("Window is outside Deriv session (05:30-02:20 IST)", "err"); return; }
   
     // ── Cache key: all pairs + date range + time window ──
     const newCacheKey = `${pairsToScan.join(",")}|${dateFrom}|${dateTo}|${secFrom}-${secTo}`;
@@ -2143,7 +2146,7 @@ async function runScan() {
     summaryEl.classList.add("visible");
 
   // Auto-pool across days when the range has more than one day
-    showPooled = days.length > 1;
+    showPooled = true;
     syncPoolBtn();
   
     // Show tabs and table
