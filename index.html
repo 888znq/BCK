@@ -764,45 +764,6 @@
               background: rgba(46,213,115,0.1);
                     box-shadow: 0 0 10px rgba(46,213,115,0.3);
             }
-th:nth-child(1), td:nth-child(1) { width: 16%; }
-  th:nth-child(2), td:nth-child(2) { width: 10%; }
-  th:nth-child(3), td:nth-child(3) { width: 10%; }
-  th:nth-child(4), td:nth-child(4) { width: 9%; }
-  th:nth-child(5), td:nth-child(5) { width: 13%; }
-  th:nth-child(6), td:nth-child(6) { width: 9%; }
-  th:nth-child(7), td:nth-child(7) { width: 9%; }
-  th:nth-child(8), td:nth-child(8) { width: 12%; }
-  th:nth-child(9), td:nth-child(9) { width: 12%; }
-.sidebar > div:nth-child(1),
-  .sidebar > hr:nth-child(2),
-  .sidebar > div:nth-child(5),
-  .sidebar > hr:nth-child(6) { display: none !important; }
-  .sidebar > div:nth-child(3)  { flex: 1 1 220px; }
-  .sidebar > div:nth-child(7)  { flex: 1 1 200px; }
-  .sidebar > div:nth-child(9)  { flex: 1 1 200px; }
-  .sidebar > div:nth-child(11) { flex: 2 1 320px; }
-.sidebar > div:nth-child(3) .field-row { gap: 4px; }
-.sidebar > div:nth-child(3) .field { margin-bottom: 2px; }
-.sidebar > div:nth-child(3) .field input { padding: 5px 10px; }
-.skip-wk { display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 11px; color: var(--text-mid); cursor: pointer; user-select: none; margin-top: 2px; }
-.skip-wk input { accent-color: var(--green); cursor: pointer; margin: 0; }
-.split-table-wrap th:nth-child(8), .split-table-wrap td:nth-child(8) { display: none; }
-  .split-table-wrap th:nth-child(1), .split-table-wrap td:nth-child(1) { width: 18%; }
-  .split-table-wrap th:nth-child(2), .split-table-wrap td:nth-child(2) { width: 11%; }
-  .split-table-wrap th:nth-child(3), .split-table-wrap td:nth-child(3) { width: 11%; }
-  .split-table-wrap th:nth-child(4), .split-table-wrap td:nth-child(4) { width: 10%; }
-  .split-table-wrap th:nth-child(5), .split-table-wrap td:nth-child(5) { width: 14%; }
-  .split-table-wrap th:nth-child(6), .split-table-wrap td:nth-child(6) { width: 10%; }
-  .split-table-wrap th:nth-child(7), .split-table-wrap td:nth-child(7) { width: 10%; }
-  .split-table-wrap th:nth-child(9), .split-table-wrap td:nth-child(9) { width: 16%; }
-.split-table-wrap th:nth-child(1), .split-table-wrap td:nth-child(1) { width: 15%; }
-  .split-table-wrap th:nth-child(2), .split-table-wrap td:nth-child(2) { width: 20%; }
-  .split-table-wrap th:nth-child(3), .split-table-wrap td:nth-child(3) { width: 10%; }
-  .split-table-wrap th:nth-child(4), .split-table-wrap td:nth-child(4) { width: 8%; }
-  .split-table-wrap th:nth-child(5), .split-table-wrap td:nth-child(5) { width: 13%; }
-  .split-table-wrap th:nth-child(6), .split-table-wrap td:nth-child(6) { width: 8%; }
-  .split-table-wrap th:nth-child(7), .split-table-wrap td:nth-child(7) { width: 8%; }
-  .split-table-wrap th:nth-child(9), .split-table-wrap td:nth-child(9) { width: 18%; }
 </style>
 </head>
 <body>
@@ -839,53 +800,35 @@ th:nth-child(1), td:nth-child(1) { width: 16%; }
                           <div class="pair-dropdown-panel" id="pairDropdownPanel"></div>
                           <select id="pairSelect" multiple size="10" style="display:none;">
                                           <option value="__ALL__">ALL PAIRS</option>
-                                          
-                                          
-                                          
-                                          
-                                          
-                                                                                    
-                                                                                    
-                                                                                    
-                                          
-                                          
-                                          
-                                          
-                                          
-                                          
-                                          
-                                          
-                                          
-                                          
-                                          
-                                          
-                                          
-                                                                                    
-                                                                                    
-                                                                                    
-                                                                                    
-                                                                                                                              
-                                                                                                                              <option value="frxAUDCAD">AUD/CAD</option>
-                                                                                                                                                                                                                                                            <option value="frxAUDCHF">AUD/CHF</option>
-                                                                                                                                                                                                                                                            <option value="frxAUDJPY">AUD/JPY</option>
-                                                                                                                                                                                                                                                            <option value="frxAUDUSD">AUD/USD</option>
-                                                                                                                                                                                                                                                            <option value="frxEURAUD">EUR/AUD</option>
-                                                                                                                                                                                                                                                            <option value="frxEURCAD">EUR/CAD</option>
-                                                                                                                                                                                                                                                            <option value="frxEURCHF">EUR/CHF</option>
-                                                                                                                                                                                                                                                            <option value="frxEURGBP">EUR/GBP</option>
-                                                                                                                                                                                                                                                            <option value="frxEURJPY">EUR/JPY</option>
-                                                                                                                                                                                                                                                            <option value="frxEURUSD" selected>EUR/USD</option>
-                                                                                                                                                                                                                                                            <option value="frxGBPAUD">GBP/AUD</option>
-                                                                                                                                                                                                                                                            <option value="frxGBPCAD">GBP/CAD</option>
-                                                                                                                                                                                                                                                            <option value="frxGBPCHF">GBP/CHF</option>
-                                                                                                                                                                                                                                                            <option value="frxGBPJPY">GBP/JPY</option>
-                                                                                                                                                                                                                                                            <option value="frxGBPUSD">GBP/USD</option>
-                                                                                                                                                                                                                                                            <option value="frxUSDCAD">USD/CAD</option>
-                                                                                                                                                                                                                                                            <option value="frxUSDCHF">USD/CHF</option>
-                                                                                                                                                                                                                                                            <option value="frxUSDJPY">USD/JPY</option>
-                                                                                                                              <!-- XAG removed -->
-                                                                                                                              <!-- XAU removed -->
-                                                                                                                              
+                                          <option value="frxAUDCAD">AUD/CAD</option>
+                                          <option value="frxAUDCHF">AUD/CHF</option>
+                                          <option value="frxAUDJPY">AUD/JPY</option>
+                                          <option value="frxAUDNZD">AUD/NZD</option>
+                                          <option value="frxAUDUSD">AUD/USD</option>
+                                                                                    <option value="cryBTCUSD">BTC/USD</option>
+                                                                                    <option value="cryETHUSD">ETH/USD</option>
+                                                                                    <option value="frxEURAUD">EUR/AUD</option>
+                                          <option value="frxEURCAD">EUR/CAD</option>
+                                          <option value="frxEURCHF">EUR/CHF</option>
+                                          <option value="frxEURGBP">EUR/GBP</option>
+                                          <option value="frxEURJPY">EUR/JPY</option>
+                                          <option value="frxEURNZD">EUR/NZD</option>
+                                          <option value="frxEURUSD" selected>EUR/USD</option>
+                                          <option value="frxGBPAUD">GBP/AUD</option>
+                                          <option value="frxGBPCAD">GBP/CAD</option>
+                                          <option value="frxGBPCHF">GBP/CHF</option>
+                                          <option value="frxGBPJPY">GBP/JPY</option>
+                                          <option value="frxGBPNZD">GBP/NZD</option>
+                                          <option value="frxGBPUSD">GBP/USD</option>
+                                          <option value="frxNZDJPY">NZD/JPY</option>
+                                                                                    <option value="frxNZDUSD">NZD/USD</option>
+                                                                                    <option value="frxUSDCAD">USD/CAD</option>
+                                                                                    <option value="frxUSDCHF">USD/CHF</option>
+                                                                                    <option value="frxUSDJPY">USD/JPY</option>
+                                                                                                                              <option value="frxUSDMXN">USD/MXN</option>
+                                                                                                                              <option value="frxXAGUSD">XAG/USD</option>
+                                                                                                                              <option value="frxXAUUSD">XAU/USD</option>
+                                                                                                                              <option value="frxXPTUSD">XPT/USD</option>
                                                                                                                               </select>
                   </div>
           </div>
@@ -905,8 +848,7 @@ th:nth-child(1), td:nth-child(1) { width: 16%; }
           <input type="date" id="dateTo"/>
         </div>
       </div>
-      <!-- Sat/Sun always skipped -->
-            <p class="hint" id="dayCountHint">Weekdays selected: —</p>
+      <p class="hint" id="dayCountHint">Weekdays selected: —</p>
     </div>
 
     <hr class="divider"/>
@@ -917,14 +859,14 @@ th:nth-child(1), td:nth-child(1) { width: 16%; }
       <div class="field-row">
         <div class="field">
           <label>Start time</label>
-          <input type="time" id="timeFrom" value="05:30"/>
+          <input type="time" id="timeFrom" value="10:30"/>
                   </div>
                   <div class="field">
                     <label>End time</label>
-                    <input type="time" id="timeTo" value="02:20"/>
+                    <input type="time" id="timeTo" value="22:30"/>
         </div>
       </div>
-      <p class="hint">Enter times in IST. Deriv session is 05:30–02:20 IST (00:00–20:50 UTC). Equal start/end = full session. Ticks are only fetched in this window each day</p>
+      <p class="hint">Enter times in IST. Equal start/end = full 24h day (00:00–00:00 UTC). Ticks are only fetched in this window each day</p>
       <div class="pair-grid" style="margin-top:6px">
         <div class="pair-chip" data-preset="00:00-20:57" title="Full session" style="display:none">Full Session</div>
                 <div class="pair-chip" data-preset="08:00-10:00" title="London open" style="display:none">London Open</div>
@@ -945,10 +887,10 @@ th:nth-child(1), td:nth-child(1) { width: 16%; }
                                           </div>
                                           <div class="field">
                                             <label>Max cycle (C)</label>
-                                            <input type="number" id="cycleMax" value="180" min="1" max="500"/>
+                                            <input type="number" id="cycleMax" value="120" min="1" max="500"/>
                                 </div>
                               </div>
-                              <p class="hint">Range C<span id="cMinLabel">300</span>–C<span id="cMaxLabel">300</span> &nbsp;(<span id="cycleCountLabel">1</span> cycle(s))</p>
+                              <p class="hint">Range C<span id="cMinLabel">60</span>–C<span id="cMaxLabel">120</span> &nbsp;(<span id="cycleCountLabel">61</span> cycle(s))</p>
     </div>
 
     <hr class="divider"/>
@@ -958,19 +900,7 @@ th:nth-child(1), td:nth-child(1) { width: 16%; }
           <div class="section-label">Signal Filter</div>
           <div class="field">
                   <label>Min probability %</label>
-                                <input type="number" id="minPct" value="10" min="0" max="100"/>
-                                          </div>
-                                          <div class="field">
-                                            <select id="splitHours">
-                                              <option value="1">SPLIT 1h</option>
-                                              <option value="2">SPLIT 2h</option>
-                                              <option value="3">SPLIT 3h</option>
-                                              <option value="4">SPLIT 4h</option>
-                                              <option value="6">SPLIT 6h</option>
-                                              <option value="8">SPLIT 8h</option>
-                                              <option value="12">SPLIT 12h</option>
-                                              <option value="24" selected>SPLIT 24h (full)</option>
-                                            </select>
+                                <input type="number" id="minPct" value="85" min="0" max="100"/>
           </div>
         </div>
 
@@ -1064,8 +994,6 @@ th:nth-child(1), td:nth-child(1) { width: 16%; }
           <span style="display:none;">|</span>
           <label style="display:none;">C1 ≥</label>
                     <input type="number" id="filterC1" placeholder="1" min="1" style="display:none;"/>
-                    <button class="export-btn" id="r0Btn" onclick="toggleR0Only()" style="margin-left: 12px;">R0</button>
-                                        <button class="export-btn" id="poolBtn" onclick="togglePooled()" style="margin-left: 8px;">POOL</button>
                     <div class="result-count" id="resultCount">—</div>
                                         <button class="export-btn" id="exportCsvBtn" onclick="exportAllSignalsCSV()" style="display:none; margin-left: 12px;">⬇ EXPORT CSV</button>
                                                             <button class="export-btn" id="exportTableFormatBtn" onclick="exportAllSignalsTableFormat()" style="display:none; margin-left: 8px;">⬇ EXPORT ALL (TABLE)</button>
@@ -1097,7 +1025,6 @@ th:nth-child(1), td:nth-child(1) { width: 16%; }
 // ═══════════════════════════════════════════════════════
 const WS_URL    = "wss://api.derivws.com/trading/v1/options/ws/public?app_id=1089";
 const CHUNK_S   = 3600;
-var SESSION_END_SEC = 75000;
 const SCAN_END  = 75420;  // kept for backward compat, overridden by time window
 
 let allRevs  = [];
@@ -1269,9 +1196,7 @@ document.getElementById("pairInput").addEventListener("input", () => {
 });
 
 // Initialise the visible pair input to reflect the EUR/USD default
-allPairsMode = true;
-Array.from(document.getElementById("pairSelect").options).forEach(function(o) { o.selected = (o.value === "__ALL__"); });
-document.getElementById("pairInput").value = "ALL (" + ALL_PAIRS.length + " pairs)";
+document.getElementById("pairInput").value = "frxEURUSD";
 
 // ── Custom pair dropdown (opens upward, escapes sidebar clipping) ──
 function buildPairDropdownPanel() {
@@ -1379,8 +1304,6 @@ document.querySelectorAll("[data-preset]").forEach(chip => {
 document.getElementById("dateFrom").addEventListener("change", updateDayCount);
 document.getElementById("dateTo").addEventListener("change",   updateDayCount);
 
-// weekends always skipped, no toggle
-
 // Cycle labels
 document.getElementById("cycleMin").addEventListener("input", updateCycleLabel);
 document.getElementById("cycleMax").addEventListener("input", updateCycleLabel);
@@ -1415,79 +1338,6 @@ function matchesDayFilter(d, dayVal) {
   return d.date === dayVal;
 }
 
-var showR0Only = false;
-
-function toggleR0Only() {
-  showR0Only = !showR0Only;
-  var b = document.getElementById("r0Btn");
-  if (b) {
-    b.style.background = showR0Only ? "var(--green)" : "transparent";
-    b.style.color = showR0Only ? "#000432" : "var(--cyan)";
-  }
-  renderTable();
-}
-
-var showPooled = false;
-
-function syncPoolBtn() {
-  var pb = document.getElementById("poolBtn");
-  if (pb) {
-    pb.style.background = showPooled ? "var(--green)" : "transparent";
-    pb.style.color = showPooled ? "#000432" : "var(--cyan)";
-  }
-}
-
-function togglePooled() {
-  showPooled = !showPooled;
-  var b = document.getElementById("poolBtn");
-  if (b) {
-    b.style.background = showPooled ? "var(--green)" : "transparent";
-    b.style.color = showPooled ? "#000432" : "var(--cyan)";
-  }
-  renderTable();
-}
-
-function computePooledWalls() {
-  var minStreakP = parseInt(document.getElementById("filterStreak").value) || 1;
-  var minC1P     = parseInt(document.getElementById("filterC1").value) || 1;
-  var levelsP    = parseLevelFilter(document.getElementById("levelFilter"));
-  var dayValP    = document.getElementById("dayFilter") ? document.getElementById("dayFilter").value : "__ALL__";
-  var dateTag    = (dayValP && dayValP !== "__ALL__") ? dayValP : "";
-  var groups = new Map();
-
-  (allRevs || []).forEach(function(d) {
-    if (d.s1 < minStreakP) return;
-    if (!matchesLevelFilter(d, levelsP)) return;
-    if (!matchesDayFilter(d, dayValP)) return;
-    var key = d.pair + "|" + d.c + "|" + d.r + "|" + d.col + "|" + d.s1 + "-" + d.s2 + "|" + (d.seg || "");
-    var g = groups.get(key);
-    if (!g) {
-      g = { pair: d.pair, c: d.c, r: d.r, col: d.col, s1: d.s1, s2: d.s2, seg: (d.seg || ""), c1: 0, c2: 0, days: new Set() };
-      groups.set(key, g);
-    }
-    g.c1 += d.c1;
-    g.c2 += d.c2;
-    g.days.add(d.date || "");
-  });
-
-  var pooledRevs = [];
-  var pooledMoms = [];
-  groups.forEach(function(g) {
-    if (g.c1 < minC1P) return;
-    var base = {
-      pair: g.pair, c: g.c, r: g.r, col: g.col, s1: g.s1, s2: g.s2,
-      c1: g.c1, c2: g.c2, seg: (g.seg ? g.seg + " " : "") + g.days.size + "d",
-      gap: 0, gapCount: 0, date: dateTag, pooled: true
-    };
-    var revPct = 100 - Math.round((g.c2 / g.c1) * 100);
-    var momPct = Math.round((g.c2 / g.c1) * 100);
-    pooledRevs.push(Object.assign({}, base, { type: "REV", pct: revPct }));
-    if (g.c1 > 1) pooledMoms.push(Object.assign({}, base, { type: "MOM", pct: momPct }));
-  });
-
-  return { revs: pooledRevs, moms: pooledMoms };
-}
-
 function selectDayChip(iso) {
   var sel = document.getElementById("dayFilter");
   sel.value = (sel.value === iso) ? "__ALL__" : iso;
@@ -1511,12 +1361,11 @@ function startClock() {
 }
 
 function getWeekdays(from, to) {
-  var days = [];
-    var skipWk = true;
+  const days = [];
   const cur = new Date(from + "T00:00:00Z");
   const end = new Date(to   + "T00:00:00Z");
   while (cur <= end) {
-    if (!skipWk || (cur.getUTCDay() !== 0 && cur.getUTCDay() !== 6)) days.push(new Date(cur));
+    days.push(new Date(cur));
     cur.setUTCDate(cur.getUTCDate() + 1);
   }
   return days;
@@ -1617,7 +1466,7 @@ async function loadTicksForDay(pair, dayEpoch, hFrom, hTo, cachedPrices, logCb) 
 
   let chunksToFetch = [];
     let gapStart = -1;
-    var GAP_THRESHOLD = 900;
+    const GAP_THRESHOLD = /^cry/i.test(pair) ? 120 : 900;
   
     for (let i = 0; i <= (actualEnd - start); i++) {
     if (prices[i] === -1.0) {
@@ -1927,43 +1776,6 @@ function workerScan(prices, minC, maxC, pair, startTsUtc, progressCb) {
 // ═══════════════════════════════════════════════════════
 //  WALL FILTER
 // ═══════════════════════════════════════════════════════
-function pad2(n) { return (n < 10 ? "0" : "") + n; }
-
-function getSplitSegments(arrLen, splitHours) {
-  var windowSec = arrLen - 1;
-  var segLen = Math.round(splitHours * 3600);
-  if (!(segLen > 0) || segLen >= windowSec) return [[0, arrLen]];
-  var n = Math.ceil(windowSec / segLen);
-  var segs = [];
-  for (var k = 0; k < n; k++) {
-    segs.push([k * segLen, (k === n - 1) ? arrLen : (k + 1) * segLen]);
-  }
-  return segs;
-}
-
-async function scanSegments(prices, minC, maxC, pair, startTsUtc, secFromVal, splitHours, progressCb) {
-  var segs = getSplitSegments(prices.length, splitHours);
-  var outR = [], outM = [];
-  var k, a, b, part, res, label, ist, i, j;
-  for (k = 0; k < segs.length; k++) {
-    if (cancelFlag) break;
-    a = segs[k][0]; b = segs[k][1];
-    part = (segs.length === 1) ? prices : prices.slice(a, b);
-    res = await workerScan(part, minC, maxC, pair, startTsUtc + a, function(frac) {
-      if (progressCb) progressCb((k + frac) / segs.length);
-    });
-    label = "";
-    if (segs.length >= 1) {
-      ist = (((secFromVal + a + 19800) % 86400) + 86400) % 86400;
-      var ist2 = (((secFromVal + ((k === segs.length - 1) ? prices.length - 1 : b) + 19800) % 86400) + 86400) % 86400;
-            label = pad2(Math.floor(ist / 3600)) + ":" + pad2(Math.floor((ist % 3600) / 60)) + "-" + pad2(Math.floor(ist2 / 3600)) + ":" + pad2(Math.floor((ist2 % 3600) / 60));
-    }
-    for (i = 0; i < res[0].length; i++) { res[0][i].seg = label; outR.push(res[0][i]); }
-    for (j = 0; j < res[1].length; j++) { res[1][j].seg = label; outM.push(res[1][j]); }
-  }
-  return [outR, outM];
-}
-
 function wallFilter(raw, minPct) {
   return raw
     .filter(x => x.pct >= minPct)
@@ -1982,7 +1794,7 @@ async function runScan() {
           ? ALL_PAIRS
           : (selectedChipPairs.length > 0
               ? selectedChipPairs
-              : [document.getElementById("pairInput").value.trim() || "frxEURUSD"]))
+              : [document.getElementById("pairInput").value.trim() || "cryBTCUSD"]))
           .map(p => p.trim());
         const pair        = pairsToScan[0]; // kept for single-pair backward compat label
     const dateFrom = document.getElementById("dateFrom").value;
@@ -1992,7 +1804,6 @@ async function runScan() {
   const cycleMin = Math.max(1, parseInt(document.getElementById("cycleMin").value) || 60);
     const cycleMax = Math.max(cycleMin, parseInt(document.getElementById("cycleMax").value) || 120);
   const minPct   = parseInt(document.getElementById("minPct").value) || 100;
-    var splitHrs = parseFloat(document.getElementById("splitHours").value) || 24;
 
   if (!dateFrom || !dateTo) { toast("Please set date range", "err"); return; }
   
@@ -2003,22 +1814,20 @@ async function runScan() {
     const IST_OFFSET_SEC = 5.5 * 3600; // 19800
     const [fH, fM] = timeFrom.split(":").map(Number);
     const [tH, tM] = timeTo.split(":").map(Number);
-    const istFromSec = ((fH * 3600 + fM * 60 - 19800 + 86400) % 86400) + 19800;
-    const istToSec   = ((tH * 3600 + tM * 60 - 19800 + 86400) % 86400) + 19800;
+    const istFromSec = fH * 3600 + fM * 60;
+    const istToSec   = tH * 3600 + tM * 60;
 
     let secFrom, secTo;
     if (istFromSec === istToSec) {
       // Equal start/end = full 24h day, anchored to UTC 00:00–24:00
-      secFrom = istFromSec - IST_OFFSET_SEC;
       secFrom = 0;
-            secTo   = SESSION_END_SEC;
+      secTo   = 86400;
     } else {
       secFrom = istFromSec - IST_OFFSET_SEC;
       secTo   = istToSec   - IST_OFFSET_SEC;
       if (secTo <= secFrom) secTo += 86400; // IST window crosses UTC midnight
     }
-    if (secTo > SESSION_END_SEC) secTo = SESSION_END_SEC;
-        if (secTo <= secFrom) { toast("Window is outside Deriv session (05:30-02:20 IST)", "err"); return; }
+    if (secTo <= secFrom) { toast("End time must be after start time", "err"); return; }
   
     // ── Cache key: all pairs + date range + time window ──
     const newCacheKey = `${pairsToScan.join(",")}|${dateFrom}|${dateTo}|${secFrom}-${secTo}`;
@@ -2107,7 +1916,7 @@ async function runScan() {
                             `[${pi+1}/${totalPairs}] ${curPair}  scanning day ${di2+1}/${allDayPrices.length} (${dayLabel2})…`,
                             `Cycles C${cycleMin}–C${cycleMax}`);
                   
-                          var dayScanResult = await scanSegments(dayPrices2, cycleMin, cycleMax, curPair, startTsUtc, secFrom, splitHrs, function(frac) {
+                          var dayScanResult = await workerScan(dayPrices2, cycleMin, cycleMax, curPair, startTsUtc, function(frac) {
                             setProgress(scanBase + (dayFrac2 + frac / allDayPrices.length) * scanSlice,
                               `[${pi+1}/${totalPairs}] ${curPair}  ${dayLabel2}  scanning… ${Math.round(frac * 100)}%`,
                               `C${cycleMin}–C${cycleMax}  [${totalCores} workers]`);
@@ -2164,11 +1973,7 @@ async function runScan() {
     }).join(" ");
     summaryEl.classList.add("visible");
 
-  // Auto-pool across days when the range has more than one day
-    showPooled = true;
-    syncPoolBtn();
-  
-    // Show tabs and table
+  // Show tabs and table
   document.getElementById("tabBar").style.display     = "flex";
   document.getElementById("filterBar").style.display  = "flex";
   document.getElementById("filterPct").value          = minPct;
@@ -2202,7 +2007,7 @@ async function exportAllSignalsCSV() {
   if (data.length === 0) { toast("No signals to export", "err"); return; }
   
     var headers = [
-            "PAIR","DATE","SLOT","TYPE","DIRECTION","CYCLE","ROW",
+            "PAIR","DATE","TYPE","DIRECTION","CYCLE","ROW",
             "STREAK_FROM","STREAK_TO","C1_OCCURRENCES","C2_OCCURRENCES","GAP_MODE","GAP_COUNT",
             "PROBABILITY_%","REVERSAL_PROB_%","MOMENTUM_PROB_%",
             "SCORE","SIGNAL_STRENGTH"
@@ -2219,7 +2024,7 @@ async function exportAllSignalsCSV() {
             var gapCountVal = d.gapCount || 0;
             var dateVal   = d.date || "";
             return [
-              name, dateVal, (d.seg || ""), d.type, direction, d.c, d.r,
+              name, dateVal, d.type, direction, d.c, d.r,
               d.s1, d.s2, d.c1, d.c2, gapVal, gapCountVal,
               d.pct, revPct, momPct,
               score, strength
@@ -2247,7 +2052,7 @@ async function exportAllSignalsCSV() {
   
       if (revData.length === 0 && momData.length === 0) { toast("No signals to export", "err"); return; }
   
-      var headers = ["TYPE","PAIR","SLOT","CYCLE","ROW","STREAK","C1","C2","GAP","PROB%"];
+      var headers = ["TYPE","PAIR","CYCLE","ROW","STREAK","C1","C2","GAP","PROB%"];
   
       function rowsFor(data) {
         return data.map(function(d) {
@@ -2257,7 +2062,7 @@ async function exportAllSignalsCSV() {
           var gapVal   = d.gap || 0;
           var gapCount = d.gapCount || 0;
           var gapCell  = (d.type === "REV") ? ("F" + gapVal + "-" + gapCount) : "-";
-          return [d.type, arrow + " " + name, (d.seg || "-"), "C" + d.c, "R" + d.r, streak, d.c1, d.c2, gapCell, d.pct + "%"].join(",");
+          return [d.type, arrow + " " + name, "C" + d.c, "R" + d.r, streak, d.c1, d.c2, gapCell, d.pct + "%"].join(",");
         });
       }
   
@@ -2335,14 +2140,13 @@ function buildRowsHTML(data) {
             const typeLbl  = d.type;
             const gapVal   = d.gap || 0;
             const gapCount = d.gapCount || 0;
-            const gapCell  = (d.type === "REV" && !d.pooled) ? `F${gapVal}-${gapCount}` : "—";
+            const gapCell  = (d.type === "REV") ? `F${gapVal}-${gapCount}` : "—";
             const gapStyle = (d.type === "REV" && gapVal >= 3) ? "color:var(--amber);" : "";
             const dateCell = d.date || "—";
   
       return `<tr class="${rowCls}">
               <td class="cell-pair"><span class="${arrowCls}">${arrow}</span> ${name}</td>
-            <td class="cell-dim">${d.seg || "-"}</td>
-                        <td class="cell-dim">C${d.c}</td>
+            <td class="cell-dim">C${d.c}</td>
             <td class="cell-dim">R${d.r}</td>
             <td class="cell-streak">X${d.s1}→X${d.s2}</td>
             <td class="cell-dim">${d.c1}</td>
@@ -2367,7 +2171,7 @@ function buildPaneHTML(label, data, countId) {
       <div class="split-pane-header"><span>${label}</span><span id="${countId}">${data.length}</span></div>
       <div class="split-pane-body"><table>
                   <thead><tr>
-                    <th>PAIR</th><th>SLOT</th><th>CYCLE</th><th>ROW</th><th>STREAK</th><th>C1</th><th>C2</th><th>GAP</th><th>PROB%</th>
+                    <th>PAIR</th><th>CYCLE</th><th>ROW</th><th>STREAK</th><th>C1</th><th>C2</th><th>GAP</th><th>PROB%</th>
                   </tr></thead>
                   <tbody>${rows}</tbody>
                 </table></div>
@@ -2391,7 +2195,7 @@ function computeRepeatingWalls() {
     let g = groups.get(key);
     if (!g) { g = { rows: [], days: new Set(), sample: d }; groups.set(key, g); }
     g.rows.push(d);
-    g.days.add(d.date + (d.seg ? " " + d.seg : ""));
+    g.days.add(d.date);
   });
 
   const out = [];
@@ -2400,7 +2204,7 @@ function computeRepeatingWalls() {
     const sample     = g.sample;
     const daysSorted = Array.from(g.days).sort();
     const avgPct     = Math.round(g.rows.reduce(function(s, r) { return s + r.pct; }, 0) / g.rows.length);
-    const rowsByDay  = g.rows.slice().sort(function(a, b) { var ka = a.date + " " + (a.seg || ""), kb = b.date + " " + (b.seg || ""); return ka < kb ? -1 : (ka > kb ? 1 : 0); });
+    const rowsByDay  = g.rows.slice().sort(function(a, b) { return a.date < b.date ? -1 : (a.date > b.date ? 1 : 0); });
     out.push({
       pair: sample.pair, type: sample.type, col: sample.col,
       c: sample.c, r: sample.r, s1: sample.s1, s2: sample.s2,
@@ -2480,20 +2284,13 @@ function renderTable() {
   const levels    = parseLevelFilter(document.getElementById("levelFilter"));
   const dayVal    = document.getElementById("dayFilter") ? document.getElementById("dayFilter").value : "__ALL__";
 
-  var filterFn = function(x) { return x.pct >= minPct && x.s1 >= minStreak && x.c1 >= minC1 && matchesLevelFilter(x, levels) && matchesDayFilter(x, dayVal) && (!showR0Only || x.r === 0); };
+  const filterFn = x => x.pct >= minPct && x.s1 >= minStreak && x.c1 >= minC1 && matchesLevelFilter(x, levels) && matchesDayFilter(x, dayVal);
   const sortFn   = (a, b) => (b.pct * b.c1) - (a.pct * a.c1);
 
-  var srcRevs = allRevs;
-    var srcMoms = allMoms;
-    if (showPooled) {
-      var pooledSrc = computePooledWalls();
-      srcRevs = pooledSrc.revs;
-      srcMoms = pooledSrc.moms;
-    }
-    const revData = srcRevs.filter(filterFn).sort(sortFn).slice(0, 100);
-  const momData = srcMoms.filter(filterFn).sort(sortFn).slice(0, 100);
+  const revData = allRevs.filter(filterFn).sort(sortFn).slice(0, 100);
+  const momData = allMoms.filter(filterFn).sort(sortFn).slice(0, 100);
 
-  document.getElementById("resultCount").textContent = `Showing ${revData.length} REV, ${momData.length} MOM` + (showPooled ? " (POOLED)" : "");
+  document.getElementById("resultCount").textContent = `Showing ${revData.length} REV, ${momData.length} MOM`;
 
   const area = document.getElementById("tableArea");
   const repeatsHTML = buildRepeatsSectionHTML();
