@@ -792,7 +792,7 @@
       <div class="field">
                           <label>Custom pair</label>
                           <div class="pair-select-wrap">
-                            <input type="text" id="pairInput" value="frxEURUSD" placeholder="frxEURUSD"/>
+                            <input type="text" id="pairInput" value="2 pairs: frxXAGUSD, frxXAUUSD" placeholder="frxXAUUSD"/>
                             <button type="button" class="pair-dropdown-toggle" id="pairDropdownToggle" title="Select pairs">▾</button>
                           </div>
                         </div>
@@ -800,35 +800,35 @@
                           <div class="pair-dropdown-panel" id="pairDropdownPanel"></div>
                           <select id="pairSelect" multiple size="10" style="display:none;">
                                           <option value="__ALL__">ALL PAIRS</option>
-                                          <option value="frxAUDCAD">AUD/CAD</option>
-                                          <option value="frxAUDCHF">AUD/CHF</option>
-                                          <option value="frxAUDJPY">AUD/JPY</option>
-                                          <option value="frxAUDNZD">AUD/NZD</option>
-                                          <option value="frxAUDUSD">AUD/USD</option>
-                                                                                    <option value="cryBTCUSD">BTC/USD</option>
-                                                                                    <option value="cryETHUSD">ETH/USD</option>
-                                                                                    <option value="frxEURAUD">EUR/AUD</option>
-                                          <option value="frxEURCAD">EUR/CAD</option>
-                                          <option value="frxEURCHF">EUR/CHF</option>
-                                          <option value="frxEURGBP">EUR/GBP</option>
-                                          <option value="frxEURJPY">EUR/JPY</option>
-                                          <option value="frxEURNZD">EUR/NZD</option>
-                                          <option value="frxEURUSD" selected>EUR/USD</option>
-                                          <option value="frxGBPAUD">GBP/AUD</option>
-                                          <option value="frxGBPCAD">GBP/CAD</option>
-                                          <option value="frxGBPCHF">GBP/CHF</option>
-                                          <option value="frxGBPJPY">GBP/JPY</option>
-                                          <option value="frxGBPNZD">GBP/NZD</option>
-                                          <option value="frxGBPUSD">GBP/USD</option>
-                                          <option value="frxNZDJPY">NZD/JPY</option>
-                                                                                    <option value="frxNZDUSD">NZD/USD</option>
-                                                                                    <option value="frxUSDCAD">USD/CAD</option>
-                                                                                    <option value="frxUSDCHF">USD/CHF</option>
-                                                                                    <option value="frxUSDJPY">USD/JPY</option>
-                                                                                                                              <option value="frxUSDMXN">USD/MXN</option>
-                                                                                                                              <option value="frxXAGUSD">XAG/USD</option>
-                                                                                                                              <option value="frxXAUUSD">XAU/USD</option>
-                                                                                                                              <option value="frxXPTUSD">XPT/USD</option>
+                                          
+                                          
+                                          
+                                          
+                                          
+                                                                                    
+                                                                                    
+                                                                                    
+                                          
+                                          
+                                          
+                                          
+                                          
+                                          
+                                          
+                                          
+                                          
+                                          
+                                          
+                                          
+                                          
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                                                              
+                                                                                                                              <option value="frxXAGUSD" selected>XAG/USD</option>
+                                                                                                                              <option value="frxXAUUSD" selected>XAU/USD</option>
+                                                                                                                              
                                                                                                                               </select>
                   </div>
           </div>
@@ -859,11 +859,11 @@
       <div class="field-row">
         <div class="field">
           <label>Start time</label>
-          <input type="time" id="timeFrom" value="10:30"/>
+          <input type="time" id="timeFrom" value="05:30"/>
                   </div>
                   <div class="field">
                     <label>End time</label>
-                    <input type="time" id="timeTo" value="22:30"/>
+                    <input type="time" id="timeTo" value="02:20"/>
         </div>
       </div>
       <p class="hint">Enter times in IST. Equal start/end = full 24h day (00:00–00:00 UTC). Ticks are only fetched in this window each day</p>
@@ -883,14 +883,14 @@
       <div class="field-row">
         <div class="field">
                                   <label>Min cycle (C)</label>
-                                  <input type="number" id="cycleMin" value="60" min="1" max="500"/>
+                                  <input type="number" id="cycleMin" value="300" min="1" max="500"/>
                                           </div>
                                           <div class="field">
                                             <label>Max cycle (C)</label>
-                                            <input type="number" id="cycleMax" value="120" min="1" max="500"/>
+                                            <input type="number" id="cycleMax" value="300" min="1" max="500"/>
                                 </div>
                               </div>
-                              <p class="hint">Range C<span id="cMinLabel">60</span>–C<span id="cMaxLabel">120</span> &nbsp;(<span id="cycleCountLabel">61</span> cycle(s))</p>
+                              <p class="hint">Range C<span id="cMinLabel">300</span>–C<span id="cMaxLabel">300</span> &nbsp;(<span id="cycleCountLabel">1</span> cycle(s))</p>
     </div>
 
     <hr class="divider"/>
@@ -900,7 +900,7 @@
           <div class="section-label">Signal Filter</div>
           <div class="field">
                   <label>Min probability %</label>
-                                <input type="number" id="minPct" value="85" min="0" max="100"/>
+                                <input type="number" id="minPct" value="10" min="0" max="100"/>
           </div>
         </div>
 
@@ -994,6 +994,7 @@
           <span style="display:none;">|</span>
           <label style="display:none;">C1 ≥</label>
                     <input type="number" id="filterC1" placeholder="1" min="1" style="display:none;"/>
+                    <button class="export-btn" id="r0Btn" onclick="toggleR0Only()" style="margin-left: 12px;">R0</button>
                     <div class="result-count" id="resultCount">—</div>
                                         <button class="export-btn" id="exportCsvBtn" onclick="exportAllSignalsCSV()" style="display:none; margin-left: 12px;">⬇ EXPORT CSV</button>
                                                             <button class="export-btn" id="exportTableFormatBtn" onclick="exportAllSignalsTableFormat()" style="display:none; margin-left: 8px;">⬇ EXPORT ALL (TABLE)</button>
@@ -1196,7 +1197,7 @@ document.getElementById("pairInput").addEventListener("input", () => {
 });
 
 // Initialise the visible pair input to reflect the EUR/USD default
-document.getElementById("pairInput").value = "frxEURUSD";
+document.getElementById("pairInput").value = "2 pairs: frxXAGUSD, frxXAUUSD";
 
 // ── Custom pair dropdown (opens upward, escapes sidebar clipping) ──
 function buildPairDropdownPanel() {
@@ -1338,6 +1339,18 @@ function matchesDayFilter(d, dayVal) {
   return d.date === dayVal;
 }
 
+var showR0Only = false;
+
+function toggleR0Only() {
+  showR0Only = !showR0Only;
+  var b = document.getElementById("r0Btn");
+  if (b) {
+    b.style.background = showR0Only ? "var(--green)" : "transparent";
+    b.style.color = showR0Only ? "#000432" : "var(--cyan)";
+  }
+  renderTable();
+}
+
 function selectDayChip(iso) {
   var sel = document.getElementById("dayFilter");
   sel.value = (sel.value === iso) ? "__ALL__" : iso;
@@ -1466,7 +1479,7 @@ async function loadTicksForDay(pair, dayEpoch, hFrom, hTo, cachedPrices, logCb) 
 
   let chunksToFetch = [];
     let gapStart = -1;
-    const GAP_THRESHOLD = /^cry/i.test(pair) ? 120 : 900;
+    var GAP_THRESHOLD = 900;
   
     for (let i = 0; i <= (actualEnd - start); i++) {
     if (prices[i] === -1.0) {
@@ -1794,7 +1807,7 @@ async function runScan() {
           ? ALL_PAIRS
           : (selectedChipPairs.length > 0
               ? selectedChipPairs
-              : [document.getElementById("pairInput").value.trim() || "cryBTCUSD"]))
+              : [document.getElementById("pairInput").value.trim() || "frxXAUUSD"]))
           .map(p => p.trim());
         const pair        = pairsToScan[0]; // kept for single-pair backward compat label
     const dateFrom = document.getElementById("dateFrom").value;
@@ -2284,7 +2297,7 @@ function renderTable() {
   const levels    = parseLevelFilter(document.getElementById("levelFilter"));
   const dayVal    = document.getElementById("dayFilter") ? document.getElementById("dayFilter").value : "__ALL__";
 
-  const filterFn = x => x.pct >= minPct && x.s1 >= minStreak && x.c1 >= minC1 && matchesLevelFilter(x, levels) && matchesDayFilter(x, dayVal);
+  var filterFn = function(x) { return x.pct >= minPct && x.s1 >= minStreak && x.c1 >= minC1 && matchesLevelFilter(x, levels) && matchesDayFilter(x, dayVal) && (!showR0Only || x.r === 0); };
   const sortFn   = (a, b) => (b.pct * b.c1) - (a.pct * a.c1);
 
   const revData = allRevs.filter(filterFn).sort(sortFn).slice(0, 100);
