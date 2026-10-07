@@ -790,6 +790,14 @@ th:nth-child(1), td:nth-child(1) { width: 16%; }
   .split-table-wrap th:nth-child(6), .split-table-wrap td:nth-child(6) { width: 10%; }
   .split-table-wrap th:nth-child(7), .split-table-wrap td:nth-child(7) { width: 10%; }
   .split-table-wrap th:nth-child(9), .split-table-wrap td:nth-child(9) { width: 16%; }
+.split-table-wrap th:nth-child(1), .split-table-wrap td:nth-child(1) { width: 15%; }
+  .split-table-wrap th:nth-child(2), .split-table-wrap td:nth-child(2) { width: 20%; }
+  .split-table-wrap th:nth-child(3), .split-table-wrap td:nth-child(3) { width: 10%; }
+  .split-table-wrap th:nth-child(4), .split-table-wrap td:nth-child(4) { width: 8%; }
+  .split-table-wrap th:nth-child(5), .split-table-wrap td:nth-child(5) { width: 13%; }
+  .split-table-wrap th:nth-child(6), .split-table-wrap td:nth-child(6) { width: 8%; }
+  .split-table-wrap th:nth-child(7), .split-table-wrap td:nth-child(7) { width: 8%; }
+  .split-table-wrap th:nth-child(9), .split-table-wrap td:nth-child(9) { width: 18%; }
 </style>
 </head>
 <body>
@@ -1856,7 +1864,8 @@ async function scanSegments(prices, minC, maxC, pair, startTsUtc, secFromVal, sp
     label = "";
     if (segs.length >= 1) {
       ist = (((secFromVal + a + 19800) % 86400) + 86400) % 86400;
-      label = pad2(Math.floor(ist / 3600)) + ":" + pad2(Math.floor((ist % 3600) / 60));
+      var ist2 = (((secFromVal + ((k === segs.length - 1) ? prices.length - 1 : b) + 19800) % 86400) + 86400) % 86400;
+            label = pad2(Math.floor(ist / 3600)) + ":" + pad2(Math.floor((ist % 3600) / 60)) + "-" + pad2(Math.floor(ist2 / 3600)) + ":" + pad2(Math.floor((ist2 % 3600) / 60));
     }
     for (i = 0; i < res[0].length; i++) { res[0][i].seg = label; outR.push(res[0][i]); }
     for (j = 0; j < res[1].length; j++) { res[1][j].seg = label; outM.push(res[1][j]); }
