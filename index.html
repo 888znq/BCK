@@ -1854,7 +1854,7 @@ async function scanSegments(prices, minC, maxC, pair, startTsUtc, secFromVal, sp
       if (progressCb) progressCb((k + frac) / segs.length);
     });
     label = "";
-    if (segs.length > 1) {
+    if (segs.length >= 1) {
       ist = (((secFromVal + a + 19800) % 86400) + 86400) % 86400;
       label = pad2(Math.floor(ist / 3600)) + ":" + pad2(Math.floor((ist % 3600) / 60));
     }
