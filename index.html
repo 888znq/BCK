@@ -764,6 +764,32 @@
               background: rgba(46,213,115,0.1);
                     box-shadow: 0 0 10px rgba(46,213,115,0.3);
             }
+th:nth-child(1), td:nth-child(1) { width: 16%; }
+  th:nth-child(2), td:nth-child(2) { width: 10%; }
+  th:nth-child(3), td:nth-child(3) { width: 10%; }
+  th:nth-child(4), td:nth-child(4) { width: 9%; }
+  th:nth-child(5), td:nth-child(5) { width: 13%; }
+  th:nth-child(6), td:nth-child(6) { width: 9%; }
+  th:nth-child(7), td:nth-child(7) { width: 9%; }
+  th:nth-child(8), td:nth-child(8) { width: 12%; }
+  th:nth-child(9), td:nth-child(9) { width: 12%; }
+.sidebar > div:nth-child(1),
+  .sidebar > hr:nth-child(2),
+  .sidebar > div:nth-child(5),
+  .sidebar > hr:nth-child(6) { display: none !important; }
+  .sidebar > div:nth-child(3)  { flex: 1 1 220px; }
+  .sidebar > div:nth-child(7)  { flex: 1 1 200px; }
+  .sidebar > div:nth-child(9)  { flex: 1 1 200px; }
+  .sidebar > div:nth-child(11) { flex: 2 1 320px; }
+.split-table-wrap th:nth-child(8), .split-table-wrap td:nth-child(8) { display: none; }
+  .split-table-wrap th:nth-child(1), .split-table-wrap td:nth-child(1) { width: 18%; }
+  .split-table-wrap th:nth-child(2), .split-table-wrap td:nth-child(2) { width: 11%; }
+  .split-table-wrap th:nth-child(3), .split-table-wrap td:nth-child(3) { width: 11%; }
+  .split-table-wrap th:nth-child(4), .split-table-wrap td:nth-child(4) { width: 10%; }
+  .split-table-wrap th:nth-child(5), .split-table-wrap td:nth-child(5) { width: 14%; }
+  .split-table-wrap th:nth-child(6), .split-table-wrap td:nth-child(6) { width: 10%; }
+  .split-table-wrap th:nth-child(7), .split-table-wrap td:nth-child(7) { width: 10%; }
+  .split-table-wrap th:nth-child(9), .split-table-wrap td:nth-child(9) { width: 16%; }
 </style>
 </head>
 <body>
@@ -792,7 +818,7 @@
       <div class="field">
                           <label>Custom pair</label>
                           <div class="pair-select-wrap">
-                            <input type="text" id="pairInput" value="2 pairs: frxXAGUSD, frxXAUUSD" placeholder="frxXAUUSD"/>
+                            <input type="text" id="pairInput" value="frxEURUSD" placeholder="frxEURUSD"/>
                             <button type="button" class="pair-dropdown-toggle" id="pairDropdownToggle" title="Select pairs">▾</button>
                           </div>
                         </div>
@@ -826,8 +852,9 @@
                                                                                     
                                                                                     
                                                                                                                               
-                                                                                                                              <option value="frxXAGUSD" selected>XAG/USD</option>
-                                                                                                                              <option value="frxXAUUSD" selected>XAU/USD</option>
+                                                                                                                              <option value="frxEURUSD" selected>EUR/USD</option>
+                                                                                                                              <option value="frxXAGUSD">XAG/USD</option>
+                                                                                                                              <option value="frxXAUUSD">XAU/USD</option>
                                                                                                                               
                                                                                                                               </select>
                   </div>
@@ -863,7 +890,7 @@
                   </div>
                   <div class="field">
                     <label>End time</label>
-                    <input type="time" id="timeTo" value="02:20"/>
+                    <input type="time" id="timeTo" value="05:30"/>
         </div>
       </div>
       <p class="hint">Enter times in IST. Equal start/end = full 24h day (00:00–00:00 UTC). Ticks are only fetched in this window each day</p>
@@ -883,11 +910,11 @@
       <div class="field-row">
         <div class="field">
                                   <label>Min cycle (C)</label>
-                                  <input type="number" id="cycleMin" value="300" min="1" max="500"/>
+                                  <input type="number" id="cycleMin" value="60" min="1" max="500"/>
                                           </div>
                                           <div class="field">
                                             <label>Max cycle (C)</label>
-                                            <input type="number" id="cycleMax" value="300" min="1" max="500"/>
+                                            <input type="number" id="cycleMax" value="180" min="1" max="500"/>
                                 </div>
                               </div>
                               <p class="hint">Range C<span id="cMinLabel">300</span>–C<span id="cMaxLabel">300</span> &nbsp;(<span id="cycleCountLabel">1</span> cycle(s))</p>
@@ -901,6 +928,18 @@
           <div class="field">
                   <label>Min probability %</label>
                                 <input type="number" id="minPct" value="10" min="0" max="100"/>
+                                          </div>
+                                          <div class="field">
+                                            <select id="splitHours">
+                                              <option value="1">SPLIT 1h</option>
+                                              <option value="2">SPLIT 2h</option>
+                                              <option value="3">SPLIT 3h</option>
+                                              <option value="4">SPLIT 4h</option>
+                                              <option value="6">SPLIT 6h</option>
+                                              <option value="8">SPLIT 8h</option>
+                                              <option value="12">SPLIT 12h</option>
+                                              <option value="24" selected>SPLIT 24h (full)</option>
+                                            </select>
           </div>
         </div>
 
@@ -1197,7 +1236,7 @@ document.getElementById("pairInput").addEventListener("input", () => {
 });
 
 // Initialise the visible pair input to reflect the EUR/USD default
-document.getElementById("pairInput").value = "2 pairs: frxXAGUSD, frxXAUUSD";
+document.getElementById("pairInput").value = "frxEURUSD";
 
 // ── Custom pair dropdown (opens upward, escapes sidebar clipping) ──
 function buildPairDropdownPanel() {
@@ -1789,6 +1828,42 @@ function workerScan(prices, minC, maxC, pair, startTsUtc, progressCb) {
 // ═══════════════════════════════════════════════════════
 //  WALL FILTER
 // ═══════════════════════════════════════════════════════
+function pad2(n) { return (n < 10 ? "0" : "") + n; }
+
+function getSplitSegments(arrLen, splitHours) {
+  var windowSec = arrLen - 1;
+  var segLen = Math.round(splitHours * 3600);
+  if (!(segLen > 0) || segLen >= windowSec) return [[0, arrLen]];
+  var n = Math.ceil(windowSec / segLen);
+  var segs = [];
+  for (var k = 0; k < n; k++) {
+    segs.push([k * segLen, (k === n - 1) ? arrLen : (k + 1) * segLen]);
+  }
+  return segs;
+}
+
+async function scanSegments(prices, minC, maxC, pair, startTsUtc, secFromVal, splitHours, progressCb) {
+  var segs = getSplitSegments(prices.length, splitHours);
+  var outR = [], outM = [];
+  var k, a, b, part, res, label, ist, i, j;
+  for (k = 0; k < segs.length; k++) {
+    if (cancelFlag) break;
+    a = segs[k][0]; b = segs[k][1];
+    part = (segs.length === 1) ? prices : prices.slice(a, b);
+    res = await workerScan(part, minC, maxC, pair, startTsUtc + a, function(frac) {
+      if (progressCb) progressCb((k + frac) / segs.length);
+    });
+    label = "";
+    if (segs.length > 1) {
+      ist = (((secFromVal + a + 19800) % 86400) + 86400) % 86400;
+      label = pad2(Math.floor(ist / 3600)) + ":" + pad2(Math.floor((ist % 3600) / 60));
+    }
+    for (i = 0; i < res[0].length; i++) { res[0][i].seg = label; outR.push(res[0][i]); }
+    for (j = 0; j < res[1].length; j++) { res[1][j].seg = label; outM.push(res[1][j]); }
+  }
+  return [outR, outM];
+}
+
 function wallFilter(raw, minPct) {
   return raw
     .filter(x => x.pct >= minPct)
@@ -1807,7 +1882,7 @@ async function runScan() {
           ? ALL_PAIRS
           : (selectedChipPairs.length > 0
               ? selectedChipPairs
-              : [document.getElementById("pairInput").value.trim() || "frxXAUUSD"]))
+              : [document.getElementById("pairInput").value.trim() || "frxEURUSD"]))
           .map(p => p.trim());
         const pair        = pairsToScan[0]; // kept for single-pair backward compat label
     const dateFrom = document.getElementById("dateFrom").value;
@@ -1817,6 +1892,7 @@ async function runScan() {
   const cycleMin = Math.max(1, parseInt(document.getElementById("cycleMin").value) || 60);
     const cycleMax = Math.max(cycleMin, parseInt(document.getElementById("cycleMax").value) || 120);
   const minPct   = parseInt(document.getElementById("minPct").value) || 100;
+    var splitHrs = parseFloat(document.getElementById("splitHours").value) || 24;
 
   if (!dateFrom || !dateTo) { toast("Please set date range", "err"); return; }
   
@@ -1833,8 +1909,8 @@ async function runScan() {
     let secFrom, secTo;
     if (istFromSec === istToSec) {
       // Equal start/end = full 24h day, anchored to UTC 00:00–24:00
-      secFrom = 0;
-      secTo   = 86400;
+      secFrom = istFromSec - IST_OFFSET_SEC;
+      secTo   = secFrom + 86400;
     } else {
       secFrom = istFromSec - IST_OFFSET_SEC;
       secTo   = istToSec   - IST_OFFSET_SEC;
@@ -1929,7 +2005,7 @@ async function runScan() {
                             `[${pi+1}/${totalPairs}] ${curPair}  scanning day ${di2+1}/${allDayPrices.length} (${dayLabel2})…`,
                             `Cycles C${cycleMin}–C${cycleMax}`);
                   
-                          var dayScanResult = await workerScan(dayPrices2, cycleMin, cycleMax, curPair, startTsUtc, function(frac) {
+                          var dayScanResult = await scanSegments(dayPrices2, cycleMin, cycleMax, curPair, startTsUtc, secFrom, splitHrs, function(frac) {
                             setProgress(scanBase + (dayFrac2 + frac / allDayPrices.length) * scanSlice,
                               `[${pi+1}/${totalPairs}] ${curPair}  ${dayLabel2}  scanning… ${Math.round(frac * 100)}%`,
                               `C${cycleMin}–C${cycleMax}  [${totalCores} workers]`);
@@ -2020,7 +2096,7 @@ async function exportAllSignalsCSV() {
   if (data.length === 0) { toast("No signals to export", "err"); return; }
   
     var headers = [
-            "PAIR","DATE","TYPE","DIRECTION","CYCLE","ROW",
+            "PAIR","DATE","SLOT","TYPE","DIRECTION","CYCLE","ROW",
             "STREAK_FROM","STREAK_TO","C1_OCCURRENCES","C2_OCCURRENCES","GAP_MODE","GAP_COUNT",
             "PROBABILITY_%","REVERSAL_PROB_%","MOMENTUM_PROB_%",
             "SCORE","SIGNAL_STRENGTH"
@@ -2037,7 +2113,7 @@ async function exportAllSignalsCSV() {
             var gapCountVal = d.gapCount || 0;
             var dateVal   = d.date || "";
             return [
-              name, dateVal, d.type, direction, d.c, d.r,
+              name, dateVal, (d.seg || ""), d.type, direction, d.c, d.r,
               d.s1, d.s2, d.c1, d.c2, gapVal, gapCountVal,
               d.pct, revPct, momPct,
               score, strength
@@ -2065,7 +2141,7 @@ async function exportAllSignalsCSV() {
   
       if (revData.length === 0 && momData.length === 0) { toast("No signals to export", "err"); return; }
   
-      var headers = ["TYPE","PAIR","CYCLE","ROW","STREAK","C1","C2","GAP","PROB%"];
+      var headers = ["TYPE","PAIR","SLOT","CYCLE","ROW","STREAK","C1","C2","GAP","PROB%"];
   
       function rowsFor(data) {
         return data.map(function(d) {
@@ -2075,7 +2151,7 @@ async function exportAllSignalsCSV() {
           var gapVal   = d.gap || 0;
           var gapCount = d.gapCount || 0;
           var gapCell  = (d.type === "REV") ? ("F" + gapVal + "-" + gapCount) : "-";
-          return [d.type, arrow + " " + name, "C" + d.c, "R" + d.r, streak, d.c1, d.c2, gapCell, d.pct + "%"].join(",");
+          return [d.type, arrow + " " + name, (d.seg || "-"), "C" + d.c, "R" + d.r, streak, d.c1, d.c2, gapCell, d.pct + "%"].join(",");
         });
       }
   
@@ -2159,7 +2235,8 @@ function buildRowsHTML(data) {
   
       return `<tr class="${rowCls}">
               <td class="cell-pair"><span class="${arrowCls}">${arrow}</span> ${name}</td>
-            <td class="cell-dim">C${d.c}</td>
+            <td class="cell-dim">${d.seg || "-"}</td>
+                        <td class="cell-dim">C${d.c}</td>
             <td class="cell-dim">R${d.r}</td>
             <td class="cell-streak">X${d.s1}→X${d.s2}</td>
             <td class="cell-dim">${d.c1}</td>
@@ -2184,7 +2261,7 @@ function buildPaneHTML(label, data, countId) {
       <div class="split-pane-header"><span>${label}</span><span id="${countId}">${data.length}</span></div>
       <div class="split-pane-body"><table>
                   <thead><tr>
-                    <th>PAIR</th><th>CYCLE</th><th>ROW</th><th>STREAK</th><th>C1</th><th>C2</th><th>GAP</th><th>PROB%</th>
+                    <th>PAIR</th><th>SLOT</th><th>CYCLE</th><th>ROW</th><th>STREAK</th><th>C1</th><th>C2</th><th>GAP</th><th>PROB%</th>
                   </tr></thead>
                   <tbody>${rows}</tbody>
                 </table></div>
@@ -2208,7 +2285,7 @@ function computeRepeatingWalls() {
     let g = groups.get(key);
     if (!g) { g = { rows: [], days: new Set(), sample: d }; groups.set(key, g); }
     g.rows.push(d);
-    g.days.add(d.date);
+    g.days.add(d.date + (d.seg ? " " + d.seg : ""));
   });
 
   const out = [];
@@ -2217,7 +2294,7 @@ function computeRepeatingWalls() {
     const sample     = g.sample;
     const daysSorted = Array.from(g.days).sort();
     const avgPct     = Math.round(g.rows.reduce(function(s, r) { return s + r.pct; }, 0) / g.rows.length);
-    const rowsByDay  = g.rows.slice().sort(function(a, b) { return a.date < b.date ? -1 : (a.date > b.date ? 1 : 0); });
+    const rowsByDay  = g.rows.slice().sort(function(a, b) { var ka = a.date + " " + (a.seg || ""), kb = b.date + " " + (b.seg || ""); return ka < kb ? -1 : (ka > kb ? 1 : 0); });
     out.push({
       pair: sample.pair, type: sample.type, col: sample.col,
       c: sample.c, r: sample.r, s1: sample.s1, s2: sample.s2,
