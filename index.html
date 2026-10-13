@@ -883,14 +883,14 @@
       <div class="field-row">
         <div class="field">
                                   <label>Min cycle (C)</label>
-                                  <input type="number" id="cycleMin" value="60" min="1" max="500"/>
+                                  <input type="number" id="cycleMin" value="120" min="1" max="500"/>
                                           </div>
                                           <div class="field">
                                             <label>Max cycle (C)</label>
-                                            <input type="number" id="cycleMax" value="120" min="1" max="500"/>
+                                            <input type="number" id="cycleMax" value="180" min="1" max="500"/>
                                 </div>
                               </div>
-                              <p class="hint">Range C<span id="cMinLabel">60</span>–C<span id="cMaxLabel">120</span> &nbsp;(<span id="cycleCountLabel">61</span> cycle(s))</p>
+                              <p class="hint">Range C<span id="cMinLabel">120</span>–C<span id="cMaxLabel">180</span> &nbsp;(<span id="cycleCountLabel">61</span> cycle(s))</p>
     </div>
 
     <hr class="divider"/>
@@ -995,6 +995,7 @@
           <label style="display:none;">C1 ≥</label>
                     <input type="number" id="filterC1" placeholder="1" min="1" style="display:none;"/>
                     <div class="result-count" id="resultCount">—</div>
+                                        <button class="export-btn" id="row0Btn" onclick="toggleRow0()" style="margin-left: 12px;">ROW 0 ONLY</button>
                                         <button class="export-btn" id="exportCsvBtn" onclick="exportAllSignalsCSV()" style="display:none; margin-left: 12px;">⬇ EXPORT CSV</button>
                                                             <button class="export-btn" id="exportTableFormatBtn" onclick="exportAllSignalsTableFormat()" style="display:none; margin-left: 8px;">⬇ EXPORT ALL (TABLE)</button>
                                                             <span>|</span>
@@ -1336,6 +1337,17 @@ function matchesLevelFilter(d, levels) {
 function matchesDayFilter(d, dayVal) {
   if (!dayVal || dayVal === "__ALL__") return true;
   return d.date === dayVal;
+}
+
+var row0Only = false;
+function toggleRow0() {
+  row0Only = !row0Only;
+  var b = document.getElementById("row0Btn");
+  if (b) {
+    b.style.background = row0Only ? "var(--green)" : "transparent";
+    b.style.color = row0Only ? "#000432" : "var(--cyan)";
+  }
+  renderTable();
 }
 
 function selectDayChip(iso) {
@@ -1801,8 +1813,8 @@ async function runScan() {
   const dateTo   = document.getElementById("dateTo").value;
   const timeFrom = document.getElementById("timeFrom").value || "00:00";
   const timeTo   = document.getElementById("timeTo").value   || "20:57";
-  const cycleMin = Math.max(1, parseInt(document.getElementById("cycleMin").value) || 60);
-    const cycleMax = Math.max(cycleMin, parseInt(document.getElementById("cycleMax").value) || 120);
+  const cycleMin = Math.max(1, parseInt(document.getElementById("cycleMin").value) || 120);
+    const cycleMax = Math.max(cycleMin, parseInt(document.getElementById("cycleMax").value) || 180);
   const minPct   = parseInt(document.getElementById("minPct").value) || 100;
 
   if (!dateFrom || !dateTo) { toast("Please set date range", "err"); return; }
@@ -2185,7 +2197,7 @@ function computeRepeatingWalls() {
   const repMinDays = Math.max(2, parseInt(document.getElementById("repMinDays").value) || 2);
   const repMinC1   = Math.max(1, parseInt(document.getElementById("repMinC1").value) || 1);
 
-  const passesBase = x => x.pct >= minPct && x.s1 >= minStreak && matchesLevelFilter(x, levels) && x.c1 >= repMinC1 && !!x.date;
+  const passesBase = x => x.pct >= minPct && x.s1 >= minStreak && matchesLevelFilter(x, levels) && x.c1 >= repMinC1 && !!x.date && (!row0Only || x.r === 0);
 
   const combined = (allRevs || []).filter(passesBase).concat((allMoms || []).filter(passesBase));
 
@@ -2284,7 +2296,7 @@ function renderTable() {
   const levels    = parseLevelFilter(document.getElementById("levelFilter"));
   const dayVal    = document.getElementById("dayFilter") ? document.getElementById("dayFilter").value : "__ALL__";
 
-  const filterFn = x => x.pct >= minPct && x.s1 >= minStreak && x.c1 >= minC1 && matchesLevelFilter(x, levels) && matchesDayFilter(x, dayVal);
+  const filterFn = x => x.pct >= minPct && x.s1 >= minStreak && x.c1 >= minC1 && matchesLevelFilter(x, levels) && matchesDayFilter(x, dayVal) && (!row0Only || x.r === 0);
   const sortFn   = (a, b) => (b.pct * b.c1) - (a.pct * a.c1);
 
   const revData = allRevs.filter(filterFn).sort(sortFn).slice(0, 100);
