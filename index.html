@@ -764,6 +764,263 @@
               background: rgba(46,213,115,0.1);
                     box-shadow: 0 0 10px rgba(46,213,115,0.3);
             }
+.sidebar > div:nth-child(1) { flex: 1 1 380px; }
+.sidebar > div:nth-child(2) { flex: 0 1 340px; }
+.settings-open { padding: 9px 10px; font-size: 13px; letter-spacing: 0.08em; margin-bottom: 6px; }
+.settings-summary { font-family: var(--mono); font-size: 11px; line-height: 1.45; color: var(--text-mid); }
+.settings-summary div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#settingsOverlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,2,24,0.8);
+  z-index: 900;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+}
+#settingsOverlay.open { display: flex; }
+.settings-modal {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  width: min(760px, 96vw);
+  max-height: 92vh;
+  overflow-y: auto;
+  padding: 18px 22px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+}
+.settings-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  color: var(--green);
+  margin-bottom: 14px;
+}
+.settings-x {
+  background: transparent;
+  border: 1px solid var(--border2);
+  color: var(--text-mid);
+  border-radius: 4px;
+  padding: 3px 9px;
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: 12px;
+}
+.settings-x:hover { color: var(--text); border-color: var(--green); }
+.settings-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px 24px;
+}
+.settings-grid > div:nth-child(1) { grid-column: 1 / -1; }
+.settings-modal .section-label {
+  display: block;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
+.settings-modal .field label {
+  display: block;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-mid);
+}
+.settings-modal .hint {
+  display: block;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 4px;
+}
+.settings-modal .field-row { flex-direction: row; gap: 12px; }
+.settings-modal .field-row .field { flex: 1; min-width: 0; }
+.settings-foot { display: flex; gap: 10px; margin-top: 18px; }
+.settings-foot .run-btn { width: auto; flex: 1; padding: 10px; font-size: 12px; }
+.settings-foot .settings-btn-ghost {
+  background: transparent;
+  color: var(--text-mid);
+  border: 1px solid var(--border2);
+}
+.settings-foot .settings-btn-ghost:hover:not(:disabled) {
+  background: rgba(255,255,255,0.08);
+  box-shadow: none;
+}
+.sidebar { display: none !important; }
+.layout { grid-template-rows: 1fr; }
+.state-idle { display: none !important; }
+.table-area { padding-bottom: 90px; }
+#settingsOverlay { padding: 0; align-items: stretch; justify-content: stretch; background: var(--bg); }
+.settings-modal { width: 100%; height: 100%; max-height: none; border: none; border-radius: 0; box-shadow: none; padding: 28px 6vw 40px; }
+.settings-head, .settings-grid, .settings-foot, #scanPage { width: 100%; max-width: 1000px; margin-left: auto; margin-right: auto; }
+.settings-head { font-size: 15px; margin-bottom: 26px; }
+.settings-grid { gap: 26px 32px; }
+.settings-foot { margin-top: 28px; }
+#scanPage { display: none; padding-top: 8vh; }
+.scan-title { font-family: var(--mono); font-size: 15px; letter-spacing: 0.12em; color: var(--green); margin-bottom: 10px; }
+#scanPage .progress-wrap { background: transparent; border: none; padding: 20px 0; }
+#scanPage .progress-label, #scanPage .progress-pct { font-size: 14px; }
+#scanPage .progress-bar-bg { height: 6px; }
+#scanPage .log-area { font-size: 12px; }
+#scanCancelBtn { width: auto; padding: 10px 24px; font-size: 12px; margin-top: 14px; background: transparent; color: var(--text-mid); border: 1px solid var(--border2); }
+#scanCancelBtn:hover { background: rgba(255,255,255,0.08); }
+#settingsFab {
+  position: fixed;
+  bottom: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  background: var(--green);
+  color: #000432;
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+  z-index: 800;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.55);
+  transition: box-shadow 0.15s;
+}
+#settingsFab:hover { box-shadow: 0 0 22px rgba(204,245,223,0.45); }
+@media (max-width: 700px) {
+  .settings-grid { grid-template-columns: 1fr; }
+}
+.settings-head, .settings-grid, .settings-foot { max-width: 1240px; }
+.settings-grid > div { min-width: 0; }
+.settings-grid > div:nth-child(2) .field-row,
+.settings-grid > div:nth-child(3) .field-row,
+.settings-grid > div:nth-child(3) .pair-grid,
+#pairDropdownToggle { display: none !important; }
+.settings-foot { position: sticky; bottom: 0; z-index: 5; background: var(--surface); padding: 12px 0; margin-top: 20px; border-top: 1px solid var(--border); }
+.wsx-pairs { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; margin-bottom: 12px; }
+.wsx-pair { padding: 10px 6px; border-radius: 4px; border: 1px solid var(--border2); background: var(--panel); color: var(--text-mid); font-family: var(--mono); font-size: 12px; cursor: pointer; transition: all 0.1s; }
+.wsx-pair:hover { border-color: var(--green); color: var(--text); }
+.wsx-pair.on { border-color: var(--green); background: var(--green); color: #000432; }
+.wsx-pair.all { grid-column: span 2; letter-spacing: 0.08em; }
+.wsx-cals, .wsx-clocks { display: flex; gap: 16px; flex-wrap: wrap; }
+.wsx-cal { width: 252px; background: var(--panel); border: 1px solid var(--border2); border-radius: 6px; padding: 10px; }
+.wsx-cal-title, .wsx-clk-title { font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; color: var(--green); margin-bottom: 6px; }
+.wsx-cal-head { display: flex; align-items: center; justify-content: space-between; font-family: var(--mono); font-size: 12px; color: var(--text); margin-bottom: 6px; }
+.wsx-cal-head button { background: transparent; border: 1px solid var(--border2); color: var(--text-mid); border-radius: 4px; width: 28px; height: 26px; cursor: pointer; font-size: 14px; }
+.wsx-cal-head button:hover { border-color: var(--green); color: var(--text); }
+.wsx-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+.wsx-dow { text-align: center; font-family: var(--mono); font-size: 10px; color: var(--text-dim); padding: 3px 0; }
+.wsx-day { aspect-ratio: 1; border: 1px solid transparent; background: transparent; color: var(--text-mid); font-family: var(--mono); font-size: 12px; border-radius: 4px; cursor: pointer; padding: 0; }
+.wsx-day:hover { border-color: var(--green); color: var(--text); }
+.wsx-day.in { background: rgba(255,255,255,0.1); color: var(--text); }
+.wsx-day.edge { border-color: var(--green); color: var(--green); }
+.wsx-day.today { text-decoration: underline; }
+.wsx-day.sel { background: var(--green); color: #000432; border-color: var(--green); }
+.wsx-clock { width: 236px; background: var(--panel); border: 1px solid var(--border2); border-radius: 6px; padding: 10px; text-align: center; }
+.wsx-clk-title { text-align: left; }
+.wsx-clk-read { display: flex; align-items: center; justify-content: center; gap: 2px; font-family: var(--mono); font-size: 26px; color: var(--text-mid); margin-bottom: 6px; }
+.wsx-clk-read button { background: transparent; border: 1px solid transparent; color: var(--text-mid); font-family: var(--mono); font-size: 26px; padding: 0 8px; border-radius: 4px; cursor: pointer; }
+.wsx-clk-read button.on { background: rgba(255,255,255,0.12); color: var(--green); }
+svg.wsx-clk { width: 100%; height: auto; display: block; touch-action: none; cursor: pointer; user-select: none; }
+.wsx-face { fill: rgba(255,255,255,0.05); stroke: var(--border2); stroke-width: 1; }
+.wsx-hand { stroke: var(--green); stroke-width: 2; }
+.wsx-hub, .wsx-knob { fill: var(--green); }
+.wsx-dot { fill: #000432; }
+.wsx-tick { stroke: var(--border2); stroke-width: 1; }
+.wsx-num { fill: var(--text); font-family: var(--mono); font-size: 14px; text-anchor: middle; pointer-events: none; }
+.wsx-num.sm { font-size: 11px; fill: var(--text-mid); }
+.wsx-num.sel { fill: #000432; }
+#settingsOverlay .settings-modal { display: flex; flex-direction: column; align-items: center; overflow: hidden; padding: 10px 14px; }
+#settingsOverlay .settings-head { width: 100%; max-width: 1060px; flex: none; margin: 0 0 6px; font-size: 13px; }
+#settingsOverlay .settings-foot { width: 100%; max-width: 760px; flex: none; position: static; border-top: none; padding: 0; margin: 6px 0 0; background: transparent; }
+#settingsOverlay .settings-foot .run-btn { padding: 9px; font-size: 11px; }
+#settingsGrid { display: grid; flex: none; width: 1060px; max-width: none; margin: auto 0; grid-template-columns: auto auto minmax(0,1fr); grid-template-rows: auto auto 1fr; gap: 10px 18px; align-items: start; }
+#settingsGrid > div { min-width: 0; }
+#settingsGrid > div:nth-child(1) { grid-column: 1 / -1; grid-row: 1; }
+#settingsGrid > div:nth-child(2) { grid-column: 1; grid-row: 2 / span 2; }
+#settingsGrid > div:nth-child(3) { grid-column: 2; grid-row: 2 / span 2; }
+#settingsGrid > div:nth-child(4) { grid-column: 3; grid-row: 2; }
+#settingsGrid > div:nth-child(5) { grid-column: 3; grid-row: 3; }
+#settingsGrid.wsx-narrow { width: 440px; grid-template-columns: 1fr 1fr; grid-template-rows: none; }
+#settingsGrid.wsx-narrow > div:nth-child(n) { grid-column: auto; grid-row: auto; }
+#settingsGrid.wsx-narrow > div:nth-child(-n+3) { grid-column: 1 / -1; }
+#settingsGrid .section-label { font-size: 10px; margin-bottom: 5px; }
+#settingsGrid .field { margin-bottom: 0; gap: 2px; }
+#settingsGrid .field label { font-size: 10px; }
+#settingsGrid .field input { padding: 5px 8px; font-size: 12px; }
+#settingsGrid .hint { font-size: 10px; margin-top: 2px; }
+#settingsGrid .settings-modal .field-row, #settingsGrid .field-row { gap: 8px; }
+#settingsGrid > div:nth-child(1) .field label { display: none; }
+#settingsGrid > div:nth-child(1) .field { max-width: 260px; }
+#settingsGrid > div:nth-child(1) > .field:last-child { display: none; }
+#settingsGrid > div:nth-child(3) .hint { display: none; }
+.wsx-pairs { grid-template-columns: repeat(16, 1fr); gap: 4px; margin-bottom: 6px; }
+#settingsGrid.wsx-narrow .wsx-pairs { grid-template-columns: repeat(8, 1fr); }
+.wsx-pair { padding: 6px 2px; font-size: 11px; border-radius: 3px; white-space: nowrap; overflow: hidden; }
+#settingsGrid.wsx-narrow .wsx-pair { font-size: 10px; padding: 6px 0; }
+.wsx-pair.all { grid-column: span 2; }
+.wsx-cals, .wsx-clocks { gap: 10px; flex-wrap: nowrap; }
+.wsx-cal { flex: none; width: 206px; padding: 7px 8px; }
+.wsx-cal-title, .wsx-clk-title { font-size: 10px; margin-bottom: 3px; }
+.wsx-cal-head { margin-bottom: 3px; font-size: 11px; }
+.wsx-cal-head button { width: 24px; height: 20px; font-size: 12px; }
+.wsx-cal-grid { gap: 1px; min-height: 146px; align-content: start; }
+.wsx-dow { font-size: 9px; height: 14px; line-height: 14px; padding: 0; }
+.wsx-day { aspect-ratio: auto; height: 21px; font-size: 11px; }
+.wsx-clock { flex: none; width: 196px; padding: 7px 8px; }
+.wsx-clk-read { font-size: 20px; margin-bottom: 2px; }
+.wsx-clk-read button { font-size: 20px; padding: 0 6px; }
+svg.wsx-clk { width: 168px; margin: 0 auto; }
+#settingsOverlay .settings-head, #settingsGrid .section-label, #settingsGrid .hint { display: none !important; }
+#settingsOverlay #settingsGrid > div:nth-child(1) > .field { display: none !important; }
+#settingsOverlay #settingsGrid { display: flex; flex-direction: column; gap: 8px; width: 466px; max-width: none; margin: auto 0; }
+#settingsOverlay #settingsGrid > div { width: 100%; min-width: 0; }
+#settingsGrid .wsx-pairs { grid-template-columns: repeat(8, 1fr); gap: 4px; margin-bottom: 0; }
+#settingsGrid .wsx-pair { font-size: 10px; padding: 6px 0; }
+.wsx-cals, .wsx-clocks { display: flex; flex-wrap: nowrap; gap: 10px; width: 100%; }
+.wsx-cal, .wsx-clock { flex: 1 1 0; width: auto; min-width: 0; height: 216px; padding: 7px 8px; overflow: hidden; display: flex; flex-direction: column; }
+.wsx-cal-grid { flex: 1; min-height: 0; }
+.wsx-day { height: 22px; }
+.wsx-clock { align-items: center; }
+.wsx-clk-title { align-self: flex-start; }
+svg.wsx-clk { width: 144px; flex: none; margin: 0 auto; }
+#settingsGrid .field-row { display: flex; flex-direction: row; gap: 10px; }
+#settingsGrid .field-row .field { flex: 1; min-width: 0; }
+#settingsOverlay .settings-foot { width: 100%; max-width: none; margin: 2px 0 0; }
+#settingsOverlay #settingsGrid { width: 540px; }
+.wsx-cal, .wsx-clock { height: 246px; }
+.wsx-cal-head { margin-bottom: 4px; }
+.wsx-cal-head span { font-size: 12px; letter-spacing: 0.08em; }
+.wsx-months { display: grid; grid-template-columns: repeat(6, 1fr); gap: 2px; margin-bottom: 4px; }
+.wsx-mon { height: 18px; padding: 0; border: 1px solid var(--border2); background: transparent; color: var(--text-mid); font-family: var(--mono); font-size: 9px; border-radius: 3px; cursor: pointer; }
+.wsx-mon:hover { border-color: var(--green); color: var(--text); }
+.wsx-mon.on { background: var(--green); border-color: var(--green); color: #000432; }
+.wsx-day { height: 20px; }
+.wsx-clock { align-items: stretch; justify-content: center; }
+.wsx-clk-top { display: flex; align-items: baseline; justify-content: space-between; font-family: var(--mono); margin-bottom: 6px; }
+.wsx-clk-title2 { font-size: 10px; letter-spacing: 0.1em; color: var(--green); }
+.wsx-clk-val { font-size: 22px; color: var(--text); }
+.wsx-dials { display: flex; gap: 6px; }
+.wsx-dial { flex: 1 1 0; min-width: 0; text-align: center; }
+.wsx-dial svg.wsx-clk { width: 100%; margin: 0; }
+.wsx-dial-lbl { font-family: var(--mono); font-size: 9px; letter-spacing: 0.12em; color: var(--text-dim); margin-top: 2px; }
+.wsx-dial .wsx-num { font-size: 17px; }
+.wsx-dial .wsx-num.sm { font-size: 13px; }
+.wsx-clock svg.wsx-single { width: 190px; height: 190px; margin: 0 auto; flex: none; }
+.wsx-clk-top { gap: 6px; align-items: center; }
+.wsx-ampm { display: flex; gap: 2px; }
+.wsx-ampm button { height: 20px; padding: 0 6px; border: 1px solid var(--border2); background: transparent; color: var(--text-mid); font-family: var(--mono); font-size: 10px; border-radius: 3px; cursor: pointer; }
+.wsx-ampm button:hover { border-color: var(--green); color: var(--text); }
+.wsx-ampm button.on { background: var(--green); border-color: var(--green); color: #000432; }
+.wsx-num.hl { fill: var(--green); font-weight: 700; }
+.wsx-hand-h { stroke: var(--green); stroke-width: 4; stroke-linecap: round; }
+.wsx-hand-m { stroke: var(--cyan); stroke-width: 2; stroke-linecap: round; }
+.wsx-knob-h { fill: var(--green); }
+.wsx-knob-m { fill: var(--cyan); }
+#settingsCloseFab { position: fixed; top: 12px; right: 14px; z-index: 950; width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--border2); background: var(--panel); color: var(--text); font-size: 18px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+#settingsCloseFab:hover { border-color: var(--green); color: var(--green); }
 </style>
 </head>
 <body>
@@ -1255,8 +1512,10 @@ function positionPairDropdownUpward() {
   var anchor = document.getElementById("pairDropdownToggle");
   var rect = anchor.getBoundingClientRect();
   panel.style.left = rect.left + "px";
-  panel.style.bottom = (window.innerHeight - rect.top + 6) + "px";
-  panel.style.top = "auto";
+  var openUp = rect.top > 340;
+    panel.style.bottom = openUp ? (window.innerHeight - rect.top + 6) + "px" : "auto";
+    panel.style.top = openUp ? "auto" : (rect.bottom + 6) + "px";
+  panel.style.right = "auto";
 }
 
 document.getElementById("pairDropdownToggle").addEventListener("click", function(e) {
@@ -2123,8 +2382,10 @@ async function exportAllSignalsCSV() {
   }
 
 function resetRunBtn() {
+  var wasCancelled = cancelFlag;
   scanRunning = false;
   cancelFlag  = false;
+  setTimeout(function() { if (window.onScanFinished) window.onScanFinished(wasCancelled); }, 0);
   const btn = document.getElementById("runBtn");
   btn.innerHTML = "<span>▶</span> RUN SCAN";
   btn.style.background = "var(--green)";
@@ -2317,6 +2578,734 @@ function renderTable() {
     ${buildPaneHTML("MOMENTUM", momData, "momCount")}
   </div>` + repeatsHTML;
 }
+(function() {
+  var sb = document.querySelector(".sidebar");
+  if (!sb) return;
+  var kids = Array.prototype.slice.call(sb.children);
+
+  var overlay = document.createElement("div");
+  overlay.id = "settingsOverlay";
+  overlay.innerHTML =
+    '<div class="settings-modal">' +
+      '<div class="settings-head"><span>⚙ SCAN SETTINGS</span><button type="button" class="settings-x" id="settingsCloseX">✕</button></div>' +
+      '<div class="settings-grid" id="settingsGrid"></div>' +
+      '<div class="settings-foot">' +
+        '<button type="button" class="run-btn settings-btn-ghost" id="settingsApplyBtn">APPLY</button>' +
+        '<button type="button" class="run-btn" id="settingsRunBtn">▶ APPLY &amp; RUN SCAN</button>' +
+      '</div>' +
+    '</div>';
+  document.body.appendChild(overlay);
+
+  var grid = document.getElementById("settingsGrid");
+  for (var i = 0; i < kids.length - 1; i++) {
+    if (kids[i].tagName === "HR") {
+      sb.removeChild(kids[i]);
+    } else {
+      grid.appendChild(kids[i]);
+    }
+  }
+
+  var launcher = document.createElement("div");
+  var openBtn = document.createElement("button");
+  openBtn.type = "button";
+  openBtn.id = "settingsOpenBtn";
+  openBtn.className = "run-btn settings-open";
+  openBtn.textContent = "⚙ SCAN SETTINGS";
+  var summary = document.createElement("div");
+  summary.className = "settings-summary";
+  summary.id = "settingsSummary";
+  launcher.appendChild(openBtn);
+  launcher.appendChild(summary);
+  sb.insertBefore(launcher, sb.firstChild);
+
+  function val(id) {
+    var e = document.getElementById(id);
+    return e ? e.value : "";
+  }
+
+  function refreshSummary() {
+    var lines = [
+      val("pairInput") || "—",
+      (val("dateFrom") || "—") + " → " + (val("dateTo") || "—") + "   " + (val("timeFrom") || "—") + "–" + (val("timeTo") || "—") + " IST",
+      "C" + val("cycleMin") + "–C" + val("cycleMax") + "   Min " + val("minPct") + "%"
+    ];
+    summary.innerHTML = "";
+    for (var k = 0; k < lines.length; k++) {
+      var d = document.createElement("div");
+      d.textContent = lines[k];
+      summary.appendChild(d);
+    }
+  }
+
+  function openSettings() {
+    refreshSummary();
+    overlay.classList.add("open");
+  }
+
+  function closeSettings() {
+    overlay.classList.remove("open");
+    var p = document.getElementById("pairDropdownPanel");
+    if (p) p.classList.remove("open");
+    refreshSummary();
+  }
+
+  window.openSettings = openSettings;
+  window.closeSettings = closeSettings;
+
+  openBtn.addEventListener("click", openSettings);
+  document.getElementById("settingsCloseX").addEventListener("click", closeSettings);
+  document.getElementById("settingsApplyBtn").addEventListener("click", closeSettings);
+  document.getElementById("settingsRunBtn").addEventListener("click", function() {
+    closeSettings();
+    var rb = document.getElementById("runBtn");
+    if (scanRunning) { toast("Scan already running", "err"); return; }
+    if (rb && rb.disabled) { toast("Cache still loading, try again in a moment", "err"); return; }
+    runScan();
+  });
+
+  overlay.addEventListener("mousedown", function(e) {
+    if (e.target === overlay) closeSettings();
+  });
+  overlay.addEventListener("input", refreshSummary);
+  overlay.addEventListener("change", refreshSummary);
+  document.addEventListener("keydown", function(e) {
+    if (e.key === "Escape" && overlay.classList.contains("open")) closeSettings();
+  });
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", refreshSummary);
+  } else {
+    refreshSummary();
+  }
+})();
+(function() {
+  var overlay = document.getElementById("settingsOverlay");
+  if (!overlay) return;
+  var modal = overlay.querySelector(".settings-modal");
+  var head  = overlay.querySelector(".settings-head");
+  var grid  = document.getElementById("settingsGrid");
+  var foot  = overlay.querySelector(".settings-foot");
+
+  var fab = document.createElement("button");
+  fab.type = "button";
+  fab.id = "settingsFab";
+  fab.title = "Scan settings";
+  fab.textContent = "⚙";
+  document.body.appendChild(fab);
+
+  var scanPage = document.createElement("div");
+  scanPage.id = "scanPage";
+  scanPage.innerHTML =
+    '<div class="scan-title">SCANNING…</div>' +
+    '<div id="scanSlot"></div>' +
+    '<button type="button" class="run-btn" id="scanCancelBtn">■ CANCEL SCAN</button>';
+  modal.appendChild(scanPage);
+
+  var slot = document.getElementById("scanSlot");
+  var pw = document.getElementById("progressWrap");
+  if (pw && slot) slot.appendChild(pw);
+
+  function showScanView() {
+    head.style.display = "none";
+    grid.style.display = "none";
+    foot.style.display = "none";
+    scanPage.style.display = "block";
+  }
+
+  function showSettingsView() {
+    scanPage.style.display = "none";
+    head.style.display = "";
+    grid.style.display = "";
+    foot.style.display = "";
+  }
+
+  fab.addEventListener("click", function() {
+    if (scanRunning) showScanView(); else showSettingsView();
+    if (window.openSettings) window.openSettings(); else overlay.classList.add("open");
+  });
+
+  var oldRun = document.getElementById("settingsRunBtn");
+  if (oldRun) {
+    var newRun = oldRun.cloneNode(true);
+    oldRun.parentNode.replaceChild(newRun, oldRun);
+    newRun.addEventListener("click", function() {
+      var rb = document.getElementById("runBtn");
+      if (scanRunning) { showScanView(); return; }
+      if (rb && rb.disabled) { toast("Cache still loading, try again in a moment", "err"); return; }
+      runScan();
+      if (scanRunning) showScanView();
+    });
+  }
+
+  var cc = document.createElement("button");
+  cc.type = "button";
+  cc.className = "run-btn settings-btn-ghost";
+  cc.textContent = "⌫ CLEAR CACHE";
+  cc.addEventListener("click", function() { clearPersistedCache(); });
+  foot.insertBefore(cc, foot.firstChild);
+
+  document.getElementById("scanCancelBtn").addEventListener("click", function() {
+    if (scanRunning) runScan();
+  });
+
+  window.onScanFinished = function(wasCancelled) {
+    if (wasCancelled) {
+      showSettingsView();
+      overlay.classList.add("open");
+    } else {
+      overlay.classList.remove("open");
+      showSettingsView();
+    }
+  };
+})();
+(function() {
+  function pad2(n) { return (n < 10 ? "0" : "") + n; }
+  function fire(el) { el.dispatchEvent(new Event("change", { bubbles: true })); }
+  var MONTHS = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+
+  function init() {
+    var grid = document.getElementById("settingsGrid");
+    if (!grid) return;
+    var blocks = Array.prototype.slice.call(grid.children);
+    var pairBlock = blocks[0], dateBlock = blocks[1], timeBlock = blocks[2];
+    if (!pairBlock || !dateBlock || !timeBlock) return;
+
+    // ── PAIR BUTTONS ──
+    var sel = document.getElementById("pairSelect");
+    var pairHost = document.createElement("div");
+    pairHost.className = "wsx-pairs";
+    Array.prototype.forEach.call(sel.options, function(o) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "wsx-pair" + (o.value === "__ALL__" ? " all" : "");
+      b.dataset.value = o.value;
+      b.textContent = o.textContent.trim();
+      pairHost.appendChild(b);
+    });
+    pairBlock.insertBefore(pairHost, pairBlock.children[1] || null);
+
+    function syncPairs() {
+      Array.prototype.forEach.call(pairHost.children, function(b) {
+        var o = Array.prototype.filter.call(sel.options, function(x) { return x.value === b.dataset.value; })[0];
+        b.classList.toggle("on", !!(o && o.selected));
+      });
+    }
+
+    pairHost.addEventListener("click", function(e) {
+      var b = e.target.closest ? e.target.closest(".wsx-pair") : null;
+      if (!b) return;
+      var v = b.dataset.value;
+      var opts = Array.prototype.slice.call(sel.options);
+      if (v === "__ALL__") {
+        opts.forEach(function(o) { o.selected = (o.value === "__ALL__"); });
+      } else {
+        var o = opts.filter(function(x) { return x.value === v; })[0];
+        if (o) o.selected = !o.selected;
+      }
+      fire(sel);
+      syncPairs();
+    });
+    sel.addEventListener("change", syncPairs);
+    document.getElementById("pairInput").addEventListener("input", syncPairs);
+    syncPairs();
+
+    // ── CALENDARS ──
+    var todayIso = new Date().toISOString().slice(0, 10);
+    function parseISO(s) {
+      var p = (s || "").split("-");
+      if (p.length !== 3) return null;
+      return { y: +p[0], m: +p[1] - 1, d: +p[2] };
+    }
+    var cals = {};
+    var calsHost = document.createElement("div");
+    calsHost.className = "wsx-cals";
+    [{ key: "from", id: "dateFrom", title: "FROM" }, { key: "to", id: "dateTo", title: "TO" }].forEach(function(def) {
+      var el = document.createElement("div");
+      el.className = "wsx-cal";
+      calsHost.appendChild(el);
+      var p = parseISO(document.getElementById(def.id).value) || parseISO(todayIso);
+      cals[def.key] = { def: def, el: el, y: p.y, m: p.m };
+      el.addEventListener("click", function(e) { onCalClick(def.key, e); });
+    });
+    dateBlock.insertBefore(calsHost, dateBlock.children[1] || null);
+
+    function renderCal(key) {
+      var c = cals[key];
+      var fromV = document.getElementById("dateFrom").value;
+      var toV = document.getElementById("dateTo").value;
+      var ownV = c.def.key === "from" ? fromV : toV;
+      var startDow = (new Date(Date.UTC(c.y, c.m, 1)).getUTCDay() + 6) % 7;
+      var dim = new Date(Date.UTC(c.y, c.m + 1, 0)).getUTCDate();
+      var h = '<div class="wsx-cal-title">' + c.def.title + '</div>' +
+        '<div class="wsx-cal-head"><button type="button" data-nav="-1">‹</button><span>' + c.y + '</span><button type="button" data-nav="1">›</button></div>' +
+        '<div class="wsx-months">' + MONTHS.map(function(n, i) { return '<button type="button" class="wsx-mon' + (i === c.m ? ' on' : '') + '" data-mon="' + (i + 1) + '">' + n + '</button>'; }).join("") + '</div>' + '<div class="wsx-cal-grid">';
+      ["M","T","W","T","F","S","S"].forEach(function(d) { h += '<div class="wsx-dow">' + d + '</div>'; });
+      for (var i = 0; i < startDow; i++) h += '<span></span>';
+      for (var d = 1; d <= dim; d++) {
+        var iso = c.y + "-" + pad2(c.m + 1) + "-" + pad2(d);
+        var cls = "wsx-day";
+        if (iso === ownV) cls += " sel";
+        else if (iso === fromV || iso === toV) cls += " edge";
+        else if (fromV && toV && iso > fromV && iso < toV) cls += " in";
+        if (iso === todayIso) cls += " today";
+        h += '<button type="button" class="' + cls + '" data-iso="' + iso + '">' + d + '</button>';
+      }
+      h += '</div>';
+      c.el.innerHTML = h;
+    }
+
+    function onCalClick(key, e) {
+      var t = e.target.closest ? e.target.closest("button") : null;
+      if (!t) return;
+      var c = cals[key];
+      if (t.dataset.nav) {
+        c.y += +t.dataset.nav;
+        if (c.m < 0) { c.m = 11; c.y--; }
+        else if (c.m > 11) { c.m = 0; c.y++; }
+        renderCal(key);
+        return;
+      }
+      if (t.dataset.mon) {
+              c.m = +t.dataset.mon - 1;
+              renderCal(key);
+              return;
+            }
+            if (t.dataset.iso) {
+        var iso = t.dataset.iso;
+        var fEl = document.getElementById("dateFrom");
+        var tEl = document.getElementById("dateTo");
+        if (key === "from") {
+          fEl.value = iso;
+          if (!tEl.value || tEl.value < iso) tEl.value = iso;
+        } else {
+          tEl.value = iso;
+          if (!fEl.value || fEl.value > iso) fEl.value = iso;
+        }
+        fire(fEl);
+        fire(tEl);
+        renderCal("from");
+        renderCal("to");
+      }
+    }
+    renderCal("from");
+    renderCal("to");
+
+    // ── ANALOG CLOCKS ──
+    function makeClock(host, inputId, title) {
+      var inp = document.getElementById(inputId);
+      var tp = (inp.value || "00:00").split(":");
+      var st = { h: (+tp[0]) || 0, m: (+tp[1]) || 0, mode: "h" };
+      host.innerHTML = '<div class="wsx-clk-title">' + title + '</div>' +
+        '<div class="wsx-clk-read"><button type="button" data-mode="h"></button><span>:</span><button type="button" data-mode="m"></button></div>' +
+        '<svg class="wsx-clk" viewBox="-110 -110 220 220"></svg>';
+      var svg = host.querySelector("svg");
+      var btns = host.querySelectorAll(".wsx-clk-read button");
+
+      function pt(r, deg) {
+        var rad = deg * Math.PI / 180;
+        return { x: r * Math.sin(rad), y: -r * Math.cos(rad) };
+      }
+      function num(p, txt, cls) {
+        return '<text x="' + p.x.toFixed(1) + '" y="' + p.y.toFixed(1) + '" dy=".35em" class="' + cls + '">' + txt + '</text>';
+      }
+
+      function draw() {
+        btns[0].textContent = pad2(st.h);
+        btns[1].textContent = pad2(st.m);
+        btns[0].className = st.mode === "h" ? "on" : "";
+        btns[1].className = st.mode === "m" ? "on" : "";
+        var s = '<circle r="106" class="wsx-face"/>';
+        var ang, ring;
+        if (st.mode === "h") {
+          ang = (st.h % 12) * 30;
+          ring = (st.h === 0 || st.h > 12) ? 58 : 88;
+        } else {
+          ang = st.m * 6;
+          ring = 88;
+          for (var k = 0; k < 60; k++) {
+            var ta = pt(101, k * 6);
+            var tb = pt(k % 5 === 0 ? 96 : 98.5, k * 6);
+            s += '<line class="wsx-tick" x1="' + ta.x.toFixed(1) + '" y1="' + ta.y.toFixed(1) + '" x2="' + tb.x.toFixed(1) + '" y2="' + tb.y.toFixed(1) + '"/>';
+          }
+        }
+        var p = pt(ring, ang);
+        s += '<line x1="0" y1="0" x2="' + p.x.toFixed(1) + '" y2="' + p.y.toFixed(1) + '" class="wsx-hand"/>';
+        s += '<circle r="3" class="wsx-hub"/>';
+        s += '<circle cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="14" class="wsx-knob"/>';
+        if (st.mode === "m" && st.m % 5 !== 0) {
+          s += '<circle cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="3" class="wsx-dot"/>';
+        }
+        for (var i = 0; i < 12; i++) {
+          if (st.mode === "h") {
+            var outerVal = i === 0 ? 12 : i;
+            var innerVal = i === 0 ? 0 : i + 12;
+            s += num(pt(88, i * 30), outerVal, "wsx-num" + (st.h === outerVal ? " sel" : ""));
+            s += num(pt(58, i * 30), pad2(innerVal), "wsx-num sm" + (st.h === innerVal ? " sel" : ""));
+          } else {
+            var mv = i * 5;
+            s += num(pt(88, i * 30), pad2(mv), "wsx-num" + (st.m === mv ? " sel" : ""));
+          }
+        }
+        svg.innerHTML = s;
+      }
+
+      function commit() {
+        inp.value = pad2(st.h) + ":" + pad2(st.m);
+        fire(inp);
+        draw();
+      }
+
+      function apply(e) {
+        var r = svg.getBoundingClientRect();
+        var k = 220 / r.width;
+        var dx = (e.clientX - (r.left + r.width / 2)) * k;
+        var dy = (e.clientY - (r.top + r.height / 2)) * k;
+        var a = Math.atan2(dx, -dy) * 180 / Math.PI;
+        if (a < 0) a += 360;
+        if (st.mode === "h") {
+          var i = Math.round(a / 30) % 12;
+          var dist = Math.sqrt(dx * dx + dy * dy);
+          st.h = dist < 73 ? (i === 0 ? 0 : i + 12) : (i === 0 ? 12 : i);
+        } else {
+          st.m = Math.round(a / 6) % 60;
+        }
+        commit();
+      }
+
+      var dragging = false;
+      svg.addEventListener("pointerdown", function(e) {
+        dragging = true;
+        try { svg.setPointerCapture(e.pointerId); } catch (x) {}
+        apply(e);
+        e.preventDefault();
+      });
+      svg.addEventListener("pointermove", function(e) { if (dragging) apply(e); });
+      function endDrag() {
+        if (!dragging) return;
+        dragging = false;
+        if (st.mode === "h") { st.mode = "m"; draw(); }
+      }
+      svg.addEventListener("pointerup", endDrag);
+      svg.addEventListener("pointercancel", endDrag);
+
+      Array.prototype.forEach.call(btns, function(b) {
+        b.addEventListener("click", function() {
+          st.mode = b.dataset.mode;
+          draw();
+        });
+      });
+
+      draw();
+    }
+
+    var clocksHost = document.createElement("div");
+    clocksHost.className = "wsx-clocks";
+    var c1 = document.createElement("div");
+    c1.className = "wsx-clock";
+    var c2 = document.createElement("div");
+    c2.className = "wsx-clock";
+    clocksHost.appendChild(c1);
+    clocksHost.appendChild(c2);
+    timeBlock.insertBefore(clocksHost, timeBlock.children[1] || null);
+    makeClock(c1, "timeFrom", "START (IST)");
+    makeClock(c2, "timeTo", "END (IST)");
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
+})();
+(function() {
+  var overlay = document.getElementById("settingsOverlay");
+  if (!overlay) return;
+  var modal = overlay.querySelector(".settings-modal");
+  var head  = overlay.querySelector(".settings-head");
+  var foot  = overlay.querySelector(".settings-foot");
+  var grid  = document.getElementById("settingsGrid");
+  if (!modal || !head || !foot || !grid) return;
+
+  function fit() {
+    if (!overlay.classList.contains("open")) return;
+    if (getComputedStyle(grid).display === "none") return;
+    grid.classList.toggle("wsx-narrow", window.innerWidth < 760);
+    grid.style.transform = "none";
+        grid.style.margin = "";
+    var nw = grid.offsetWidth;
+    var nh = grid.offsetHeight;
+    if (!nw || !nh) return;
+    var cs = getComputedStyle(modal);
+    var availW = modal.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+    var availH = modal.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - head.offsetHeight - 8;
+    var s = Math.min(1.5, availW / nw, availH / nh);
+    if (!(s > 0.2)) s = 0.2;
+    grid.style.transform = "scale(" + s + ")";
+        grid.style.margin = ((availH - nh) / 2) + "px 0 0";
+  }
+
+  if (window.ResizeObserver) {
+    new ResizeObserver(function() { fit(); }).observe(modal);
+  }
+  window.addEventListener("resize", fit);
+
+  var fab = document.getElementById("settingsFab");
+  if (fab) fab.addEventListener("click", function() { setTimeout(fit, 0); });
+
+  var prevFinished = window.onScanFinished;
+  window.onScanFinished = function(wasCancelled) {
+    if (prevFinished) prevFinished(wasCancelled);
+    setTimeout(fit, 0);
+  };
+})();
+(function() {
+  var grid = document.getElementById("settingsGrid");
+  var foot = document.querySelector("#settingsOverlay .settings-foot");
+  if (grid && foot && foot.parentNode !== grid) grid.appendChild(foot);
+})();
+(function() {
+  function pad2(n) { return (n < 10 ? "0" : "") + n; }
+  function fire(el) { el.dispatchEvent(new Event("change", { bubbles: true })); }
+  function pt(r, deg) {
+    var rad = deg * Math.PI / 180;
+    return { x: r * Math.sin(rad), y: -r * Math.cos(rad) };
+  }
+  function num(p, txt, cls) {
+    return '<text x="' + p.x.toFixed(1) + '" y="' + p.y.toFixed(1) + '" dy=".35em" class="' + cls + '">' + txt + '</text>';
+  }
+  function handKnob(p) {
+    return '<line x1="0" y1="0" x2="' + p.x.toFixed(1) + '" y2="' + p.y.toFixed(1) + '" class="wsx-hand"/>' +
+      '<circle r="3" class="wsx-hub"/>' +
+      '<circle cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="14" class="wsx-knob"/>';
+  }
+
+  function bind(svg, onPick) {
+    var dragging = false;
+    function go(e) {
+      var r = svg.getBoundingClientRect();
+      var k = 220 / r.width;
+      var dx = (e.clientX - (r.left + r.width / 2)) * k;
+      var dy = (e.clientY - (r.top + r.height / 2)) * k;
+      var a = Math.atan2(dx, -dy) * 180 / Math.PI;
+      if (a < 0) a += 360;
+      onPick(a, Math.sqrt(dx * dx + dy * dy));
+    }
+    svg.addEventListener("pointerdown", function(e) {
+      dragging = true;
+      try { svg.setPointerCapture(e.pointerId); } catch (x) {}
+      go(e);
+      e.preventDefault();
+    });
+    svg.addEventListener("pointermove", function(e) { if (dragging) go(e); });
+    svg.addEventListener("pointerup", function() { dragging = false; });
+    svg.addEventListener("pointercancel", function() { dragging = false; });
+  }
+
+  function makeDual(host, inputId, title) {
+    var inp = document.getElementById(inputId);
+    if (!inp) return;
+    var tp = (inp.value || "00:00").split(":");
+    var st = { h: (+tp[0]) || 0, m: (+tp[1]) || 0 };
+    host.innerHTML =
+      '<div class="wsx-clk-top"><span class="wsx-clk-title2">' + title + '</span><span class="wsx-clk-val"></span></div>' +
+      '<div class="wsx-dials">' +
+        '<div class="wsx-dial"><svg class="wsx-clk" viewBox="-110 -110 220 220"></svg><div class="wsx-dial-lbl">HOUR</div></div>' +
+        '<div class="wsx-dial"><svg class="wsx-clk" viewBox="-110 -110 220 220"></svg><div class="wsx-dial-lbl">MIN</div></div>' +
+      '</div>';
+    var val  = host.querySelector(".wsx-clk-val");
+    var svgs = host.querySelectorAll("svg");
+    var svgH = svgs[0];
+    var svgM = svgs[1];
+
+    function draw() {
+      val.textContent = pad2(st.h) + ":" + pad2(st.m);
+
+      var s = '<circle r="106" class="wsx-face"/>';
+      var hp = pt((st.h === 0 || st.h > 12) ? 58 : 88, (st.h % 12) * 30);
+      s += handKnob(hp);
+      for (var i = 0; i < 12; i++) {
+        var outerVal = i === 0 ? 12 : i;
+        var innerVal = i === 0 ? 0 : i + 12;
+        s += num(pt(88, i * 30), outerVal, "wsx-num" + (st.h === outerVal ? " sel" : ""));
+        s += num(pt(58, i * 30), pad2(innerVal), "wsx-num sm" + (st.h === innerVal ? " sel" : ""));
+      }
+      svgH.innerHTML = s;
+
+      var t = '<circle r="106" class="wsx-face"/>';
+      for (var k = 0; k < 60; k++) {
+        var ta = pt(101, k * 6);
+        var tb = pt(k % 5 === 0 ? 96 : 98.5, k * 6);
+        t += '<line class="wsx-tick" x1="' + ta.x.toFixed(1) + '" y1="' + ta.y.toFixed(1) + '" x2="' + tb.x.toFixed(1) + '" y2="' + tb.y.toFixed(1) + '"/>';
+      }
+      var mp = pt(88, st.m * 6);
+      t += handKnob(mp);
+      if (st.m % 5 !== 0) {
+        t += '<circle cx="' + mp.x.toFixed(1) + '" cy="' + mp.y.toFixed(1) + '" r="3" class="wsx-dot"/>';
+      }
+      for (var j = 0; j < 12; j++) {
+        var mv = j * 5;
+        t += num(pt(88, j * 30), pad2(mv), "wsx-num" + (st.m === mv ? " sel" : ""));
+      }
+      svgM.innerHTML = t;
+    }
+
+    function commit() {
+      inp.value = pad2(st.h) + ":" + pad2(st.m);
+      fire(inp);
+      draw();
+    }
+
+    bind(svgH, function(a, dist) {
+      var i = Math.round(a / 30) % 12;
+      st.h = dist < 73 ? (i === 0 ? 0 : i + 12) : (i === 0 ? 12 : i);
+      commit();
+    });
+    bind(svgM, function(a) {
+      st.m = Math.round(a / 6) % 60;
+      commit();
+    });
+
+    draw();
+  }
+
+  function build() {
+    var hosts = document.querySelectorAll("#settingsGrid .wsx-clock");
+    if (hosts.length < 2) return;
+    makeDual(hosts[0], "timeFrom", "START (IST)");
+    makeDual(hosts[1], "timeTo", "END (IST)");
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", build);
+  } else {
+    build();
+  }
+})();
+(function() {
+  function pad2(n) { return (n < 10 ? "0" : "") + n; }
+  function fire(el) { el.dispatchEvent(new Event("change", { bubbles: true })); }
+  function f1(n) { return n.toFixed(1); }
+  function pt(r, deg) {
+    var rad = deg * Math.PI / 180;
+    return { x: r * Math.sin(rad), y: -r * Math.cos(rad) };
+  }
+
+  function makeClock(host, inputId, title) {
+    var inp = document.getElementById(inputId);
+    if (!inp) return;
+    var tp = (inp.value || "00:00").split(":");
+    var st = { h: (+tp[0]) || 0, m: (+tp[1]) || 0 };
+    host.innerHTML =
+      '<div class="wsx-clk-top"><span class="wsx-clk-title2">' + title + '</span><span class="wsx-clk-val"></span>' +
+      '<span class="wsx-ampm"><button type="button" data-ap="0">AM</button><button type="button" data-ap="1">PM</button></span></div>' +
+      '<svg class="wsx-clk wsx-single" viewBox="-110 -110 220 220"></svg>';
+    var val = host.querySelector(".wsx-clk-val");
+    var svg = host.querySelector("svg");
+    var apBtns = host.querySelectorAll(".wsx-ampm button");
+
+    function draw() {
+      val.textContent = pad2(st.h) + ":" + pad2(st.m);
+      apBtns[0].className = st.h < 12 ? "on" : "";
+      apBtns[1].className = st.h >= 12 ? "on" : "";
+      var hourNum = st.h % 12 || 12;
+      var s = '<circle r="108" class="wsx-face"/>';
+      for (var k = 0; k < 60; k++) {
+        var ta = pt(104, k * 6);
+        var tb = pt(k % 5 === 0 ? 96 : 100, k * 6);
+        s += '<line class="wsx-tick" x1="' + f1(ta.x) + '" y1="' + f1(ta.y) + '" x2="' + f1(tb.x) + '" y2="' + f1(tb.y) + '"/>';
+      }
+      for (var i = 1; i <= 12; i++) {
+        var np = pt(76, i * 30);
+        s += '<text x="' + f1(np.x) + '" y="' + f1(np.y) + '" dy=".35em" class="wsx-num' + (i === hourNum ? " hl" : "") + '">' + i + '</text>';
+      }
+      var hp = pt(44, (st.h % 12) * 30);
+      var mp = pt(92, st.m * 6);
+      s += '<line x1="0" y1="0" x2="' + f1(mp.x) + '" y2="' + f1(mp.y) + '" class="wsx-hand-m"/>';
+      s += '<line x1="0" y1="0" x2="' + f1(hp.x) + '" y2="' + f1(hp.y) + '" class="wsx-hand-h"/>';
+      s += '<circle r="4" class="wsx-hub"/>';
+      s += '<circle cx="' + f1(mp.x) + '" cy="' + f1(mp.y) + '" r="8" class="wsx-knob-m"/>';
+      s += '<circle cx="' + f1(hp.x) + '" cy="' + f1(hp.y) + '" r="11" class="wsx-knob-h"/>';
+      svg.innerHTML = s;
+    }
+
+    function commit() {
+      inp.value = pad2(st.h) + ":" + pad2(st.m);
+      fire(inp);
+      draw();
+    }
+
+    function geo(e) {
+      var r = svg.getBoundingClientRect();
+      var k = 220 / r.width;
+      var dx = (e.clientX - (r.left + r.width / 2)) * k;
+      var dy = (e.clientY - (r.top + r.height / 2)) * k;
+      var a = Math.atan2(dx, -dy) * 180 / Math.PI;
+      if (a < 0) a += 360;
+      return { a: a, dist: Math.sqrt(dx * dx + dy * dy) };
+    }
+
+    var target = null;
+    function move(e) {
+      var g = geo(e);
+      if (target === "h") {
+        var i = Math.round(g.a / 30) % 12;
+        st.h = i + (st.h >= 12 ? 12 : 0);
+      } else {
+        st.m = Math.round(g.a / 6) % 60;
+      }
+      commit();
+    }
+
+    svg.addEventListener("pointerdown", function(e) {
+      var g = geo(e);
+      target = g.dist < 60 ? "h" : "m";
+      try { svg.setPointerCapture(e.pointerId); } catch (x) {}
+      move(e);
+      e.preventDefault();
+    });
+    svg.addEventListener("pointermove", function(e) { if (target) move(e); });
+    svg.addEventListener("pointerup", function() { target = null; });
+    svg.addEventListener("pointercancel", function() { target = null; });
+
+    Array.prototype.forEach.call(apBtns, function(b) {
+      b.addEventListener("click", function() {
+        st.h = (st.h % 12) + (b.dataset.ap === "1" ? 12 : 0);
+        commit();
+      });
+    });
+
+    draw();
+  }
+
+  function build() {
+    var hosts = document.querySelectorAll("#settingsGrid .wsx-clock");
+    if (hosts.length < 2) {
+          if (!window._wsxRetry) { window._wsxRetry = 1; setTimeout(build, 500); }
+        } else {
+      setTimeout(function() { makeClock(hosts[0], "timeFrom", "START (IST)"); }, 500);
+      setTimeout(function() { makeClock(hosts[1], "timeTo", "END (IST)"); }, 500);
+    }
+    var ov = document.getElementById("settingsOverlay");
+    if (ov && !document.getElementById("settingsCloseFab")) {
+      var x = document.createElement("button");
+      x.type = "button";
+      x.id = "settingsCloseFab";
+      x.title = "Close (Esc)";
+      x.textContent = "✕";
+      x.addEventListener("click", function() {
+        if (window.closeSettings) window.closeSettings();
+        else ov.classList.remove("open");
+      });
+      ov.appendChild(x);
+    }
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", build);
+  } else {
+    build();
+  }
+})();
 </script>
 </body>
 </html>
