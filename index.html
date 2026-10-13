@@ -923,7 +923,11 @@
 .wsx-clk-read { display: flex; align-items: center; justify-content: center; gap: 2px; font-family: var(--mono); font-size: 26px; color: var(--text-mid); margin-bottom: 6px; }
 .wsx-clk-read button { background: transparent; border: 1px solid transparent; color: var(--text-mid); font-family: var(--mono); font-size: 26px; padding: 0 8px; border-radius: 4px; cursor: pointer; }
 .wsx-clk-read button.on { background: rgba(255,255,255,0.12); color: var(--green); }
-svg.wsx-clk { width: 100%; height: auto; display: block; touch-action: none; cursor: pointer; user-select: none; }
+svg.wsx-clk { width: 100%; height: auto; display: block; touch-action: none; cursor: pointer; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+.wsx-clock, .wsx-clock * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; touch-action: none; }
+.wsx-clock svg *::selection { background: transparent; }
+.wsx-face, .wsx-tick, .wsx-num { pointer-events: none; }
+.wsx-hand-h, .wsx-hand-m { pointer-events: none; }
 .wsx-face { fill: rgba(255,255,255,0.05); stroke: var(--border2); stroke-width: 1; }
 .wsx-hand { stroke: var(--green); stroke-width: 2; }
 .wsx-hub, .wsx-knob { fill: var(--green); }
@@ -1015,10 +1019,10 @@ svg.wsx-clk { width: 144px; flex: none; margin: 0 auto; }
 .wsx-ampm button:hover { border-color: var(--green); color: var(--text); }
 .wsx-ampm button.on { background: var(--green); border-color: var(--green); color: #000432; }
 .wsx-num.hl { fill: var(--green); font-weight: 700; }
-.wsx-hand-h { stroke: var(--green); stroke-width: 4; stroke-linecap: round; }
-.wsx-hand-m { stroke: var(--cyan); stroke-width: 2; stroke-linecap: round; }
-.wsx-knob-h { fill: var(--green); }
-.wsx-knob-m { fill: var(--cyan); }
+.wsx-hand-h { stroke: var(--green); stroke-width: 5; stroke-linecap: butt; }
+.wsx-hand-m { stroke: var(--cyan); stroke-width: 3; stroke-linecap: butt; }
+.wsx-knob-h { display: none; }
+.wsx-knob-m { display: none; }
 #settingsCloseFab { position: fixed; top: 12px; right: 14px; z-index: 950; width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--border2); background: var(--panel); color: var(--text); font-size: 18px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; }
 #settingsCloseFab:hover { border-color: var(--green); color: var(--green); }
 </style>
@@ -3218,13 +3222,13 @@ function renderTable() {
         var np = pt(76, i * 30);
         s += '<text x="' + f1(np.x) + '" y="' + f1(np.y) + '" dy=".35em" class="wsx-num' + (i === hourNum ? " hl" : "") + '">' + i + '</text>';
       }
-      var hp = pt(44, (st.h % 12) * 30);
-      var mp = pt(92, st.m * 6);
-      s += '<line x1="0" y1="0" x2="' + f1(mp.x) + '" y2="' + f1(mp.y) + '" class="wsx-hand-m"/>';
-      s += '<line x1="0" y1="0" x2="' + f1(hp.x) + '" y2="' + f1(hp.y) + '" class="wsx-hand-h"/>';
-      s += '<circle r="4" class="wsx-hub"/>';
-      s += '<circle cx="' + f1(mp.x) + '" cy="' + f1(mp.y) + '" r="8" class="wsx-knob-m"/>';
-      s += '<circle cx="' + f1(hp.x) + '" cy="' + f1(hp.y) + '" r="11" class="wsx-knob-h"/>';
+      var hp = pt(48, (st.h % 12) * 30);
+            var hq = pt(-12, (st.h % 12) * 30);
+            var mp = pt(92, st.m * 6);
+            var mq = pt(-16, st.m * 6);
+            s += '<line x1="' + f1(mq.x) + '" y1="' + f1(mq.y) + '" x2="' + f1(mp.x) + '" y2="' + f1(mp.y) + '" class="wsx-hand-m"/>';
+            s += '<line x1="' + f1(hq.x) + '" y1="' + f1(hq.y) + '" x2="' + f1(hp.x) + '" y2="' + f1(hp.y) + '" class="wsx-hand-h"/>';
+            s += '<circle r="4" class="wsx-hub"/>';
       svg.innerHTML = s;
     }
 
@@ -3245,6 +3249,9 @@ function renderTable() {
     }
 
     var target = null;
+        svg.addEventListener("selectstart", function(e) { e.preventDefault(); });
+        svg.addEventListener("contextmenu", function(e) { e.preventDefault(); });
+        svg.addEventListener("dragstart", function(e) { e.preventDefault(); });
     function move(e) {
       var g = geo(e);
       if (target === "h") {
@@ -3258,7 +3265,18 @@ function renderTable() {
 
     svg.addEventListener("pointerdown", function(e) {
       var g = geo(e);
-      target = g.dist < 60 ? "h" : "m";
+      var px = g.dist * Math.sin(g.a * Math.PI / 180);
+            var py = -g.dist * Math.cos(g.a * Math.PI / 180);
+            function segDist(len, deg) {
+              var q = pt(len, deg);
+              var t = Math.max(0, Math.min(1, (px * q.x + py * q.y) / ((q.x * q.x + q.y * q.y) || 1)));
+              var ex = px - q.x * t;
+              var ey = py - q.y * t;
+              return Math.sqrt(ex * ex + ey * ey);
+            }
+            var hitH = segDist(48, (st.h % 12) * 30);
+            var hitM = segDist(92, st.m * 6);
+            target = g.dist > 60 ? "m" : (hitM <= hitH ? "m" : "h");
       try { svg.setPointerCapture(e.pointerId); } catch (x) {}
       move(e);
       e.preventDefault();
