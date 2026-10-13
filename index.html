@@ -1019,12 +1019,20 @@ svg.wsx-clk { width: 144px; flex: none; margin: 0 auto; }
 .wsx-ampm button:hover { border-color: var(--green); color: var(--text); }
 .wsx-ampm button.on { background: var(--green); border-color: var(--green); color: #000432; }
 .wsx-num.hl { fill: var(--green); font-weight: 700; }
+.wsx-hit { stroke: rgba(0,0,0,0.001); stroke-width: 28; stroke-linecap: butt; pointer-events: stroke !important; cursor: grab; }
 .wsx-hand-h { stroke: var(--green); stroke-width: 5; stroke-linecap: butt; }
 .wsx-hand-m { stroke: var(--cyan); stroke-width: 3; stroke-linecap: butt; }
 .wsx-knob-h { display: none; }
 .wsx-knob-m { display: none; }
 #settingsCloseFab { position: fixed; top: 12px; right: 14px; z-index: 950; width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--border2); background: var(--panel); color: var(--text); font-size: 18px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; }
 #settingsCloseFab:hover { border-color: var(--green); color: var(--green); }
+.wsx-clock { height: auto; justify-content: flex-start; }
+.wsx-pick-lbl { font-family: var(--mono); font-size: 9px; letter-spacing: 0.12em; color: var(--text-dim); margin: 4px 0 2px; }
+.wsx-hgrid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 2px; }
+.wsx-mgrid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 2px; }
+.wsx-pk { height: 22px; padding: 0; border: 1px solid var(--border2); background: transparent; color: var(--text-mid); font-family: var(--mono); font-size: 10px; border-radius: 3px; cursor: pointer; touch-action: manipulation; }
+.wsx-pk:hover { border-color: var(--green); color: var(--text); }
+.wsx-pk.on { background: var(--green); border-color: var(--green); color: #000432; }
 </style>
 </head>
 <body>
@@ -3189,6 +3197,50 @@ function renderTable() {
   function pad2(n) { return (n < 10 ? "0" : "") + n; }
   function fire(el) { el.dispatchEvent(new Event("change", { bubbles: true })); }
   function f1(n) { return n.toFixed(1); }
+  
+    function makeGrid(host, inputId, title) {
+      var inp = document.getElementById(inputId);
+      if (!inp) return;
+      var tp = (inp.value || "00:00").split(":");
+      var st = { h: (+tp[0]) || 0, m: (+tp[1]) || 0 };
+      var hb = "";
+      var mb = "";
+      for (var a = 1; a <= 24; a++) {
+        hb += '<button type="button" class="wsx-pk" data-h="' + (a % 24) + '">' + a + '</button>';
+      }
+      for (var b = 1; b <= 60; b++) {
+        mb += '<button type="button" class="wsx-pk" data-m="' + (b % 60) + '">' + b + '</button>';
+      }
+      host.innerHTML =
+        '<div class="wsx-clk-top"><span class="wsx-clk-title2">' + title + '</span><span class="wsx-clk-val"></span></div>' +
+        '<div class="wsx-pick-lbl">HOUR (24 = 00)</div><div class="wsx-hgrid">' + hb + '</div>' +
+        '<div class="wsx-pick-lbl">MIN (60 = 00)</div><div class="wsx-mgrid">' + mb + '</div>';
+      var val = host.querySelector(".wsx-clk-val");
+      var pks = host.querySelectorAll(".wsx-pk");
+  
+      function draw() {
+        val.textContent = pad2(st.h) + ":" + pad2(st.m);
+        for (var i = 0; i < pks.length; i++) {
+          var pk = pks[i];
+          var isOn = pk.hasAttribute("data-h")
+            ? (+pk.getAttribute("data-h") === st.h)
+            : (+pk.getAttribute("data-m") === st.m);
+          pk.className = "wsx-pk" + (isOn ? " on" : "");
+        }
+      }
+  
+      host.addEventListener("click", function(e) {
+        var t = e.target.closest ? e.target.closest(".wsx-pk") : null;
+        if (!t) return;
+        if (t.hasAttribute("data-h")) st.h = +t.getAttribute("data-h");
+        else st.m = +t.getAttribute("data-m");
+        inp.value = pad2(st.h) + ":" + pad2(st.m);
+        fire(inp);
+        draw();
+      });
+  
+      draw();
+    }
   function pt(r, deg) {
     var rad = deg * Math.PI / 180;
     return { x: r * Math.sin(rad), y: -r * Math.cos(rad) };
@@ -3229,6 +3281,8 @@ function renderTable() {
             s += '<line x1="' + f1(mq.x) + '" y1="' + f1(mq.y) + '" x2="' + f1(mp.x) + '" y2="' + f1(mp.y) + '" class="wsx-hand-m"/>';
             s += '<line x1="' + f1(hq.x) + '" y1="' + f1(hq.y) + '" x2="' + f1(hp.x) + '" y2="' + f1(hp.y) + '" class="wsx-hand-h"/>';
             s += '<circle r="4" class="wsx-hub"/>';
+                  s += '<line x1="0" y1="0" x2="' + f1(mp.x) + '" y2="' + f1(mp.y) + '" class="wsx-hit" data-hand="m"/>';
+                  s += '<line x1="0" y1="0" x2="' + f1(hp.x) + '" y2="' + f1(hp.y) + '" class="wsx-hit" data-hand="h"/>';
       svg.innerHTML = s;
     }
 
@@ -3276,7 +3330,8 @@ function renderTable() {
             }
             var hitH = segDist(48, (st.h % 12) * 30);
             var hitM = segDist(92, st.m * 6);
-            target = g.dist > 60 ? "m" : (hitM <= hitH ? "m" : "h");
+            var th = (e.target && e.target.getAttribute) ? e.target.getAttribute("data-hand") : null;
+                  target = th ? th : (g.dist > 60 ? "m" : (hitM <= hitH ? "m" : "h"));
       try { svg.setPointerCapture(e.pointerId); } catch (x) {}
       move(e);
       e.preventDefault();
@@ -3300,8 +3355,8 @@ function renderTable() {
     if (hosts.length < 2) {
           if (!window._wsxRetry) { window._wsxRetry = 1; setTimeout(build, 500); }
         } else {
-      setTimeout(function() { makeClock(hosts[0], "timeFrom", "START (IST)"); }, 500);
-      setTimeout(function() { makeClock(hosts[1], "timeTo", "END (IST)"); }, 500);
+      setTimeout(function() { makeGrid(hosts[0], "timeFrom", "START (IST)"); }, 500);
+      setTimeout(function() { makeGrid(hosts[1], "timeTo", "END (IST)"); }, 500);
     }
     var ov = document.getElementById("settingsOverlay");
     if (ov && !document.getElementById("settingsCloseFab")) {
