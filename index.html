@@ -1206,6 +1206,38 @@ body, .layout { height: 100vh; height: 100dvh; }
 .repeats-section table { width: 100%; min-width: 0; }
 .table-area > .state-empty { flex: 1 1 auto; }
 #repMinDays, #repMinC1, .filter-bar label:has(+ #repMinDays), .filter-bar label:has(+ #repMinC1) { display: none !important; }
+.wsx-chart { flex: none; background: var(--bg); border-bottom: 2px solid var(--border2); }
+.wsx-chart-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 4px; font-family: var(--mono); font-size: 12px; color: var(--text-mid); background: var(--panel); border-bottom: 1px solid var(--border); }
+.wsx-chart-head select { background: var(--panel); border: 1px solid var(--border2); color: var(--text); font-family: var(--mono); font-size: 12px; padding: 3px 4px; border-radius: 4px; }
+.wsx-chart-head button { background: transparent; border: 1px solid var(--border2); color: var(--text-mid); font-family: var(--mono); font-size: 13px; border-radius: 4px; padding: 2px 9px; cursor: pointer; }
+.wsx-chart-head button:hover { border-color: var(--green); color: var(--text); }
+.wsx-chart-leg { margin-left: auto; display: flex; gap: 8px; font-size: 11px; }
+.wsx-chart-read { font-family: var(--mono); font-size: 11px; color: var(--text-mid); padding: 3px 4px; line-height: 1.4; white-space: pre-wrap; min-height: 18px; }
+.wsx-chart-body { display: flex; }
+#wsxYAxis { flex: none; display: block; }
+.wsx-chart-scroll { flex: 1 1 auto; min-width: 0; overflow-x: scroll; overflow-y: hidden; -webkit-overflow-scrolling: touch; }
+#wsxCanvas { display: block; }
+#wsxFsBtn { display: none; position: fixed; bottom: 22px; right: 14px; height: 56px; padding: 0 18px; border: none; border-radius: 28px; background: var(--green); color: #000432; font-family: var(--mono); font-size: 13px; letter-spacing: 0.06em; cursor: pointer; z-index: 800; box-shadow: 0 6px 24px rgba(0,0,0,0.55); }
+#wsxFsBtn:hover { box-shadow: 0 0 22px rgba(204,245,223,0.45); }
+#wsxFs { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 960; flex-direction: column; background: var(--bg); }
+#wsxFs.open { display: flex; }
+#wsxFs .wsx-chart-head { flex: none; padding: 8px; font-size: 13px; }
+#wsxFs .wsx-chart-head select { font-size: 14px; padding: 6px; }
+#wsxFs .wsx-chart-head button { font-size: 15px; padding: 5px 12px; }
+#wsxFs .wsx-chart-read { flex: none; height: 70px; overflow-y: auto; font-size: 12px; padding: 6px 8px; }
+#wsxFs .wsx-chart-body { flex: 1 1 auto; min-height: 0; }
+#wsxFs .wsx-chart-scroll { height: 100%; }
+.wsx-sum { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 18px; padding: 6px 8px; font-family: var(--mono); font-size: 13px; color: var(--text-mid); background: var(--bg); border-bottom: 1px solid var(--border); }
+.wsx-sum b { color: var(--text); font-weight: 500; }
+.wsx-sum-dim { color: var(--text-dim); }
+.wsx-mini { display: inline-block; width: 60px; height: 5px; border-radius: 3px; overflow: hidden; vertical-align: middle; margin-left: 6px; }
+.wsx-mini i { display: block; height: 100%; }
+.wsx-rep { display: none; order: 1; flex: 1 1 auto; min-height: 0; overflow: auto; background: var(--bg); }
+#wsxFs.rep-open .wsx-rep { display: block; }
+#wsxFs.rep-open .wsx-chart-body { display: none; }
+.wsx-rep-note { padding: 6px 8px; font-family: var(--mono); font-size: 11px; color: var(--text-dim); }
+.wsx-rep-tbl { table-layout: auto !important; width: 100%; min-width: 600px; border-collapse: collapse; font-family: var(--mono); font-size: 13px; }
+.wsx-rep-tbl th, .wsx-rep-tbl td { width: auto !important; padding: 6px 8px; text-align: left; }
 </style>
 </head>
 <body>
@@ -2308,6 +2340,8 @@ async function runScan() {
   
     // ── Cache key: all pairs + date range + time window ──
     const newCacheKey = `${pairsToScan.join(",")}|${dateFrom}|${dateTo}|${secFrom}-${secTo}`;
+        wsxScanWin = { secFrom: secFrom, secTo: secTo };
+            wsxFsHide();
         const allDaysCached = pairsToScan.every(p => days.every(d => {
           const dk = `${p}|${d.toISOString().slice(0,10)}|${secFrom}-${secTo}`;
           return tickCache[dk] !== undefined;
@@ -2790,6 +2824,601 @@ function buildCombined() {
   return { revs: revs, moms: moms, days: Object.keys(daySet).length };
 }
 
+var wsxScanWin = null;
+var wsxChartOpen = true;
+var wsxChartPair = "";
+var wsxChartSpp = 10;
+var wsxChartEff = 10;
+var wsxChartSigs = [];
+var wsxChartMarks = [];
+var wsxChartCenter = 1;
+var wsxDragMoved = false;
+var WSX_ZOOMS = [1, 2, 3, 5, 10, 20, 30, 60, 120, 300, 600];
+
+function wsxCss(name) {
+  var v = getComputedStyle(document.documentElement).getPropertyValue(name);
+  return (v && v.trim()) || "#ffffff";
+}
+
+function wsxCenterFrac() {
+  var sc = document.getElementById("wsxScroll");
+  if (!sc || !sc.scrollWidth) return 1;
+  return (sc.scrollLeft + sc.clientWidth / 2) / sc.scrollWidth;
+}
+
+function wsxFmtTime(epoch) {
+  var iso = new Date((epoch + 19800) * 1000).toISOString();
+  return iso.slice(5, 10) + " " + iso.slice(11, 19) + " IST";
+}
+
+function wsxToggleChart() {
+  wsxChartOpen = !wsxChartOpen;
+  renderTable();
+}
+
+function wsxSetPair(v) {
+  wsxChartPair = v;
+  wsxDrawChart(wsxCenterFrac());
+}
+
+function wsxZoom(dir) {
+  var cur = wsxChartEff || wsxChartSpp;
+  var best = 0;
+  var bestDiff = Infinity;
+  for (var zi = 0; zi < WSX_ZOOMS.length; zi++) {
+    var df = Math.abs(WSX_ZOOMS[zi] - cur);
+    if (df < bestDiff) { bestDiff = df; best = zi; }
+  }
+  var ni = Math.max(0, Math.min(WSX_ZOOMS.length - 1, best + dir));
+  wsxChartSpp = WSX_ZOOMS[ni];
+  wsxDrawChart(wsxCenterFrac());
+}
+
+function wsxEntries(arr, startTs, c, r, colCode, s1, i1) {
+  var out = [];
+  var n = arr.length;
+  var i = (((r - startTs) % c) + c) % c;
+  var color = 0;
+  var streak = 0;
+  for (; i < n; i += c) {
+    var p = arr[i];
+    var q = i >= c ? arr[i - c] : -1;
+    var nc, ns;
+    if (q === -1) {
+      nc = (p === -1) ? 0 : 1;
+      ns = (p === -1) ? 0 : 1;
+    } else if (p === -1) {
+      nc = 0; ns = 0;
+    } else if (p > q) {
+      nc = 1;
+      ns = (color === 1 && streak > 0) ? streak + 1 : 1;
+    } else if (p < q) {
+      nc = 2;
+      ns = (color === 2 && streak > 0) ? streak + 1 : 1;
+    } else {
+      nc = color; ns = 0;
+    }
+    color = nc;
+    streak = ns;
+    if (p !== -1 && ns === s1 && nc === colCode) {
+      var j = i + c;
+      var res;
+      if (j > i1 || j >= n) res = "pending";
+      else if (arr[j] === -1) res = "none";
+      else if ((nc === 1 && arr[j] > p) || (nc === 2 && arr[j] < p)) res = "cont";
+      else res = "rev";
+      out.push({ i: i, p: p, res: res });
+    }
+  }
+  return out;
+}
+
+function wsxMarkText(m) {
+  var s = m.sig;
+  var oc = wsxOutcome(m);
+    var res = oc === "pending" ? "pending" : oc === "none" ? "no next tick" : (m.res === "cont" ? "continued" : "reversed") + " → " + (oc === "win" ? "✓ SUCCESS" : "✗ FAILED");
+  return (s.col === "R" ? "↓ " : "↑ ") + getPairDisplayName(s.pair) + " " + s.type + " C" + s.c + " R" + s.r + " X" + s.s1 + "→X" + s.s2 + " " + s.pct + "% · " + wsxFmtTime(m.t) + " · " + res;
+}
+
+function wsxDrawChart(center) {
+  var cv = document.getElementById("wsxCanvas");
+  var ya = document.getElementById("wsxYAxis");
+  var sc = document.getElementById("wsxScroll");
+  var rd = document.getElementById("wsxRead");
+  if (!cv || !ya || !sc || !rd || !wsxScanWin) return;
+
+  var pair = wsxChartPair;
+  var secFrom = wsxScanWin.secFrom;
+  var secTo = wsxScanWin.secTo;
+  var len = secTo - secFrom + 1;
+  var dsel = document.getElementById("dayFilter");
+  var dv = (combinedMode || !dsel) ? "__ALL__" : dsel.value;
+  var segs = [];
+  var total = 0;
+  var oi, i, si, k;
+
+  if (dsel) {
+    for (oi = 0; oi < dsel.options.length; oi++) {
+      var dt = dsel.options[oi].value;
+      if (dt === "__ALL__") continue;
+      if (dv !== "__ALL__" && dt !== dv) continue;
+      var src = tickCache[pair + "|" + dt + "|" + secFrom + "-" + secTo];
+      if (!src) continue;
+      var arr = new Float64Array(len);
+      arr.fill(-1);
+      var lim = Math.min(len, src.length);
+      for (i = 0; i < lim; i++) {
+        var sv = src[i];
+        arr[i] = (typeof sv === "number") ? sv : -1;
+      }
+      var i0 = -1;
+      var i1 = -1;
+      for (i = 0; i < len; i++) {
+        if (arr[i] !== -1) {
+          if (i0 < 0) i0 = i;
+          i1 = i;
+        }
+      }
+      if (i0 < 0) continue;
+      var dayEpoch = Date.parse(dt + "T00:00:00Z") / 1000;
+      segs.push({ date: dt, arr: arr, i0: i0, i1: i1, startTs: dayEpoch + secFrom, x0: 0, w: 0 });
+      total += (i1 - i0 + 1);
+    }
+  }
+
+  if (!segs.length) {
+    rd.textContent = getPairDisplayName(pair) + " — no cached ticks for this selection";
+        wsxChartMarks = [];
+        wsxRenderReport();
+    cv.width = 1; cv.height = 1; ya.width = 1; ya.height = 1;
+    return;
+  }
+
+  var minSpp = Math.max(1, Math.ceil(total / 8000));
+  var spp = Math.max(wsxChartSpp, minSpp);
+  wsxChartEff = spp;
+
+  var GAP = 24;
+  var xx = 0;
+  for (si = 0; si < segs.length; si++) {
+    segs[si].x0 = xx;
+    segs[si].w = Math.max(2, Math.ceil((segs[si].i1 - segs[si].i0 + 1) / spp));
+    xx += segs[si].w + GAP;
+  }
+  var cssW = Math.max(sc.clientWidth || 300, xx);
+  var H = Math.max(120, sc.clientHeight || 170);
+  var YW = 54;
+  var padT = 26;
+  var padB = 22;
+
+  var lo = Infinity;
+  var hi = -Infinity;
+  for (si = 0; si < segs.length; si++) {
+    var sa = segs[si].arr;
+    for (i = segs[si].i0; i <= segs[si].i1; i++) {
+      var vv = sa[i];
+      if (vv === -1) continue;
+      if (vv < lo) lo = vv;
+      if (vv > hi) hi = vv;
+    }
+  }
+  if (!(hi > lo)) { hi = lo + 1; lo = lo - 1; }
+  var padY = (hi - lo) * 0.06;
+  lo -= padY;
+  hi += padY;
+  var dec = Math.max(0, Math.min(6, 3 - Math.floor(Math.log10(hi - lo))));
+  var ys = function(p) { return padT + (1 - (p - lo) / (hi - lo)) * (H - padT - padB); };
+
+  var C = {
+    line: wsxCss("--blue"),
+    grid: wsxCss("--border"),
+    txt: wsxCss("--text-dim"),
+    mid: wsxCss("--text-mid"),
+    g: wsxCss("--sig-green"),
+    r: wsxCss("--sig-red"),
+    bg: wsxCss("--bg")
+  };
+
+  var dpr = Math.min(window.devicePixelRatio || 1, 2);
+  cv.width = Math.round(cssW * dpr);
+  cv.height = Math.round(H * dpr);
+  cv.style.width = cssW + "px";
+  cv.style.height = H + "px";
+  var ctx = cv.getContext("2d");
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  ya.width = Math.round(YW * dpr);
+  ya.height = Math.round(H * dpr);
+  ya.style.width = YW + "px";
+  ya.style.height = H + "px";
+  var yc = ya.getContext("2d");
+  yc.setTransform(dpr, 0, 0, dpr, 0, 0);
+  yc.fillStyle = C.txt;
+  yc.font = "10px monospace";
+  yc.textAlign = "right";
+  yc.textBaseline = "middle";
+
+  for (k = 0; k <= 4; k++) {
+    var gv = lo + ((hi - lo) * k) / 4;
+    var gy = Math.round(ys(gv)) + 0.5;
+    ctx.strokeStyle = C.grid;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, gy);
+    ctx.lineTo(cssW, gy);
+    ctx.stroke();
+    yc.fillText(gv.toFixed(dec), YW - 4, gy);
+  }
+
+  ctx.font = "10px monospace";
+  ctx.textAlign = "left";
+  ctx.textBaseline = "alphabetic";
+  for (si = 0; si < segs.length; si++) {
+    var sg = segs[si];
+    if (si > 0) {
+      var sx = Math.round(sg.x0 - GAP / 2) + 0.5;
+      ctx.strokeStyle = C.txt;
+      ctx.lineWidth = 1;
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath();
+      ctx.moveTo(sx, 0);
+      ctx.lineTo(sx, H);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    ctx.fillStyle = C.mid;
+    ctx.fillText(sg.date.slice(5), sg.x0 + 3, 11);
+
+    ctx.strokeStyle = C.line;
+    ctx.lineWidth = 1.2;
+    ctx.lineJoin = "round";
+    ctx.beginPath();
+    var lastI = -99999;
+    for (i = sg.i0; i <= sg.i1; i++) {
+      var pp = sg.arr[i];
+      if (pp === -1) continue;
+      var px = sg.x0 + (i - sg.i0) / spp;
+      var py = ys(pp);
+      if (i - lastI > 600) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+      lastI = i;
+    }
+    ctx.stroke();
+  }
+
+  wsxChartMarks = [];
+  var sigs = wsxChartSigs.filter(function(s) { return s.pair === pair; });
+  for (si = 0; si < segs.length; si++) {
+    var sg2 = segs[si];
+    for (k = 0; k < sigs.length; k++) {
+      var sig = sigs[k];
+      if (sig.date !== sg2.date) continue;
+      var ents = wsxEntries(sg2.arr, sg2.startTs, sig.c, sig.r, sig.col === "G" ? 1 : 2, sig.s1, sg2.i1);
+      for (var ei = 0; ei < ents.length; ei++) {
+        var en = ents[ei];
+        wsxChartMarks.push({
+          x: sg2.x0 + (en.i - sg2.i0) / spp,
+          y: ys(en.p),
+          sig: sig,
+          res: en.res,
+          t: sg2.startTs + en.i
+        });
+      }
+    }
+  }
+
+  for (k = 0; k < wsxChartMarks.length; k++) {
+    var m = wsxChartMarks[k];
+    var mc = m.sig.col === "R" ? C.r : C.g;
+    if (m.res === "pending") {
+      ctx.beginPath();
+      ctx.arc(m.x, m.y, 7, 0, 6.2832);
+      ctx.lineWidth = 1.2;
+      ctx.strokeStyle = C.mid;
+      ctx.stroke();
+    }
+    ctx.beginPath();
+    ctx.arc(m.x, m.y, 3.6, 0, 6.2832);
+    if (m.sig.type === "REV") {
+      ctx.fillStyle = mc;
+      ctx.fill();
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = C.bg;
+      ctx.stroke();
+    } else {
+      ctx.lineWidth = 1.8;
+      ctx.strokeStyle = mc;
+      ctx.stroke();
+    }
+  }
+
+  ctx.font = "bold 12px monospace";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "alphabetic";
+    for (k = 0; k < wsxChartMarks.length; k++) {
+      var om = wsxChartMarks[k];
+      var oc = wsxOutcome(om);
+      if (oc === "win" || oc === "loss") {
+        ctx.fillStyle = oc === "win" ? WSX_WIN_C : WSX_LOSS_C;
+        ctx.fillText(oc === "win" ? "✓" : "✗", om.x, om.sig.type === "MOM" ? om.y + 17 : om.y - 8);
+      }
+    }
+    ctx.textAlign = "left";
+    wsxRenderReport();
+    rd.textContent = getPairDisplayName(pair) + " · " + segs.length + " day(s) · 1px = " + spp + "s · " + wsxChartMarks.length + " markers · tap a marker for details";
+
+  var cf = (typeof center === "number") ? center : 1;
+  sc.scrollLeft = cf * sc.scrollWidth - sc.clientWidth / 2;
+
+  cv.onclick = function(e) {
+    if (wsxDragMoved) { wsxDragMoved = false; return; }
+    var rc = cv.getBoundingClientRect();
+    var mx = e.clientX - rc.left;
+    var my = e.clientY - rc.top;
+    var hits = [];
+    for (var hk = 0; hk < wsxChartMarks.length; hk++) {
+      var hm = wsxChartMarks[hk];
+      var dd = Math.sqrt((hm.x - mx) * (hm.x - mx) + (hm.y - my) * (hm.y - my));
+      if (dd <= 12) hits.push({ m: hm, d: dd });
+    }
+    if (!hits.length) return;
+    hits.sort(function(a, b) { return a.d - b.d; });
+    var lines = [];
+    for (var hl = 0; hl < hits.length && hl < 4; hl++) lines.push(wsxMarkText(hits[hl].m));
+    rd.textContent = lines.join("\n");
+  };
+
+  var dragX = null;
+  var dragSL = 0;
+  cv.onpointerdown = function(e) {
+    if (e.pointerType !== "mouse") return;
+    dragX = e.clientX;
+    dragSL = sc.scrollLeft;
+    wsxDragMoved = false;
+  };
+  cv.onpointermove = function(e) {
+    if (dragX === null) return;
+    var dx = e.clientX - dragX;
+    if (Math.abs(dx) > 3) wsxDragMoved = true;
+    sc.scrollLeft = dragSL - dx;
+  };
+  cv.onpointerup = function() { dragX = null; };
+  cv.onpointerleave = function() { dragX = null; };
+  sc.onwheel = function(e) {
+    if (sc.scrollWidth > sc.clientWidth && Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+      sc.scrollLeft += e.deltaY;
+      e.preventDefault();
+    }
+  };
+}
+
+function wsxChartShell(filterFn, sortFn) {
+  var oldSc = document.getElementById("wsxScroll");
+  wsxChartCenter = oldSc ? wsxCenterFrac() : 1;
+
+  var revSigs = allRevs.filter(filterFn).sort(sortFn).slice(0, 100);
+  var momSigs = allMoms.filter(filterFn).sort(sortFn).slice(0, 100);
+  wsxChartSigs = revSigs.concat(momSigs);
+  if (!wsxScanWin || wsxChartSigs.length === 0) return "";
+
+  var pairs = [];
+  var seen = {};
+  for (var k = 0; k < wsxChartSigs.length; k++) {
+    var pn = wsxChartSigs[k].pair;
+    if (!seen[pn]) { seen[pn] = 1; pairs.push(pn); }
+  }
+  if (!seen[wsxChartPair]) wsxChartPair = pairs[0];
+
+  var opts = "";
+  for (var pi2 = 0; pi2 < pairs.length; pi2++) {
+    opts += '<option value="' + pairs[pi2] + '"' + (pairs[pi2] === wsxChartPair ? ' selected' : '') + '>' + getPairDisplayName(pairs[pi2]) + '</option>';
+  }
+
+  var head = '<div class="wsx-chart-head"><span>📈 TICKS</span>' +
+    '<select onchange="wsxSetPair(this.value)">' + opts + '</select>' +
+    '<button type="button" onclick="wsxZoom(1)">−</button>' +
+    '<button type="button" onclick="wsxZoom(-1)">+</button>' +
+    '<span class="wsx-chart-leg"><span style="color:var(--sig-green)">UP</span><span style="color:var(--sig-red)">DOWN</span><span>● REV</span><span>○ MOM</span></span>' +
+    '<button type="button" onclick="wsxToggleChart()">' + (wsxChartOpen ? "▾" : "▸") + '</button></div>';
+
+  var body = "";
+  if (wsxChartOpen) {
+    body = '<div class="wsx-chart-read" id="wsxRead">…</div>' +
+      '<div class="wsx-chart-body"><canvas id="wsxYAxis"></canvas><div class="wsx-chart-scroll" id="wsxScroll"><canvas id="wsxCanvas"></canvas></div></div>';
+    setTimeout(function() { wsxDrawChart(wsxChartCenter); }, 0);
+  }
+  return '<div class="wsx-chart">' + head + body + '</div>';
+}
+
+function wsxFsIsOpen() {
+  var fe = document.getElementById("wsxFs");
+  return !!(fe && fe.classList.contains("open"));
+}
+
+function wsxFsHide() {
+  var hb = document.getElementById("wsxFsBtn");
+  if (hb) hb.style.display = "none";
+  var he = document.getElementById("wsxFs");
+  if (he) he.classList.remove("open");
+}
+
+function wsxFsClose() {
+  var ce = document.getElementById("wsxFs");
+    if (ce) ce.classList.remove("rep-open");
+    var rbt = document.getElementById("wsxRepBtn");
+    if (rbt) rbt.textContent = "REPORT";
+  if (ce) ce.classList.remove("open");
+}
+
+function wsxFsHook(filterFn, sortFn) {
+  var rv = allRevs.filter(filterFn).sort(sortFn).slice(0, 100);
+  var mv = allMoms.filter(filterFn).sort(sortFn).slice(0, 100);
+  wsxChartSigs = rv.concat(mv);
+  var fb = document.getElementById("wsxFsBtn");
+  if (!fb) {
+    fb = document.createElement("button");
+    fb.type = "button";
+    fb.id = "wsxFsBtn";
+    fb.textContent = "📈 CHART";
+    fb.addEventListener("click", wsxFsOpen);
+    document.body.appendChild(fb);
+  }
+  fb.style.display = (wsxScanWin && wsxChartSigs.length) ? "block" : "none";
+  if (wsxFsIsOpen()) wsxFsRefreshBar();
+}
+
+function wsxFsBuild() {
+  if (document.getElementById("wsxFs")) return;
+  var el = document.createElement("div");
+  el.id = "wsxFs";
+  el.innerHTML =
+    '<div class="wsx-chart-head"><span>📈 TICKS</span>' +
+    '<select id="wsxFsPair" onchange="wsxSetPair(this.value)"></select>' +
+    '<select id="wsxFsDay" onchange="wsxFsSetDay(this.value)"></select>' +
+    '<button type="button" onclick="wsxZoom(1)">−</button>' +
+    '<button type="button" onclick="wsxZoom(-1)">+</button>' +
+    '<span class="wsx-chart-leg"><span style="color:var(--sig-green)">UP</span><span style="color:var(--sig-red)">DOWN</span><span>● REV</span><span>○ MOM</span></span>' +
+    '<button type="button" id="wsxRepBtn" onclick="wsxToggleReport()">REPORT</button>' +
+        '<button type="button" onclick="wsxFsClose()">✕</button></div>' +
+        '<div class="wsx-sum" id="wsxSum"></div>' +
+        '<div class="wsx-rep" id="wsxRep"></div>' +
+    '<div class="wsx-chart-read" id="wsxRead">…</div>' +
+    '<div class="wsx-chart-body"><canvas id="wsxYAxis"></canvas><div class="wsx-chart-scroll" id="wsxScroll"><canvas id="wsxCanvas"></canvas></div></div>';
+  document.body.appendChild(el);
+}
+
+function wsxFsRefreshBar() {
+  var ps = document.getElementById("wsxFsPair");
+  var dsl = document.getElementById("wsxFsDay");
+  if (!ps || !dsl) return;
+  var plist = [];
+  var pseen = {};
+  for (var fi = 0; fi < wsxChartSigs.length; fi++) {
+    var fpn = wsxChartSigs[fi].pair;
+    if (!pseen[fpn]) { pseen[fpn] = 1; plist.push(fpn); }
+  }
+  if (plist.length && !pseen[wsxChartPair]) wsxChartPair = plist[0];
+  var pho = "";
+  for (var fj = 0; fj < plist.length; fj++) {
+    pho += '<option value="' + plist[fj] + '"' + (plist[fj] === wsxChartPair ? ' selected' : '') + '>' + getPairDisplayName(plist[fj]) + '</option>';
+  }
+  ps.innerHTML = pho;
+  var dsrc = document.getElementById("dayFilter");
+  dsl.innerHTML = dsrc ? dsrc.innerHTML : "";
+  dsl.value = (dsrc && !combinedMode) ? dsrc.value : "__ALL__";
+}
+
+function wsxFsSetDay(v) {
+  if (combinedMode) toggleCombined();
+  var dsel2 = document.getElementById("dayFilter");
+  if (dsel2) dsel2.value = v;
+  renderTable();
+  wsxFsRefreshBar();
+  wsxDrawChart(1);
+}
+
+function wsxFsOpen() {
+  if (!wsxScanWin || !wsxChartSigs.length) { toast("No signals to chart", "err"); return; }
+  wsxFsBuild();
+  wsxFsRefreshBar();
+  document.getElementById("wsxFs").classList.add("open");
+  wsxDrawChart(1);
+}
+
+window.addEventListener("resize", function() {
+  if (wsxFsIsOpen()) wsxDrawChart(wsxCenterFrac());
+});
+
+document.addEventListener("keydown", function(e) {
+  if (e.key === "Escape" && wsxFsIsOpen()) wsxFsClose();
+});
+
+var WSX_WIN_C = "#00E5FF";
+var WSX_LOSS_C = "#FFB703";
+var wsxRepCenter = 1;
+
+function wsxOutcome(m) {
+  if (m.res === "pending") return "pending";
+  if (m.res === "none") return "none";
+  var isCont = m.res === "cont";
+  return ((m.sig.type === "MOM") === isCont) ? "win" : "loss";
+}
+
+function wsxSegHTML(label, t) {
+  var d = t.w + t.l;
+  var rate = d ? Math.round((t.w / d) * 100) : 0;
+  var bar = '<span class="wsx-mini" style="background:' + (d ? WSX_LOSS_C : "var(--border)") + '"><i style="width:' + rate + '%;background:' + WSX_WIN_C + '"></i></span>';
+  return '<span><b>' + label + '</b> <span style="color:' + WSX_WIN_C + '">✓ ' + t.w + '</span> <span style="color:' + WSX_LOSS_C + '">✗ ' + t.l + '</span> <span class="wsx-sum-dim">⏳ ' + t.p + '</span> <b>' + (d ? rate + "%" : "—") + '</b>' + bar + '</span>';
+}
+
+function wsxRenderReport() {
+  var sumEl = document.getElementById("wsxSum");
+  var repEl = document.getElementById("wsxRep");
+  if (!sumEl || !repEl) return;
+  if (!wsxChartMarks.length) {
+    sumEl.innerHTML = '<span class="wsx-sum-dim">No signal results on this chart</span>';
+    repEl.innerHTML = "";
+    return;
+  }
+  var tot = { REV: { w: 0, l: 0, p: 0 }, MOM: { w: 0, l: 0, p: 0 } };
+  var per = new Map();
+  for (var k = 0; k < wsxChartMarks.length; k++) {
+    var m = wsxChartMarks[k];
+    var oc = wsxOutcome(m);
+    var t = tot[m.sig.type];
+    var row = per.get(m.sig);
+    if (!row) { row = { sig: m.sig, w: 0, l: 0, p: 0 }; per.set(m.sig, row); }
+    if (oc === "win") { t.w++; row.w++; }
+    else if (oc === "loss") { t.l++; row.l++; }
+    else { t.p++; row.p++; }
+  }
+  sumEl.innerHTML = wsxSegHTML("REV", tot.REV) + wsxSegHTML("MOM", tot.MOM);
+
+  var rows = [];
+  per.forEach(function(r) { rows.push(r); });
+  rows.sort(function(a, b) {
+    var ta = a.sig.type === "REV" ? 0 : 1;
+    var tb = b.sig.type === "REV" ? 0 : 1;
+    if (ta !== tb) return ta - tb;
+    var da = a.sig.date || "";
+    var db = b.sig.date || "";
+    return da < db ? -1 : (da > db ? 1 : 0);
+  });
+
+  var h = '<div class="wsx-rep-note">REV ✓ = next tick reversed · MOM ✓ = next tick continued · ⏳ = pending or no next tick</div>' +
+    '<table class="wsx-rep-tbl"><thead><tr><th>DATE</th><th>TYPE</th><th>DIR</th><th>C</th><th>R</th><th>STREAK</th><th>SCAN%</th><th>✓</th><th>✗</th><th>⏳</th><th>WIN%</th></tr></thead><tbody>';
+  for (var ri = 0; ri < rows.length; ri++) {
+    var rr = rows[ri];
+    var s = rr.sig;
+    var dd = rr.w + rr.l;
+    h += '<tr><td>' + (s.date ? s.date.slice(5) : "—") + '</td>' +
+      '<td>' + s.type + '</td>' +
+      '<td style="color:' + (s.col === "R" ? "var(--sig-red)" : "var(--sig-green)") + '">' + (s.col === "R" ? "↓" : "↑") + '</td>' +
+      '<td>C' + s.c + '</td><td>R' + s.r + '</td><td>X' + s.s1 + '→X' + s.s2 + '</td><td>' + s.pct + '%</td>' +
+      '<td style="color:' + WSX_WIN_C + '">' + rr.w + '</td>' +
+      '<td style="color:' + WSX_LOSS_C + '">' + rr.l + '</td>' +
+      '<td>' + rr.p + '</td>' +
+      '<td>' + (dd ? Math.round((rr.w / dd) * 100) + "%" : "—") + '</td></tr>';
+  }
+  h += '</tbody></table>';
+  repEl.innerHTML = h;
+}
+
+function wsxToggleReport() {
+  var fe = document.getElementById("wsxFs");
+  var rb = document.getElementById("wsxRepBtn");
+  if (!fe) return;
+  var opening = !fe.classList.contains("rep-open");
+  if (opening) {
+    wsxRepCenter = wsxCenterFrac();
+    fe.classList.add("rep-open");
+  } else {
+    fe.classList.remove("rep-open");
+  }
+  if (rb) rb.textContent = opening ? "CHART" : "REPORT";
+  if (!opening) wsxDrawChart(wsxRepCenter);
+}
+
 function renderTable() {
   const minPct    = parseInt(document.getElementById("filterPct").value) || 0;
   const minStreak = parseInt(document.getElementById("filterStreak").value) || 1;
@@ -2807,6 +3436,7 @@ function renderTable() {
   document.getElementById("resultCount").textContent = `Showing ${revData.length} REV, ${momData.length} MOM`;
 
   const area = document.getElementById("tableArea");
+    wsxFsHook(filterFn, sortFn);
   const repeatsHTML = buildRepeatsSectionHTML();
 
   if (revData.length === 0 && momData.length === 0) {
