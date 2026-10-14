@@ -1438,6 +1438,7 @@ body, .layout { height: 100vh; height: 100dvh; }
                     <input type="number" id="filterC1" placeholder="1" min="1" style="display:none;"/>
                     <div class="result-count" id="resultCount">—</div>
                                         <button class="export-btn" id="row0Btn" onclick="toggleRow0()" style="margin-left: 12px;">ROW 0 ONLY</button>
+                                                                                <button class="export-btn" id="combinedBtn" onclick="toggleCombined()" style="margin-left: 8px;">COMBINED DAYS</button>
                                         <button class="export-btn" id="exportCsvBtn" onclick="exportAllSignalsCSV()" style="display:none; margin-left: 12px;">⬇ EXPORT CSV</button>
                                                             <button class="export-btn" id="exportTableFormatBtn" onclick="exportAllSignalsTableFormat()" style="display:none; margin-left: 8px;">⬇ EXPORT ALL (TABLE)</button>
                                                             <span>|</span>
@@ -1784,12 +1785,23 @@ function matchesDayFilter(d, dayVal) {
 }
 
 var row0Only = false;
+var combinedMode = false;
 function toggleRow0() {
   row0Only = !row0Only;
   var b = document.getElementById("row0Btn");
   if (b) {
     b.style.background = row0Only ? "var(--green)" : "transparent";
     b.style.color = row0Only ? "#000432" : "var(--cyan)";
+  }
+  renderTable();
+}
+
+function toggleCombined() {
+  combinedMode = !combinedMode;
+  var cb = document.getElementById("combinedBtn");
+  if (cb) {
+    cb.style.background = combinedMode ? "var(--green)" : "transparent";
+    cb.style.color = combinedMode ? "#000432" : "var(--cyan)";
   }
   renderTable();
 }
@@ -1816,12 +1828,19 @@ function startClock() {
   setInterval(tick, 1000);
 }
 
-function getWeekdays(from, to) {
+function skipWeekendsFor(pairs) {
+  for (var i = 0; i < pairs.length; i++) {
+    if (!/^cry/i.test(pairs[i])) return true;
+  }
+  return false;
+}
+
+function getWeekdays(from, to, skipWknd) {
   const days = [];
   const cur = new Date(from + "T00:00:00Z");
   const end = new Date(to   + "T00:00:00Z");
   while (cur <= end) {
-    days.push(new Date(cur));
+    if (!skipWknd || (cur.getUTCDay() !== 0 && cur.getUTCDay() !== 6)) days.push(new Date(cur));
     cur.setUTCDate(cur.getUTCDate() + 1);
   }
   return days;
@@ -1831,7 +1850,9 @@ function updateDayCount() {
   const from = document.getElementById("dateFrom").value;
   const to   = document.getElementById("dateTo").value;
   if (!from || !to) { document.getElementById("dayCountHint").textContent = "Days selected: —"; return; }
-  const days = getWeekdays(from, to);
+  var _uiPairs = allPairsMode ? ALL_PAIRS : getSelectedPairs();
+    if (!_uiPairs.length) _uiPairs = [document.getElementById("pairInput").value.trim()];
+    const days = getWeekdays(from, to, skipWeekendsFor(_uiPairs));
   document.getElementById("dayCountHint").textContent = `Days selected: ${days.length}`;
 }
 
@@ -2263,7 +2284,7 @@ async function runScan() {
 
   if (!dateFrom || !dateTo) { toast("Please set date range", "err"); return; }
   
-    const days = getWeekdays(dateFrom, dateTo);
+    const days = getWeekdays(dateFrom, dateTo, skipWeekendsFor(pairsToScan));
     if (days.length === 0) { toast("No days in selected range", "err"); return; }
   
     // Time window: inputs are IST (UTC+5:30) → convert to UTC seconds-from-midnight
@@ -2380,6 +2401,7 @@ async function runScan() {
       
               for (var _i = 0; _i < dayScanResult[0].length; _i++) {
                 dayScanResult[0][_i].date = dayLabel2;
+                                dayScanResult[0][_i].ph = (((dayScanResult[0][_i].r - startTsUtc) % dayScanResult[0][_i].c) + dayScanResult[0][_i].c) % dayScanResult[0][_i].c;
                 allRevs.push(dayScanResult[0][_i]);
               }
               for (var _j = 0; _j < dayScanResult[1].length; _j++) {
@@ -2735,6 +2757,39 @@ function buildRepeatsSectionHTML() {
     </div>`;
 }
 
+function buildCombined() {
+  var groups = {};
+  var order = [];
+  var daySet = {};
+  for (var gi = 0; gi < allRevs.length; gi++) {
+    var d = allRevs[gi];
+    if (!d.date) continue;
+    var key = d.pair + "|" + d.c + "|" + d.ph + "|" + d.col + "|" + d.s1;
+    var g = groups[key];
+    if (!g) {
+      g = { pair: d.pair, c: d.c, r: d.r, col: d.col, s1: d.s1, s2: d.s2, c1: 0, c2: 0, firstDate: d.date };
+      groups[key] = g;
+      order.push(key);
+    }
+    if (d.date < g.firstDate) { g.firstDate = d.date; g.r = d.r; }
+    g.c1 += d.c1;
+    g.c2 += d.c2;
+    daySet[d.date] = 1;
+  }
+  var revs = [];
+  var moms = [];
+  for (var oi = 0; oi < order.length; oi++) {
+    var gg = groups[order[oi]];
+    var pctRev = gg.c1 ? 100 - Math.round((gg.c2 / gg.c1) * 100) : 0;
+    var pctMom = gg.c1 ? Math.round((gg.c2 / gg.c1) * 100) : 0;
+    revs.push({ pair: gg.pair, c: gg.c, r: gg.r, s1: gg.s1, s2: gg.s2, c1: gg.c1, c2: gg.c2, pct: pctRev, col: gg.col, type: "REV", gap: 0, curGap: 0, gapCount: 0, gapFreq: {}, date: "" });
+    if (gg.c1 > 1) {
+      moms.push({ pair: gg.pair, c: gg.c, r: gg.r, s1: gg.s1, s2: gg.s2, c1: gg.c1, c2: gg.c2, pct: pctMom, col: gg.col, type: "MOM", gap: 0, curGap: 0, gapCount: 0, gapFreq: {}, date: "" });
+    }
+  }
+  return { revs: revs, moms: moms, days: Object.keys(daySet).length };
+}
+
 function renderTable() {
   const minPct    = parseInt(document.getElementById("filterPct").value) || 0;
   const minStreak = parseInt(document.getElementById("filterStreak").value) || 1;
@@ -2742,11 +2797,12 @@ function renderTable() {
   const levels    = parseLevelFilter(document.getElementById("levelFilter"));
   const dayVal    = document.getElementById("dayFilter") ? document.getElementById("dayFilter").value : "__ALL__";
 
-  const filterFn = x => x.pct >= minPct && x.s1 >= minStreak && x.c1 >= minC1 && matchesLevelFilter(x, levels) && matchesDayFilter(x, dayVal) && (!row0Only || x.r === 0);
+  const filterFn = x => x.pct >= minPct && x.s1 >= minStreak && x.c1 >= minC1 && matchesLevelFilter(x, levels) && (combinedMode || matchesDayFilter(x, dayVal)) && (!row0Only || x.r === 0);
   const sortFn   = (a, b) => (b.pct * b.c1) - (a.pct * a.c1);
 
-  const revData = allRevs.filter(filterFn).sort(sortFn).slice(0, 100);
-  const momData = allMoms.filter(filterFn).sort(sortFn).slice(0, 100);
+  var cmbData = combinedMode ? buildCombined() : null;
+    const revData = (cmbData ? cmbData.revs : allRevs).filter(filterFn).sort(sortFn).slice(0, 100);
+  const momData = (cmbData ? cmbData.moms : allMoms).filter(filterFn).sort(sortFn).slice(0, 100);
 
   document.getElementById("resultCount").textContent = `Showing ${revData.length} REV, ${momData.length} MOM`;
 
@@ -2759,8 +2815,8 @@ function renderTable() {
   }
 
   area.innerHTML = `<div class="split-table-wrap">
-    ${buildPaneHTML("REVERSAL", revData, "revCount")}
-    ${buildPaneHTML("MOMENTUM", momData, "momCount")}
+    ${buildPaneHTML(cmbData ? "REVERSAL (COMBINED " + cmbData.days + " days)" : "REVERSAL", revData, "revCount")}
+    ${buildPaneHTML(cmbData ? "MOMENTUM (COMBINED " + cmbData.days + " days)" : "MOMENTUM", momData, "momCount")}
   </div>` + repeatsHTML;
 }
 (function() {
