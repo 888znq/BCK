@@ -1267,6 +1267,123 @@ body, .layout { height: 100vh; height: 100dvh; }
 #settingsOverlay #settingsGrid .wsx-cals .wsx-cal .wsx-years { order: 3 !important; }
 #settingsOverlay #settingsGrid .wsx-clocks .wsx-hgrid { order: 1 !important; }
 #settingsOverlay #settingsGrid .wsx-clocks .wsx-mgrid { order: 2 !important; }
+#settingsOverlay #settingsGrid > div:nth-child(1) { flex: 0 0 auto !important; min-height: 0 !important; }
+#settingsOverlay #settingsGrid .wsx-pairs { display: flex !important; flex-direction: column !important; flex: 0 0 auto !important; gap: 4px !important; overflow: visible !important; margin: 0 !important; }
+#settingsOverlay #settingsGrid .wsx-pairs > .wsx-pair.all { flex: none !important; height: 28px !important; width: 100% !important; }
+.wsx-pg { display: flex; align-items: stretch; gap: 6px; }
+.wsx-pgh { flex: 0 0 78px; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; line-height: 1.25; color: var(--text-dim); }
+.wsx-pgc { color: var(--green); font-size: 11px; }
+.wsx-pgb { flex: 1 1 auto; min-width: 0; display: grid; grid-template-columns: repeat(13, minmax(0, 1fr)); grid-auto-rows: 30px; gap: 4px; }
+#settingsOverlay #settingsGrid .wsx-clocks .wsx-clock .wsx-ti { cursor: pointer !important; caret-color: transparent !important; }
+#wsxPop { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 1200; background: rgba(0,2,24,0.78); align-items: center; justify-content: center; padding: 10px; }
+.wsx-pubox { width: min(560px, 96vw); max-height: 96vh; overflow-y: auto; background: var(--surface); border: 1px solid var(--border2); border-radius: 12px; padding: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
+.wsx-putitle { font-family: var(--mono); font-size: 12px; letter-spacing: 0.14em; color: var(--green); text-align: center; margin-bottom: 10px; }
+.wsx-pugrid { display: grid; gap: 6px; }
+.wsx-pugrid.ph { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.wsx-pugrid.pm { grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 4px; }
+.wsx-pun { height: 48px; padding: 0; background: transparent; border: 1px solid var(--border2); color: var(--text-mid); border-radius: 6px; font-family: var(--mono); font-size: 17px; cursor: pointer; touch-action: manipulation; }
+.wsx-pugrid.pm .wsx-pun { height: 40px; font-size: 14px; }
+.wsx-pun:hover { border-color: var(--green); color: var(--text); }
+.wsx-pun.on { background: var(--green); border-color: var(--green); color: #000432; font-weight: 700; }
+@media (max-width: 700px) {
+  #settingsOverlay #settingsGrid .wsx-pairs { gap: 3px !important; }
+  .wsx-pg { gap: 4px; }
+  .wsx-pgh { flex-basis: 52px; font-size: 8px; letter-spacing: 0.02em; }
+  .wsx-pgc { font-size: 9px; }
+  .wsx-pgb { grid-template-columns: repeat(7, minmax(0, 1fr)); grid-auto-rows: 28px; gap: 3px; }
+  #settingsOverlay #settingsGrid .wsx-pairs .wsx-pair, #settingsOverlay #settingsGrid .wsx-pairs .wsx-pair.all { font-size: clamp(8px, 2.5vw, 12px) !important; }
+  #settingsOverlay #settingsGrid .wsx-pairs > .wsx-pair.all { height: 26px !important; }
+}
+#settingsOverlay #settingsGrid > div:nth-child(2), #settingsOverlay #settingsGrid > div:nth-child(3) { flex-direction: row !important; align-items: stretch !important; gap: 0 !important; padding: 0 !important; }
+#settingsOverlay #settingsGrid .wsx-cals { flex: 11 1 0 !important; width: auto !important; min-width: 0 !important; gap: 0 !important; }
+#settingsOverlay #settingsGrid .wsx-clocks { flex: 10 1 0 !important; width: auto !important; min-width: 0 !important; gap: 0 !important; border-left: 1px solid var(--border2) !important; }
+#settingsOverlay #settingsGrid .wsx-cals .wsx-cal { display: flex !important; flex-direction: column !important; gap: 2px !important; padding: 2px !important; border: 0 !important; border-radius: 0 !important; background: transparent !important; flex: 1 1 0 !important; min-height: 0 !important; height: auto !important; width: 100% !important; overflow: hidden !important; }
+#settingsOverlay #settingsGrid .wsx-clocks .wsx-clock { display: flex !important; flex-direction: column !important; gap: 2px !important; padding: 2px !important; border: 0 !important; border-radius: 0 !important; background: transparent !important; flex: 1 1 0 !important; min-height: 0 !important; height: auto !important; width: 100% !important; overflow: hidden !important; }
+.wsx-cr { flex: none; height: 20px; line-height: 20px; text-align: center; font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; color: var(--text-dim); white-space: nowrap; overflow: hidden; }
+.wsx-cr b { color: var(--green); font-weight: 500; font-size: 14px; letter-spacing: 0.1em; }
+.wsx-ch { flex: none; display: flex; align-items: center; gap: 2px; height: 30px; }
+.wsx-ch button, .wsx-da button { height: 100%; padding: 0; background: transparent; border: 1px solid var(--border2); color: var(--text-mid); border-radius: 4px; font-family: var(--mono); font-size: 15px; cursor: pointer; touch-action: manipulation; }
+.wsx-ch button { flex: 0 0 24px; }
+.wsx-ch button:hover, .wsx-da button:hover { border-color: var(--green); color: var(--text); }
+.wsx-ch span { flex: 1 1 auto; min-width: 0; text-align: center; font-family: var(--mono); font-size: 12px; color: var(--text); white-space: nowrap; }
+#settingsOverlay #settingsGrid .wsx-cal .wsx-mg { flex: 1 1 0 !important; min-height: 0 !important; display: grid !important; grid-template-columns: repeat(7, minmax(0, 1fr)) !important; grid-template-rows: 16px repeat(6, minmax(0, 1fr)) !important; gap: 2px !important; overflow: hidden !important; }
+.wsx-dw { text-align: center; font-family: var(--mono); font-size: 10px; line-height: 16px; color: var(--text-dim); }
+#settingsOverlay #settingsGrid .wsx-cals .wsx-cal .wsx-mg .wsx-day { font-size: clamp(11px, 3.6vw, 16px) !important; }
+.wsx-dv { height: 20px; padding: 0 4px; margin: 0 1px; background: transparent; border: 1px solid transparent; color: var(--green); font-family: var(--mono); font-size: 15px; font-weight: 500; line-height: 1; border-radius: 4px; cursor: pointer; touch-action: manipulation; vertical-align: middle; }
+.wsx-dv.on { background: var(--green); color: #000432; }
+.wsx-da { flex: none; display: flex; gap: 2px; height: 30px; }
+.wsx-da button { flex: 1 1 0; font-size: 12px; }
+.wsx-da button.on { background: var(--green); border-color: var(--green); color: #000432; }
+.wsx-dsvg { flex: 1 1 0; min-height: 0; width: 100%; display: block; }
+#settingsOverlay .wsx-clock .wsx-dsvg { touch-action: none; cursor: pointer; }
+#settingsOverlay .wsx-dsvg .wsx-num { font-size: 19px; }
+#settingsOverlay .wsx-dsvg .wsx-num.sm { font-size: 15px; }
+#settingsOverlay .wsx-dsvg .wsx-num.h24 { font-size: 12px; }
+#settingsOverlay .wsx-dsvg .wsx-num.h24.hl { fill: var(--green); font-weight: 700; }
+#settingsOverlay .wsx-dsvg .wsx-num.mn { font-size: 9px; fill: var(--text-dim); }
+#settingsOverlay .wsx-dsvg .wsx-num.mn.hl { fill: var(--cyan); font-weight: 700; }
+.wsx-tv { color: var(--green); letter-spacing: 0.12em; }
+#settingsOverlay #settingsGrid .wsx-clocks .wsx-clock .wsx-dh { flex: 2 1 0 !important; min-height: 0 !important; display: grid !important; grid-template-columns: repeat(12, minmax(0, 1fr)) !important; grid-template-rows: repeat(2, minmax(0, 1fr)) !important; gap: 2px !important; }
+#settingsOverlay #settingsGrid .wsx-clocks .wsx-clock .wsx-dm { flex: 5 1 0 !important; min-height: 0 !important; display: grid !important; grid-template-columns: repeat(12, minmax(0, 1fr)) !important; grid-template-rows: repeat(5, minmax(0, 1fr)) !important; gap: 2px !important; margin-top: 4px !important; }
+.wsx-dk { min-width: 0; min-height: 0; height: auto; padding: 0; line-height: 1; background: transparent; border: 1px solid var(--border2); color: var(--text-mid); font-family: var(--mono); font-size: clamp(9px, 3.1vw, 15px); border-radius: 3px; cursor: pointer; touch-action: manipulation; }
+.wsx-dk:hover { border-color: var(--green); color: var(--text); }
+.wsx-dk.on { background: var(--green); border-color: var(--green); color: #000432; font-weight: 700; }
+#settingsOverlay #settingsGrid .wsx-clocks .wsx-clock .wsx-tin { flex: 1 1 0 !important; min-height: 0 !important; display: flex !important; align-items: center !important; justify-content: center !important; gap: 6px !important; }
+#settingsOverlay #settingsGrid .wsx-clocks .wsx-clock .wsx-ti { width: 38% !important; max-width: 150px !important; height: 70% !important; max-height: 90px !important; padding: 0 !important; text-align: center !important; font-family: var(--mono) !important; font-size: clamp(28px, 11vw, 56px) !important; font-weight: 500 !important; color: var(--green) !important; background: var(--panel) !important; border: 1px solid var(--border2) !important; border-radius: 6px !important; outline: none !important; -webkit-user-select: text !important; user-select: text !important; touch-action: manipulation !important; }
+#settingsOverlay #settingsGrid .wsx-clocks .wsx-clock .wsx-ti:focus { border-color: var(--green) !important; box-shadow: 0 0 0 2px rgba(255,255,255,0.15) !important; }
+.wsx-tc { font-family: var(--mono); font-size: clamp(28px, 11vw, 56px); color: var(--text-dim); line-height: 1; }
+#settingsOverlay #settingsGrid .wsx-pairs { grid-template-columns: repeat(10, minmax(0, 1fr)) !important; grid-template-rows: repeat(3, minmax(0, 1fr)) !important; grid-auto-rows: minmax(0, 1fr) !important; grid-auto-flow: row !important; gap: 4px !important; }
+#settingsOverlay #settingsGrid .wsx-pairs .wsx-pair, #settingsOverlay #settingsGrid .wsx-pairs .wsx-pair.all { writing-mode: horizontal-tb !important; letter-spacing: 0.03em !important; border-radius: 6px !important; font-size: clamp(10px, 1.1vw, 14px) !important; }
+#settingsGrid .wsx-pairs .wsx-pair.on { font-weight: 700; box-shadow: 0 0 12px rgba(204,245,223,0.4); }
+.wsx-cr { height: 26px; line-height: 26px; font-size: 11px; letter-spacing: 0.14em; }
+.wsx-cr b { display: inline-block; margin-left: 8px; padding: 0 12px; line-height: 22px; border-radius: 11px; background: rgba(204,245,223,0.12); border: 1px solid rgba(204,245,223,0.3); font-size: 14px; }
+.wsx-ch, #settingsOverlay #settingsGrid .wsx-cal .wsx-mg { width: 100%; max-width: 440px; margin-left: auto; margin-right: auto; }
+.wsx-ch { height: 34px; gap: 6px; }
+.wsx-ch button { flex: 0 0 36px; border-radius: 8px; background: rgba(255,255,255,0.05); font-size: 16px; transition: all 0.12s; }
+.wsx-ch span { font-size: 15px; font-weight: 600; letter-spacing: 0.16em; color: var(--green); }
+#settingsOverlay #settingsGrid .wsx-cal .wsx-mg { gap: 4px !important; }
+#settingsGrid .wsx-mg .wsx-dw { font-size: 11px; letter-spacing: 0.1em; font-weight: 600; }
+#settingsGrid .wsx-mg > .wsx-dw:nth-child(7n+6), #settingsGrid .wsx-mg > .wsx-dw:nth-child(7n) { color: #e58f99; }
+#settingsGrid .wsx-mg .wsx-day { background: rgba(255,255,255,0.045); border: 1px solid transparent; border-radius: 8px; color: var(--text); transition: background 0.1s, border-color 0.1s, box-shadow 0.1s; }
+#settingsGrid .wsx-mg > .wsx-day:nth-child(7n+6), #settingsGrid .wsx-mg > .wsx-day:nth-child(7n) { color: #e58f99; }
+#settingsGrid .wsx-mg .wsx-day:hover { border-color: var(--green); background: rgba(204,245,223,0.12); }
+#settingsGrid .wsx-mg .wsx-day.in { background: rgba(204,245,223,0.16); }
+#settingsGrid .wsx-mg > .wsx-day.edge { border-color: var(--green); color: var(--green); background: rgba(204,245,223,0.16); }
+#settingsGrid .wsx-mg .wsx-day.today { text-decoration: none; box-shadow: inset 0 0 0 1px var(--amber); }
+#settingsGrid .wsx-mg > .wsx-day.sel { background: var(--green); border-color: var(--green); color: #000432; font-weight: 700; box-shadow: 0 0 16px rgba(204,245,223,0.5); }
+#settingsGrid .wsx-mg > .wsx-day.sel.today { box-shadow: 0 0 16px rgba(204,245,223,0.5), inset 0 0 0 2px #000432; }
+@media (max-width: 700px) {
+  #settingsOverlay #settingsGrid .wsx-pairs { grid-template-columns: repeat(6, minmax(0, 1fr)) !important; grid-template-rows: repeat(5, minmax(0, 1fr)) !important; gap: 3px !important; }
+  #settingsOverlay #settingsGrid .wsx-pairs .wsx-pair, #settingsOverlay #settingsGrid .wsx-pairs .wsx-pair.all { font-size: clamp(9px, 2.7vw, 13px) !important; letter-spacing: 0 !important; }
+  #settingsOverlay #settingsGrid > div:nth-child(1) { flex: 7 1 0 !important; }
+}
+#settingsOverlay #settingsGrid > div:nth-child(1) { flex: 0 0 auto !important; min-height: 0 !important; }
+#settingsOverlay #settingsGrid .wsx-pairs { display: flex !important; flex-direction: column !important; flex: 0 0 auto !important; gap: 4px !important; overflow: visible !important; margin: 0 !important; }
+#settingsOverlay #settingsGrid .wsx-pairs > .wsx-pair.all { flex: none !important; height: 28px !important; width: 100% !important; }
+.wsx-pg { display: flex; align-items: stretch; gap: 6px; }
+.wsx-pgh { flex: 0 0 78px; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; line-height: 1.25; color: var(--text-dim); }
+.wsx-pgc { color: var(--green); font-size: 11px; }
+.wsx-pgb { flex: 1 1 auto; min-width: 0; display: grid; grid-template-columns: repeat(13, minmax(0, 1fr)); grid-auto-rows: 30px; gap: 4px; }
+#settingsOverlay #settingsGrid .wsx-clocks .wsx-clock .wsx-ti { cursor: pointer !important; caret-color: transparent !important; }
+#wsxPop { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 1200; background: rgba(0,2,24,0.78); align-items: center; justify-content: center; padding: 10px; }
+.wsx-pubox { width: min(560px, 96vw); max-height: 96vh; overflow-y: auto; background: var(--surface); border: 1px solid var(--border2); border-radius: 12px; padding: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
+.wsx-putitle { font-family: var(--mono); font-size: 12px; letter-spacing: 0.14em; color: var(--green); text-align: center; margin-bottom: 10px; }
+.wsx-pugrid { display: grid; gap: 6px; }
+.wsx-pugrid.ph { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.wsx-pugrid.pm { grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 4px; }
+.wsx-pun { height: 48px; padding: 0; background: transparent; border: 1px solid var(--border2); color: var(--text-mid); border-radius: 6px; font-family: var(--mono); font-size: 17px; cursor: pointer; touch-action: manipulation; }
+.wsx-pugrid.pm .wsx-pun { height: 40px; font-size: 14px; }
+.wsx-pun:hover { border-color: var(--green); color: var(--text); }
+.wsx-pun.on { background: var(--green); border-color: var(--green); color: #000432; font-weight: 700; }
+@media (max-width: 700px) {
+  #settingsOverlay #settingsGrid .wsx-pairs { gap: 3px !important; }
+  .wsx-pg { gap: 4px; }
+  .wsx-pgh { flex-basis: 52px; font-size: 8px; letter-spacing: 0.02em; }
+  .wsx-pgc { font-size: 9px; }
+  .wsx-pgb { grid-template-columns: repeat(7, minmax(0, 1fr)); grid-auto-rows: 28px; gap: 3px; }
+  #settingsOverlay #settingsGrid .wsx-pairs .wsx-pair, #settingsOverlay #settingsGrid .wsx-pairs .wsx-pair.all { font-size: clamp(8px, 2.5vw, 12px) !important; }
+  #settingsOverlay #settingsGrid .wsx-pairs > .wsx-pair.all { height: 26px !important; }
+}
 </style>
 </head>
 <body>
@@ -1660,6 +1777,64 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
+(function() {
+  var GROUPS = [
+    ["METALS", ["frxXAGUSD", "frxXAUUSD", "frxXPDUSD", "frxXPTUSD"]],
+    ["FOREX", ["frxAUDCAD", "frxAUDCHF", "frxAUDJPY", "frxAUDNZD", "frxAUDUSD", "frxEURAUD", "frxEURCAD", "frxEURCHF", "frxEURGBP", "frxEURJPY", "frxEURNZD", "frxEURUSD", "frxGBPAUD", "frxGBPCAD", "frxGBPCHF", "frxGBPJPY", "frxGBPNZD", "frxGBPUSD", "frxNZDJPY", "frxNZDUSD", "frxUSDCAD", "frxUSDCHF", "frxUSDJPY", "frxUSDMXN", "frxUSDPLN"]],
+    ["CRYPTO", ["cryBTCUSD", "cryETHUSD"]],
+    ["VOLATILITY (1s)", ["1HZ10V", "1HZ15V", "1HZ25V", "1HZ30V", "1HZ50V", "1HZ75V", "1HZ90V", "1HZ100V"]]
+  ];
+  var se = document.getElementById("pairSelect");
+  if (!se) return;
+  se.innerHTML = "";
+  var ao = document.createElement("option");
+  ao.value = "__ALL__";
+  ao.textContent = "ALL PAIRS";
+  se.appendChild(ao);
+  GROUPS.forEach(function(g) {
+    var og = document.createElement("optgroup");
+    og.label = g[0];
+    g[1].forEach(function(v) {
+      var op = document.createElement("option");
+      var cd = v.replace(/^frx|^cry/, "");
+      var vm = cd.match(/^1HZ(\d+)V$/);
+      op.value = v;
+      op.textContent = vm ? "V" + vm[1] : cd.slice(0, 3) + "/" + cd.slice(3);
+      op.selected = (v === "frxEURUSD");
+      og.appendChild(op);
+    });
+    se.appendChild(og);
+  });
+})();
+(function() {
+  var GROUPS = [
+    ["METALS", ["frxXAGUSD", "frxXAUUSD", "frxXPDUSD", "frxXPTUSD"]],
+    ["FOREX", ["frxAUDCAD", "frxAUDCHF", "frxAUDJPY", "frxAUDNZD", "frxAUDUSD", "frxEURAUD", "frxEURCAD", "frxEURCHF", "frxEURGBP", "frxEURJPY", "frxEURNZD", "frxEURUSD", "frxGBPAUD", "frxGBPCAD", "frxGBPCHF", "frxGBPJPY", "frxGBPNZD", "frxGBPUSD", "frxNZDJPY", "frxNZDUSD", "frxUSDCAD", "frxUSDCHF", "frxUSDJPY", "frxUSDMXN", "frxUSDPLN"]],
+    ["CRYPTO", ["cryBTCUSD", "cryETHUSD"]],
+    ["VOLATILITY (1s)", ["1HZ10V", "1HZ15V", "1HZ25V", "1HZ30V", "1HZ50V", "1HZ75V", "1HZ90V", "1HZ100V"]]
+  ];
+  var se = document.getElementById("pairSelect");
+  if (!se) return;
+  se.innerHTML = "";
+  var ao = document.createElement("option");
+  ao.value = "__ALL__";
+  ao.textContent = "ALL PAIRS";
+  se.appendChild(ao);
+  GROUPS.forEach(function(g) {
+    var og = document.createElement("optgroup");
+    og.label = g[0];
+    g[1].forEach(function(v) {
+      var op = document.createElement("option");
+      var cd = v.replace(/^frx|^cry/, "");
+      var vm = cd.match(/^1HZ(\d+)V$/);
+      op.value = v;
+      op.textContent = vm ? "V" + vm[1] : cd.slice(0, 3) + "/" + cd.slice(3);
+      op.selected = (v === "frxEURUSD");
+      og.appendChild(op);
+    });
+    se.appendChild(og);
+  });
+})();
 var ALL_PAIRS = Array.from(document.querySelectorAll("#pairSelect option[value]:not([value='__ALL__'])"))
   .map(o => o.value);
 var allPairsMode = false;
@@ -1988,7 +2163,7 @@ async function loadTicksForDay(pair, dayEpoch, hFrom, hTo, cachedPrices, logCb) 
 
   let chunksToFetch = [];
     let gapStart = -1;
-    const GAP_THRESHOLD = /^cry/i.test(pair) ? 120 : 900;
+    const GAP_THRESHOLD = /^(cry|1HZ)/i.test(pair) ? 120 : 900;
   
     for (let i = 0; i <= (actualEnd - start); i++) {
     if (prices[i] === -1.0) {
@@ -3040,12 +3215,49 @@ function renderTable() {
       b.className = "wsx-pair" + (o.value === "__ALL__" ? " all" : "");
       b.dataset.value = o.value;
       b.textContent = o.textContent.trim();
-      pairHost.appendChild(b);
+      var gl = (o.parentNode && o.parentNode.tagName === "OPTGROUP") ? o.parentNode.label : "";
+            if (!gl) { var gl = (o.parentNode && o.parentNode.tagName === "OPTGROUP") ? o.parentNode.label : "";
+                  if (!gl) { pairHost.appendChild(b); return; }
+                  var gEl = null;
+                  var gAll = pairHost.querySelectorAll(".wsx-pg");
+                  for (var gi = 0; gi < gAll.length; gi++) {
+                    if (gAll[gi].getAttribute("data-g") === gl) { gEl = gAll[gi]; break; }
+                  }
+                  if (!gEl) {
+                    gEl = document.createElement("div");
+                    gEl.className = "wsx-pg";
+                    gEl.setAttribute("data-g", gl);
+                    gEl.innerHTML = '<div class="wsx-pgh"><span>' + gl + '</span><span class="wsx-pgc"></span></div><div class="wsx-pgb"></div>';
+                    pairHost.appendChild(gEl);
+                  }
+                  gEl.querySelector(".wsx-pgb").appendChild(b); return; }
+            var gEl = null;
+            var gAll = pairHost.querySelectorAll(".wsx-pg");
+            for (var gi = 0; gi < gAll.length; gi++) {
+              if (gAll[gi].getAttribute("data-g") === gl) { gEl = gAll[gi]; break; }
+            }
+            if (!gEl) {
+              gEl = document.createElement("div");
+              gEl.className = "wsx-pg";
+              gEl.setAttribute("data-g", gl);
+              gEl.innerHTML = '<div class="wsx-pgh"><span>' + gl + '</span><span class="wsx-pgc"></span></div><div class="wsx-pgb"></div>';
+              pairHost.appendChild(gEl);
+            }
+            gEl.querySelector(".wsx-pgb").appendChild(b);
     });
     pairBlock.insertBefore(pairHost, pairBlock.children[1] || null);
 
     function syncPairs() {
-      Array.prototype.forEach.call(pairHost.children, function(b) {
+      Array.prototype.forEach.call(pairHost.querySelectorAll(".wsx-pg"), function(g) {
+              var gb = g.querySelectorAll(".wsx-pair");
+              var gn = 0;
+              Array.prototype.forEach.call(gb, function(x) {
+                var oo = Array.prototype.filter.call(sel.options, function(z) { return z.value === x.dataset.value; })[0];
+                if (oo && oo.selected) gn++;
+              });
+              g.querySelector(".wsx-pgc").textContent = gn + "/" + gb.length;
+            });
+            Array.prototype.forEach.call(pairHost.querySelectorAll(".wsx-pair"), function(b) {
         var o = Array.prototype.filter.call(sel.options, function(x) { return x.value === b.dataset.value; })[0];
         b.classList.toggle("on", !!(o && o.selected));
       });
@@ -3104,10 +3316,11 @@ function renderTable() {
       var startDow = (new Date(Date.UTC(c.y, c.m, 1)).getUTCDay() + 6) % 7;
       var dim = new Date(Date.UTC(c.y, c.m + 1, 0)).getUTCDate();
       var h = '<div class="wsx-cal-title">' + c.def.title + '</div>' +
-        '<div class="wsx-cal-head"><button type="button" data-nav="-1">‹</button><span>' + c.y + '</span><button type="button" data-nav="1">›</button></div>' +
-                yearSel(c.y) +
-        '<div class="wsx-months">' + MONTHS.map(function(n, i) { return '<button type="button" class="wsx-mon' + (i === c.m ? ' on' : '') + '" data-mon="' + (i + 1) + '">' + n + '</button>'; }).join("") + '</div>' + '<div class="wsx-cal-grid">';
-      for (var d = 1; d <= 31; d++) {
+        '<div class="wsx-cr">' + c.def.title + ' <b>' + fmtDMY(ownV) + '</b></div>' + '<div class="wsx-ch"><button type="button" data-ynav="-1">«</button><button type="button" data-nav="-1">‹</button><span>' + MONTHS[c.m] + ' ' + c.y + '</span><button type="button" data-nav="1">›</button><button type="button" data-ynav="1">»</button></div>' +
+                '' +
+        '<div class="wsx-mg">' + ["M","T","W","T","F","S","S"].map(function(n) { return '<span class="wsx-dw">' + n + '</span>'; }).join("");
+      for (var pb = 0; pb < startDow; pb++) { h += '<span class="wsx-bk"></span>'; }
+            for (var d = 1; d <= dim; d++) {
               if (d > dim) { h += '<button type="button" class="wsx-day off" disabled>' + d + '</button>'; continue; }
         var iso = c.y + "-" + pad2(c.m + 1) + "-" + pad2(d);
         var cls = "wsx-day";
@@ -3130,13 +3343,18 @@ function renderTable() {
       if (!t) return;
       var c = cals[key];
       if (t.dataset.nav) {
-        c.y += +t.dataset.nav;
+        c.m += +t.dataset.nav;
         if (c.m < 0) { c.m = 11; c.y--; }
         else if (c.m > 11) { c.m = 0; c.y++; }
         renderCal(key);
         return;
       }
-      if (t.dataset.yr) {
+      if (t.dataset.ynav) {
+              c.y += +t.dataset.ynav;
+              renderCal(key);
+              return;
+            }
+            if (t.dataset.yr) {
               c.y = +t.dataset.yr;
               renderCal(key);
               return;
@@ -3462,7 +3680,457 @@ function renderTable() {
   function fire(el) { el.dispatchEvent(new Event("change", { bubbles: true })); }
   function f1(n) { return n.toFixed(1); }
   
-    function makeGrid(host, inputId, title) {
+    function makeDial(host, inputId, title) {
+          var inp = document.getElementById(inputId);
+          if (!inp) return;
+          var tp = (inp.value || "00:00").split(":");
+          var st = { h: (+tp[0]) || 0, m: (+tp[1]) || 0 };
+          host.innerHTML =
+            '<div class="wsx-cr">' + title + '</div>' +
+            '<div class="wsx-tin"><input type="text" inputmode="numeric" maxlength="2" class="wsx-ti" data-f="h" autocomplete="off"/><span class="wsx-tc">:</span><input type="text" inputmode="numeric" maxlength="2" class="wsx-ti" data-f="m" autocomplete="off"/></div>';
+          var ih = host.querySelector('[data-f="h"]');
+          var im = host.querySelector('[data-f="m"]');
+    
+          function show() { ih.value = pad2(st.h); im.value = pad2(st.m); }
+                function showPop(kind) {
+                  var pop = document.getElementById("wsxPop");
+                  if (!pop) {
+                    pop = document.createElement("div");
+                    pop.id = "wsxPop";
+                    document.body.appendChild(pop);
+                  }
+                  var isH = (kind === "h");
+                  var cnt = isH ? 24 : 60;
+                  var cur = isH ? st.h : st.m;
+                  var html = '<div class="wsx-pubox"><div class="wsx-putitle">' + title + ' - ' + (isH ? 'HOUR 00-23' : 'MINUTE 00-59') + '</div><div class="wsx-pugrid ' + (isH ? 'ph' : 'pm') + '">';
+                  for (var q = 0; q < cnt; q++) {
+                    html += '<button type="button" data-v="' + q + '" class="wsx-pun' + (q === cur ? ' on' : '') + '">' + pad2(q) + '</button>';
+                  }
+                  html += '</div></div>';
+                  pop.innerHTML = html;
+                  pop.onclick = function(ev) {
+                    var bt = ev.target.closest ? ev.target.closest(".wsx-pun") : null;
+                    if (!bt) {
+                      if (ev.target === pop) pop.style.display = "none";
+                      return;
+                    }
+                    if (isH) st.h = +bt.getAttribute("data-v"); else st.m = +bt.getAttribute("data-v");
+                    save();
+                    show();
+                    pop.style.display = "none";
+                  };
+                  pop.style.display = "flex";
+                }
+                [ih, im].forEach(function(pe) {
+                  pe.readOnly = true;
+                  pe.setAttribute("inputmode", "none");
+                  pe.addEventListener("click", function() {
+                    pe.blur();
+                    showPop(pe === ih ? "h" : "m");
+                  });
+                });
+          function save() { inp.value = pad2(st.h) + ":" + pad2(st.m); fire(inp); }
+          function clean(el) { return el.value.replace(/\D/g, "").slice(0, 2); }
+          function apply(el, max) {
+            var cv = clean(el);
+            if (cv === "") return false;
+            var n = +cv;
+            if (n > max) n = max;
+            if (el === ih) st.h = n; else st.m = n;
+            save();
+            return true;
+          }
+    
+          ih.addEventListener("input", function() {
+            var v1 = clean(ih);
+            ih.value = v1;
+            if (v1.length === 2 || (v1.length === 1 && +v1 > 2)) {
+              apply(ih, 23);
+              show();
+              im.focus();
+            }
+          });
+          im.addEventListener("input", function() {
+            var v2 = clean(im);
+            im.value = v2;
+            if (v2.length === 2 || (v2.length === 1 && +v2 > 5)) {
+              apply(im, 59);
+              show();
+              im.blur();
+            }
+          });
+          im.addEventListener("keydown", function(e) {
+            if (e.key === "Backspace" && im.value === "") ih.focus();
+          });
+          [ih, im].forEach(function(el) {
+            el.addEventListener("focus", function() {
+              setTimeout(function() { try { el.select(); } catch (x) {} }, 0);
+            });
+            el.addEventListener("blur", function() {
+              apply(el, el === ih ? 23 : 59);
+              show();
+            });
+            el.addEventListener("keydown", function(e) {
+              if (e.key === "Enter") el.blur();
+            });
+          });
+    
+          show();
+        }
+        function makeDialGrid(host, inputId, title) {
+          var inp = document.getElementById(inputId);
+          if (!inp) return;
+          var tp = (inp.value || "00:00").split(":");
+          var st = { h: (+tp[0]) || 0, m: (+tp[1]) || 0 };
+          var hb = "";
+          var mb = "";
+          for (var a = 0; a < 24; a++) {
+            hb += '<button type="button" class="wsx-dk" data-h="' + a + '">' + pad2(a) + '</button>';
+          }
+          for (var b = 0; b < 60; b++) {
+            mb += '<button type="button" class="wsx-dk" data-m="' + b + '">' + pad2(b) + '</button>';
+          }
+          host.innerHTML =
+            '<div class="wsx-cr">' + title + ' <b class="wsx-tv"></b></div>' +
+            '<div class="wsx-dh">' + hb + '</div>' +
+            '<div class="wsx-dm">' + mb + '</div>';
+          var tv = host.querySelector(".wsx-tv");
+          var pks = host.querySelectorAll(".wsx-dk");
+    
+          function draw() {
+            tv.textContent = pad2(st.h) + pad2(st.m);
+            for (var i = 0; i < pks.length; i++) {
+              var pk = pks[i];
+              var isOn = pk.hasAttribute("data-h")
+                ? (+pk.getAttribute("data-h") === st.h)
+                : (+pk.getAttribute("data-m") === st.m);
+              pk.className = "wsx-dk" + (isOn ? " on" : "");
+            }
+          }
+    
+          host.addEventListener("click", function(e) {
+            var t = e.target.closest ? e.target.closest(".wsx-dk") : null;
+            if (!t) return;
+            if (t.hasAttribute("data-h")) st.h = +t.getAttribute("data-h");
+            else st.m = +t.getAttribute("data-m");
+            inp.value = pad2(st.h) + ":" + pad2(st.m);
+            fire(inp);
+            draw();
+          });
+    
+          draw();
+        }
+        function makeDial12(host, inputId, title) {
+          var inp = document.getElementById(inputId);
+          if (!inp) return;
+          var tp = (inp.value || "00:00").split(":");
+          var st = { h: (+tp[0]) || 0, m: (+tp[1]) || 0, mode: "h" };
+          host.innerHTML =
+            '<div class="wsx-cr">' + title + ' <button type="button" class="wsx-dv" data-mode="h"></button><button type="button" class="wsx-dv" data-mode="m"></button></div>' +
+            '<div class="wsx-da"><button type="button" data-ap="0">AM</button><button type="button" data-ap="1">PM</button></div>' +
+            '<svg class="wsx-dsvg" viewBox="-110 -110 220 220"></svg>';
+          var svg = host.querySelector("svg");
+          var dv = host.querySelectorAll(".wsx-dv");
+          var apBtns = host.querySelectorAll(".wsx-da button");
+    
+          function draw() {
+            var pm = st.h >= 12;
+            var h12 = st.h % 12 || 12;
+            var ang = st.mode === "h" ? (st.h % 12) * 30 : st.m * 6;
+            var p = pt(80, ang);
+            var s = '<circle r="108" class="wsx-face"/>';
+            var k, ta, tb, j, np, lbl, on;
+            dv[0].textContent = pad2(h12);
+            dv[1].textContent = pad2(st.m);
+            dv[0].className = "wsx-dv" + (st.mode === "h" ? " on" : "");
+            dv[1].className = "wsx-dv" + (st.mode === "m" ? " on" : "");
+            apBtns[0].className = pm ? "" : "on";
+            apBtns[1].className = pm ? "on" : "";
+            if (st.mode === "m") {
+              for (k = 0; k < 60; k++) {
+                ta = pt(104, k * 6);
+                tb = pt(k % 5 === 0 ? 98 : 101, k * 6);
+                s += '<line class="wsx-tick" x1="' + f1(ta.x) + '" y1="' + f1(ta.y) + '" x2="' + f1(tb.x) + '" y2="' + f1(tb.y) + '"/>';
+              }
+            }
+            s += '<line x1="0" y1="0" x2="' + f1(p.x) + '" y2="' + f1(p.y) + '" class="wsx-hand"/>';
+            s += '<circle r="4" class="wsx-hub"/>';
+            s += '<circle cx="' + f1(p.x) + '" cy="' + f1(p.y) + '" r="17" class="wsx-knob"/>';
+            if (st.mode === "m" && st.m % 5 !== 0) {
+              s += '<circle cx="' + f1(p.x) + '" cy="' + f1(p.y) + '" r="3" class="wsx-dot"/>';
+            }
+            for (j = 0; j < 12; j++) {
+              np = pt(80, j * 30);
+              if (st.mode === "h") { lbl = j === 0 ? 12 : j; on = (lbl === h12); }
+              else { lbl = pad2(j * 5); on = (st.m === j * 5); }
+              s += '<text x="' + f1(np.x) + '" y="' + f1(np.y) + '" dy=".35em" class="wsx-num' + (on ? " sel" : "") + '">' + lbl + '</text>';
+            }
+            svg.innerHTML = s;
+          }
+    
+          function commit() {
+            inp.value = pad2(st.h) + ":" + pad2(st.m);
+            fire(inp);
+            draw();
+          }
+    
+          function pick(e) {
+            var r = svg.getBoundingClientRect();
+            var dx = e.clientX - (r.left + r.width / 2);
+            var dy = e.clientY - (r.top + r.height / 2);
+            var a = Math.atan2(dx, -dy) * 180 / Math.PI;
+            if (a < 0) a += 360;
+            if (st.mode === "h") {
+              st.h = (Math.round(a / 30) % 12) + (st.h >= 12 ? 12 : 0);
+            } else {
+              st.m = Math.round(a / 6) % 60;
+            }
+            commit();
+          }
+    
+          var drag = false;
+          function endDrag() {
+            if (!drag) return;
+            drag = false;
+            if (st.mode === "h") { st.mode = "m"; draw(); }
+          }
+          svg.addEventListener("pointerdown", function(e) {
+            drag = true;
+            try { svg.setPointerCapture(e.pointerId); } catch (x) {}
+            pick(e);
+            e.preventDefault();
+          });
+          svg.addEventListener("pointermove", function(e) { if (drag) pick(e); });
+          svg.addEventListener("pointerup", endDrag);
+          svg.addEventListener("pointercancel", endDrag);
+          svg.addEventListener("contextmenu", function(e) { e.preventDefault(); });
+    
+          Array.prototype.forEach.call(dv, function(b) {
+            b.addEventListener("click", function() { st.mode = b.getAttribute("data-mode"); draw(); });
+          });
+          Array.prototype.forEach.call(apBtns, function(b) {
+            b.addEventListener("click", function() {
+              st.h = (st.h % 12) + (b.getAttribute("data-ap") === "1" ? 12 : 0);
+              commit();
+            });
+          });
+    
+          draw();
+        }
+        function makeDial24(host, inputId, title) {
+          var inp = document.getElementById(inputId);
+          if (!inp) return;
+          var tp = (inp.value || "00:00").split(":");
+          var st = { h: (+tp[0]) || 0, m: (+tp[1]) || 0 };
+          host.innerHTML =
+            '<div class="wsx-cr">' + title + ' <b class="wsx-tv"></b></div>' +
+            '<svg class="wsx-dsvg" viewBox="-110 -110 220 220"></svg>';
+          var svg = host.querySelector("svg");
+          var tv = host.querySelector(".wsx-tv");
+          var LH = 50, LM = 94;
+          var target = null;
+    
+          function draw() {
+            var hp = pt(LH, st.h * 15 + st.m * 0.25);
+            var hq = pt(-10, st.h * 15 + st.m * 0.25);
+            var mp = pt(LM, st.m * 6);
+            var mq = pt(-14, st.m * 6);
+            var s = '<circle r="108" class="wsx-face"/>';
+            var k, ta, tb, np;
+            tv.textContent = pad2(st.h) + pad2(st.m);
+            for (k = 0; k < 60; k++) {
+              ta = pt(106, k * 6);
+              tb = pt(k % 5 === 0 ? 98 : 102, k * 6);
+              s += '<line class="wsx-tick" x1="' + f1(ta.x) + '" y1="' + f1(ta.y) + '" x2="' + f1(tb.x) + '" y2="' + f1(tb.y) + '"/>';
+            }
+            for (k = 0; k < 24; k++) {
+              np = pt(82, k * 15);
+              s += '<text x="' + f1(np.x) + '" y="' + f1(np.y) + '" dy=".35em" class="wsx-num h24' + (st.h === k ? " hl" : "") + '">' + pad2(k) + '</text>';
+            }
+            for (k = 0; k < 12; k++) {
+              np = pt(62, k * 30);
+              s += '<text x="' + f1(np.x) + '" y="' + f1(np.y) + '" dy=".35em" class="wsx-num mn' + (st.m === k * 5 ? " hl" : "") + '">' + pad2(k * 5) + '</text>';
+            }
+            s += '<line x1="' + f1(mq.x) + '" y1="' + f1(mq.y) + '" x2="' + f1(mp.x) + '" y2="' + f1(mp.y) + '" class="wsx-hand-m"/>';
+            s += '<line x1="' + f1(hq.x) + '" y1="' + f1(hq.y) + '" x2="' + f1(hp.x) + '" y2="' + f1(hp.y) + '" class="wsx-hand-h"/>';
+            s += '<circle r="4" class="wsx-hub"/>';
+            s += '<circle cx="' + f1(hp.x) + '" cy="' + f1(hp.y) + '" r="6" class="wsx-knob"/>';
+            s += '<circle cx="' + f1(mp.x) + '" cy="' + f1(mp.y) + '" r="5" fill="#cdf1ef"/>';
+            svg.innerHTML = s;
+          }
+    
+          function commit() {
+            inp.value = pad2(st.h) + ":" + pad2(st.m);
+            fire(inp);
+            draw();
+          }
+    
+          function geo(e) {
+            var r = svg.getBoundingClientRect();
+            var kk = 220 / Math.min(r.width, r.height);
+            var dx = (e.clientX - (r.left + r.width / 2)) * kk;
+            var dy = (e.clientY - (r.top + r.height / 2)) * kk;
+            var a = Math.atan2(dx, -dy) * 180 / Math.PI;
+            if (a < 0) a += 360;
+            return { a: a, x: dx, y: dy, d: Math.sqrt(dx * dx + dy * dy) };
+          }
+    
+          function segDist(g, len, deg) {
+            var q = pt(len, deg);
+            var t = Math.max(0, Math.min(1, (g.x * q.x + g.y * q.y) / ((q.x * q.x + q.y * q.y) || 1)));
+            var ex = g.x - q.x * t;
+            var ey = g.y - q.y * t;
+            return Math.sqrt(ex * ex + ey * ey);
+          }
+    
+          function move(e) {
+            var g = geo(e);
+            var a2;
+            if (target === "h") {
+              a2 = g.a - st.m * 0.25;
+              if (a2 < 0) a2 += 360;
+              st.h = Math.round(a2 / 15) % 24;
+            } else {
+              st.m = Math.round(g.a / 6) % 60;
+            }
+            commit();
+          }
+    
+          svg.addEventListener("pointerdown", function(e) {
+            var g = geo(e);
+            var dh = segDist(g, LH, st.h * 15 + st.m * 0.25);
+            var dm = segDist(g, LM, st.m * 6);
+            if (g.d > 66) target = "m";
+            else if (g.d < 56 && Math.abs(dh - dm) < 6) target = "h";
+            else target = dh <= dm ? "h" : "m";
+            try { svg.setPointerCapture(e.pointerId); } catch (x) {}
+            move(e);
+            e.preventDefault();
+          });
+          svg.addEventListener("pointermove", function(e) { if (target) move(e); });
+          svg.addEventListener("pointerup", function() { target = null; });
+          svg.addEventListener("pointercancel", function() { target = null; });
+          svg.addEventListener("contextmenu", function(e) { e.preventDefault(); });
+    
+          draw();
+        }
+        function makeDialOld(host, inputId, title) {
+          var inp = document.getElementById(inputId);
+          if (!inp) return;
+          var tp = (inp.value || "00:00").split(":");
+          var st = { h: (+tp[0]) || 0, m: (+tp[1]) || 0, mode: "h" };
+          host.innerHTML =
+            '<div class="wsx-cr">' + title + ' <button type="button" class="wsx-dv" data-mode="h"></button><button type="button" class="wsx-dv" data-mode="m"></button></div>' +
+            '<div class="wsx-da"><button type="button" data-ap="0">AM</button><button type="button" data-ap="1">PM</button></div>' +
+            '<svg class="wsx-dsvg" viewBox="-110 -110 220 220"></svg>';
+          var svg = host.querySelector("svg");
+          var dv = host.querySelectorAll(".wsx-dv");
+                var ringIn = 52, ringOut = 88;
+          var apBtns = host.querySelectorAll(".wsx-da button");
+    
+          function draw() {
+            var inner = (st.h === 0 || st.h > 12);
+            var rr = inner ? ringIn : ringOut;
+            var ang = st.mode === "h" ? st.h * 15 + st.m * 0.25 : st.m * 6;
+            var p = pt(ringOut, ang);
+            var s = '<circle r="108" class="wsx-face"/>';
+            var k, ta, tb, j, np, lbl, on;
+                    if (st.mode === "h") {
+                      for (k = 0; k < 48; k++) {
+                        ta = pt(104, k * 7.5);
+                        tb = pt(k % 2 === 0 ? 97 : 100, k * 7.5);
+                        s += '<line class="wsx-tick" x1="' + f1(ta.x) + '" y1="' + f1(ta.y) + '" x2="' + f1(tb.x) + '" y2="' + f1(tb.y) + '"/>';
+                      }
+                    }
+            dv[0].textContent = pad2(st.h);
+            dv[1].textContent = pad2(st.m);
+            dv[0].className = "wsx-dv" + (st.mode === "h" ? " on" : "");
+            dv[1].className = "wsx-dv" + (st.mode === "m" ? " on" : "");
+            dv[0].title = "HOUR 00-23";
+            dv[1].title = "MIN 00-59";
+            if (st.mode === "m") {
+              for (k = 0; k < 60; k++) {
+                ta = pt(104, k * 6);
+                tb = pt(k % 5 === 0 ? 98 : 101, k * 6);
+                s += '<line class="wsx-tick" x1="' + f1(ta.x) + '" y1="' + f1(ta.y) + '" x2="' + f1(tb.x) + '" y2="' + f1(tb.y) + '"/>';
+              }
+            }
+            s += '<line x1="0" y1="0" x2="' + f1(p.x) + '" y2="' + f1(p.y) + '" class="wsx-hand"/>';
+            s += '<circle r="4" class="wsx-hub"/>';
+            s += '<circle cx="' + f1(p.x) + '" cy="' + f1(p.y) + '" r="17" class="wsx-knob"/>';
+            if (st.mode === "m" && st.m % 5 !== 0) {
+              s += '<circle cx="' + f1(p.x) + '" cy="' + f1(p.y) + '" r="3" class="wsx-dot"/>';
+            }
+            for (j = 0; j < (st.mode === "h" ? 24 : 12); j++) {
+              np = pt(ringOut, st.mode === "h" ? j * 15 : j * 30);
+              if (st.mode === "h") { lbl = pad2(j); on = (st.h === j); }
+              else { lbl = pad2(j * 5); on = (st.m === j * 5); }
+              s += '<text x="' + f1(np.x) + '" y="' + f1(np.y) + '" dy=".35em" class="wsx-num' + (on ? " sel" : "") + (st.mode === "h" ? " h24" : "") + '">' + lbl + '</text>';
+                      if (false) { var iv = j === 0 ? 0 : j + 12; var ip = pt(ringIn, j * 30); s += '<text x="' + f1(ip.x) + '" y="' + f1(ip.y) + '" dy=".35em" class="wsx-num sm' + (st.h === iv ? " sel" : "") + '">' + pad2(iv) + '</text>'; }
+            }
+            svg.innerHTML = s;
+          }
+    
+          function commit() {
+            inp.value = pad2(st.h) + ":" + pad2(st.m);
+            fire(inp);
+            draw();
+          }
+    
+          function pick(e) {
+            var r = svg.getBoundingClientRect();
+            var dx = e.clientX - (r.left + r.width / 2);
+            var dy = e.clientY - (r.top + r.height / 2);
+            var a = Math.atan2(dx, -dy) * 180 / Math.PI;
+            if (a < 0) a += 360;
+            if (st.mode === "h") {
+              var q = Math.round(a / 30) % 12;
+                        var dd = Math.sqrt(dx * dx + dy * dy) / (Math.min(r.width, r.height) / 220);
+                        var hi = Math.round(a / 7.5) % 48;
+                                  st.h = hi >> 1;
+                                  if (hi % 2 === 1) {
+                                    st.m = 30;
+                                    st.hf = true;
+                                  } else {
+                                    if (st.hf && st.m === 30) { st.m = 0; }
+                                    st.hf = false;
+                                  }
+            } else {
+              st.m = Math.round(a / 6) % 60;
+            }
+            commit();
+          }
+    
+          var drag = false;
+          function endDrag() {
+            if (!drag) return;
+            drag = false;
+            if (st.mode === "h") { st.mode = "m"; draw(); }
+          }
+          svg.addEventListener("pointerdown", function(e) {
+            drag = true;
+            try { svg.setPointerCapture(e.pointerId); } catch (x) {}
+            pick(e);
+            e.preventDefault();
+          });
+          svg.addEventListener("pointermove", function(e) { if (drag) pick(e); });
+          svg.addEventListener("pointerup", endDrag);
+          svg.addEventListener("pointercancel", endDrag);
+          svg.addEventListener("contextmenu", function(e) { e.preventDefault(); });
+    
+          Array.prototype.forEach.call(dv, function(b) {
+            b.addEventListener("click", function() { st.mode = b.getAttribute("data-mode"); draw(); });
+          });
+          Array.prototype.forEach.call(apBtns, function(b) {
+            b.addEventListener("click", function() {
+              st.h = (st.h % 12) + (b.getAttribute("data-ap") === "1" ? 12 : 0);
+              commit();
+            });
+          });
+    
+          draw();
+        }
+        function makeGrid(host, inputId, title) {
       var inp = document.getElementById(inputId);
       if (!inp) return;
       var tp = (inp.value || "00:00").split(":");
@@ -3619,8 +4287,8 @@ function renderTable() {
     if (hosts.length < 2) {
           if (!window._wsxRetry) { window._wsxRetry = 1; setTimeout(build, 500); }
         } else {
-      setTimeout(function() { makeGrid(hosts[0], "timeFrom", "START (IST)"); }, 500);
-      setTimeout(function() { makeGrid(hosts[1], "timeTo", "END (IST)"); }, 500);
+      setTimeout(function() { makeDial(hosts[0], "timeFrom", "START IST"); }, 500);
+      setTimeout(function() { makeDial(hosts[1], "timeTo", "END IST"); }, 500);
     }
     var _cy = document.querySelector("#settingsGrid > div:nth-child(4) .field-row");
         var _pf = document.querySelector("#settingsGrid > div:nth-child(5) .field");
