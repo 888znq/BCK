@@ -1206,6 +1206,67 @@ body, .layout { height: 100vh; height: 100dvh; }
 .repeats-section table { width: 100%; min-width: 0; }
 .table-area > .state-empty { flex: 1 1 auto; }
 #repMinDays, #repMinC1, .filter-bar label:has(+ #repMinDays), .filter-bar label:has(+ #repMinC1) { display: none !important; }
+#settingsOverlay #settingsGrid .wsx-cals, #settingsOverlay #settingsGrid .wsx-clocks { display: flex !important; flex-direction: column !important; flex-wrap: nowrap !important; align-items: stretch !important; gap: 3px !important; width: 100% !important; }
+#settingsOverlay #settingsGrid .wsx-cal { flex: 0 0 auto !important; width: 100% !important; height: auto !important; }
+#settingsOverlay #settingsGrid .wsx-clock { display: contents !important; }
+#settingsOverlay #settingsGrid .wsx-cal .wsx-cal-grid { display: flex !important; flex-direction: row !important; flex-wrap: nowrap !important; flex: 0 0 auto !important; gap: 2px !important; min-height: 0 !important; overflow-x: auto !important; overflow-y: hidden !important; position: relative !important; -webkit-overflow-scrolling: touch; }
+#settingsOverlay #settingsGrid .wsx-cal .wsx-day { flex: 1 0 34px !important; min-width: 34px !important; width: auto !important; height: 36px !important; font-size: 14px !important; align-self: auto !important; }
+#settingsOverlay #settingsGrid .wsx-cal .wsx-day.off { opacity: 0.25; pointer-events: none; }
+#settingsOverlay #settingsGrid .wsx-hgrid, #settingsOverlay #settingsGrid .wsx-mgrid { display: flex !important; flex-direction: row !important; flex-wrap: nowrap !important; flex: 0 0 auto !important; gap: 2px !important; margin: 0 !important; overflow-x: auto !important; overflow-y: hidden !important; position: relative !important; -webkit-overflow-scrolling: touch; }
+#settingsOverlay #settingsGrid .wsx-hgrid { order: 1; }
+#settingsOverlay #settingsGrid .wsx-mgrid { order: 2; }
+#settingsOverlay #settingsGrid .wsx-hgrid .wsx-pk, #settingsOverlay #settingsGrid .wsx-mgrid .wsx-pk { flex: 1 0 34px !important; min-width: 34px !important; height: 36px !important; font-size: 14px !important; }
+#settingsOverlay .settings-modal { height: 100% !important; max-height: 100dvh !important; overflow: hidden !important; }
+#settingsOverlay #settingsGrid { flex: 1 1 0 !important; min-height: 0 !important; overflow: hidden !important; gap: 3px !important; }
+#settingsOverlay #settingsGrid > div:nth-child(1) { flex: 4 1 0 !important; min-height: 0 !important; }
+#settingsOverlay #settingsGrid > div:nth-child(2) { flex: 12 1 0 !important; min-height: 0 !important; }
+#settingsOverlay #settingsGrid > div:nth-child(3) { flex: 12 1 0 !important; min-height: 0 !important; }
+#settingsOverlay #settingsGrid > div:nth-child(4) { flex: 0 0 auto !important; }
+#settingsOverlay #settingsGrid > div.settings-foot { flex: 0 0 auto !important; }
+#settingsOverlay #settingsGrid .wsx-pairs { flex: 1 1 0 !important; min-height: 0 !important; display: grid !important; grid-template-columns: repeat(8, minmax(0, 1fr)) !important; grid-template-rows: repeat(4, minmax(0, 1fr)) !important; grid-auto-rows: minmax(0, 1fr) !important; gap: 2px !important; margin: 0 !important; }
+#settingsOverlay #settingsGrid .wsx-pairs .wsx-pair { height: auto !important; min-height: 0 !important; min-width: 0 !important; padding: 0 !important; line-height: 1 !important; align-self: stretch !important; font-size: clamp(8px, min(2.6vw, 2.2vh), 13px) !important; }
+#settingsOverlay #settingsGrid .wsx-cals { flex: 1 1 0 !important; min-height: 0 !important; display: flex !important; flex-direction: column !important; flex-wrap: nowrap !important; gap: 3px !important; }
+#settingsOverlay #settingsGrid .wsx-cals .wsx-cal { display: grid !important; grid-template-columns: minmax(0, 1fr) !important; grid-template-rows: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 3fr) !important; gap: 2px !important; flex: 1 1 0 !important; min-height: 0 !important; height: auto !important; width: 100% !important; padding: 3px !important; overflow: hidden !important; }
+#settingsOverlay #settingsGrid .wsx-cals .wsx-cal .wsx-year { height: 100% !important; min-height: 0 !important; margin: 0 !important; padding: 0 4px !important; font-size: clamp(8px, min(2.8vw, 2.2vh), 14px) !important; }
+#settingsOverlay #settingsGrid .wsx-cals .wsx-cal .wsx-months { display: grid !important; grid-template-columns: repeat(6, minmax(0, 1fr)) !important; grid-template-rows: repeat(2, minmax(0, 1fr)) !important; grid-auto-rows: minmax(0, 1fr) !important; gap: 2px !important; margin: 0 !important; min-height: 0 !important; }
+#settingsOverlay #settingsGrid .wsx-cals .wsx-cal .wsx-months .wsx-mon { height: auto !important; min-height: 0 !important; min-width: 0 !important; padding: 0 !important; line-height: 1 !important; font-size: clamp(7px, min(2.4vw, 2vh), 12px) !important; }
+#settingsOverlay #settingsGrid .wsx-cals .wsx-cal .wsx-cal-grid { display: grid !important; grid-template-columns: repeat(11, minmax(0, 1fr)) !important; grid-template-rows: repeat(3, minmax(0, 1fr)) !important; grid-auto-rows: minmax(0, 1fr) !important; gap: 2px !important; flex: none !important; min-height: 0 !important; overflow: visible !important; }
+#settingsOverlay #settingsGrid .wsx-cals .wsx-cal .wsx-day { flex: none !important; width: auto !important; min-width: 0 !important; height: auto !important; min-height: 0 !important; padding: 0 !important; line-height: 1 !important; align-self: stretch !important; font-size: clamp(8px, min(2.6vw, 2.2vh), 13px) !important; }
+#settingsOverlay #settingsGrid .wsx-clocks { flex: 1 1 0 !important; min-height: 0 !important; display: flex !important; flex-direction: column !important; flex-wrap: nowrap !important; gap: 3px !important; }
+#settingsOverlay #settingsGrid .wsx-clocks .wsx-hgrid { display: grid !important; grid-template-columns: repeat(12, minmax(0, 1fr)) !important; grid-template-rows: repeat(2, minmax(0, 1fr)) !important; grid-auto-rows: minmax(0, 1fr) !important; flex: 2 1 0 !important; min-height: 0 !important; gap: 2px !important; margin: 0 !important; overflow: visible !important; order: 1; }
+#settingsOverlay #settingsGrid .wsx-clocks .wsx-mgrid { display: grid !important; grid-template-columns: repeat(15, minmax(0, 1fr)) !important; grid-template-rows: repeat(4, minmax(0, 1fr)) !important; grid-auto-rows: minmax(0, 1fr) !important; flex: 4 1 0 !important; min-height: 0 !important; gap: 2px !important; margin: 0 !important; overflow: visible !important; order: 2; }
+#settingsOverlay #settingsGrid .wsx-clocks .wsx-hgrid .wsx-pk, #settingsOverlay #settingsGrid .wsx-clocks .wsx-mgrid .wsx-pk { flex: none !important; width: auto !important; min-width: 0 !important; height: auto !important; min-height: 0 !important; padding: 0 !important; line-height: 1 !important; align-self: stretch !important; font-size: clamp(7px, min(2.5vw, 2.1vh), 13px) !important; }
+#settingsOverlay #settingsGrid .wsx-cals .wsx-cal { display: grid !important; grid-template-columns: minmax(0, 1fr) !important; grid-template-rows: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1fr) !important; gap: 3px !important; overflow: hidden !important; }
+#settingsOverlay #settingsGrid .wsx-cals .wsx-cal .wsx-months { display: grid !important; grid-template-columns: repeat(12, minmax(0, 1fr)) !important; grid-template-rows: minmax(0, 1fr) !important; grid-auto-rows: 0 !important; grid-auto-flow: column !important; gap: 1px !important; overflow: hidden !important; }
+#settingsOverlay #settingsGrid .wsx-cals .wsx-cal .wsx-months .wsx-mon { min-width: 0 !important; width: auto !important; height: auto !important; padding: 0 !important; line-height: 1 !important; letter-spacing: -0.04em !important; white-space: nowrap !important; overflow: hidden !important; font-size: min(calc((100vw - 14px) / 12 / 2), 12px) !important; }
+#settingsOverlay #settingsGrid .wsx-cals .wsx-cal .wsx-cal-grid { display: grid !important; grid-template-columns: repeat(31, minmax(0, 1fr)) !important; grid-template-rows: minmax(0, 1fr) !important; grid-auto-rows: 0 !important; grid-auto-flow: column !important; gap: 1px !important; overflow: hidden !important; }
+#settingsOverlay #settingsGrid .wsx-cals .wsx-cal .wsx-cal-grid .wsx-day { flex: none !important; min-width: 0 !important; width: auto !important; height: auto !important; min-height: 0 !important; padding: 0 !important; line-height: 1 !important; letter-spacing: -0.06em !important; white-space: nowrap !important; overflow: hidden !important; align-self: stretch !important; font-size: min(calc((100vw - 16px) / 31 / 1.35), 13px) !important; }
+#settingsOverlay #settingsGrid .wsx-clocks .wsx-hgrid { display: grid !important; grid-template-columns: repeat(24, minmax(0, 1fr)) !important; grid-template-rows: minmax(0, 1fr) !important; grid-auto-rows: 0 !important; grid-auto-flow: column !important; flex: 1 1 0 !important; min-height: 0 !important; gap: 1px !important; overflow: hidden !important; }
+#settingsOverlay #settingsGrid .wsx-clocks .wsx-mgrid { display: grid !important; grid-template-columns: repeat(60, minmax(0, 1fr)) !important; grid-template-rows: minmax(0, 1fr) !important; grid-auto-rows: 0 !important; grid-auto-flow: column !important; flex: 1 1 0 !important; min-height: 0 !important; gap: 1px !important; overflow: hidden !important; }
+#settingsOverlay #settingsGrid .wsx-clocks .wsx-hgrid .wsx-pk, #settingsOverlay #settingsGrid .wsx-clocks .wsx-mgrid .wsx-pk { flex: none !important; min-width: 0 !important; width: auto !important; height: auto !important; min-height: 0 !important; padding: 0 !important; line-height: 1 !important; letter-spacing: -0.06em !important; white-space: nowrap !important; overflow: hidden !important; align-self: stretch !important; }
+#settingsOverlay #settingsGrid .wsx-clocks .wsx-hgrid .wsx-pk { font-size: min(calc((100vw - 14px) / 24 / 1.35), 13px) !important; }
+#settingsOverlay #settingsGrid .wsx-clocks .wsx-mgrid .wsx-pk { writing-mode: vertical-rl !important; text-orientation: upright !important; border: 0 !important; background: rgba(255,255,255,0.1) !important; letter-spacing: 0 !important; font-size: min(calc((100vw - 14px) / 60 / 0.8), 12px) !important; }
+#settingsOverlay #settingsGrid .wsx-clocks .wsx-mgrid .wsx-pk.on { background: var(--green) !important; color: #000432 !important; }
+@media (min-width: 900px) {
+  #settingsOverlay #settingsGrid .wsx-clocks .wsx-mgrid .wsx-pk { writing-mode: horizontal-tb !important; text-orientation: mixed !important; border: 1px solid var(--border2) !important; background: transparent !important; font-size: 11px !important; }
+  #settingsOverlay #settingsGrid .wsx-clocks .wsx-mgrid .wsx-pk.on { background: var(--green) !important; }
+}
+#settingsOverlay #settingsGrid > div:nth-child(1) { flex: 5 1 0 !important; min-height: 0 !important; }
+#settingsOverlay #settingsGrid .wsx-pairs { display: grid !important; grid-template-columns: repeat(30, minmax(0, 1fr)) !important; grid-template-rows: minmax(0, 1fr) !important; grid-auto-rows: 0 !important; grid-auto-flow: column !important; gap: 1px !important; flex: 1 1 0 !important; min-height: 0 !important; overflow: hidden !important; margin: 0 !important; }
+#settingsOverlay #settingsGrid .wsx-pairs .wsx-pair, #settingsOverlay #settingsGrid .wsx-pairs .wsx-pair.all { grid-column: auto !important; writing-mode: vertical-rl !important; text-orientation: mixed !important; min-width: 0 !important; width: auto !important; height: auto !important; min-height: 0 !important; padding: 0 !important; line-height: 1 !important; letter-spacing: 0 !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: clip !important; align-self: stretch !important; display: flex !important; align-items: center !important; justify-content: center !important; font-size: min(calc((100vw - 14px) / 30 / 1.2), 12px) !important; }
+#settingsOverlay #settingsGrid .wsx-cals .wsx-cal .wsx-years { display: grid !important; grid-template-columns: repeat(11, minmax(0, 1fr)) !important; grid-template-rows: minmax(0, 1fr) !important; grid-auto-rows: 0 !important; grid-auto-flow: column !important; gap: 1px !important; min-height: 0 !important; overflow: hidden !important; margin: 0 !important; }
+#settingsOverlay #settingsGrid .wsx-cals .wsx-cal .wsx-years .wsx-yr { min-width: 0 !important; width: auto !important; height: auto !important; min-height: 0 !important; padding: 0 !important; line-height: 1 !important; letter-spacing: -0.06em !important; white-space: nowrap !important; overflow: hidden !important; align-self: stretch !important; border: 1px solid var(--border2); background: transparent; color: var(--text-mid); font-family: var(--mono); border-radius: 3px; cursor: pointer; font-size: min(calc((100vw - 16px) / 11 / 2.6), 13px) !important; }
+#settingsOverlay #settingsGrid .wsx-cals .wsx-cal .wsx-years .wsx-yr:hover { border-color: var(--green); color: var(--text); }
+#settingsOverlay #settingsGrid .wsx-cals .wsx-cal .wsx-years .wsx-yr.on { background: var(--green) !important; border-color: var(--green) !important; color: #000432 !important; }
+#settingsOverlay #settingsGrid .wsx-clocks .wsx-hgrid, #settingsOverlay #settingsGrid .wsx-clocks .wsx-mgrid { order: 0 !important; }
+#settingsOverlay #settingsGrid .wsx-clocks .wsx-clock:nth-child(2) .wsx-hgrid { margin-top: 4px !important; }
+#settingsOverlay #settingsGrid > div:nth-child(2) { border: 2px solid var(--sig-red) !important; border-radius: 12px !important; padding: 3px !important; overflow: hidden !important; }
+#settingsOverlay #settingsGrid > div:nth-child(3) { border: 2px solid var(--sig-green) !important; border-radius: 12px !important; padding: 3px !important; overflow: hidden !important; }
+#settingsOverlay #settingsGrid .wsx-cals .wsx-cal .wsx-cal-grid { order: 1 !important; }
+#settingsOverlay #settingsGrid .wsx-cals .wsx-cal .wsx-months { order: 2 !important; }
+#settingsOverlay #settingsGrid .wsx-cals .wsx-cal .wsx-years { order: 3 !important; }
+#settingsOverlay #settingsGrid .wsx-clocks .wsx-hgrid { order: 1 !important; }
+#settingsOverlay #settingsGrid .wsx-clocks .wsx-mgrid { order: 2 !important; }
 </style>
 </head>
 <body>
@@ -1858,6 +1919,11 @@ function toast(msg, type="ok", dur=3000) {
   el._t = setTimeout(() => el.className = "", dur);
 }
 
+function fmtDMY(iso) {
+  var p = String(iso || "").split("-");
+  return p.length === 3 ? p[2] + p[1] + p[0] : String(iso || "");
+}
+
 function fmtK(n) {
   if (n >= 1_000_000) return (n/1_000_000).toFixed(1) + "M";
   if (n >= 1_000)     return (n/1_000).toFixed(1) + "K";
@@ -2418,13 +2484,13 @@ async function runScan() {
     const dayFilterSel = document.getElementById("dayFilter");
     dayFilterSel.innerHTML = '<option value="__ALL__">ALL DAYS</option>' + days.map(d => {
       const iso = d.toISOString().slice(0, 10);
-      return `<option value="${iso}">${iso}</option>`;
+      return `<option value="${iso}">${fmtDMY(iso)}</option>`;
     }).join("");
     dayFilterSel.value = "__ALL__";
   
     summaryEl.innerHTML = days.map(d => {
       const iso = d.toISOString().slice(0, 10);
-      const lbl = iso.slice(5,10).replace("-","/");
+      const lbl = fmtDMY(iso);
       return `<span class="day-chip" data-date="${iso}" onclick="selectDayChip('${iso}')">${lbl}</span>`;
     }).join(" ");
     summaryEl.classList.add("visible");
@@ -2478,7 +2544,7 @@ async function exportAllSignalsCSV() {
             var strength  = d.pct >= 90 ? "STRONG" : d.pct >= 75 ? "MODERATE" : d.pct >= 60 ? "WEAK" : "SPECULATIVE";
             var gapVal    = d.gap || 0;
             var gapCountVal = d.gapCount || 0;
-            var dateVal   = d.date || "";
+            var dateVal   = d.date ? fmtDMY(d.date) : "";
             return [
               name, dateVal, d.type, direction, d.c, d.r,
               d.s1, d.s2, d.c1, d.c2, gapVal, gapCountVal,
@@ -2693,7 +2759,7 @@ function buildRepeatsRowsHTML(list) {
               <td class="cell-dim">R${g.r}</td>
               <td class="cell-streak">X${g.s1}→X${g.s2}</td>
               <td class="cell-streak">${g.daysSeen}</td>
-              <td class="cell-dim" style="white-space:normal;font-size:10px;">${g.dayList.join(", ")}</td>
+              <td class="cell-dim" style="white-space:normal;font-size:10px;">${g.dayList.map(function(x) { return fmtDMY(x); }).join(", ")}</td>
               <td class="cell-dim">${g.totalOcc}</td>
               <td class="cell-dim" style="white-space:normal;font-size:10px;">${g.c1List.join(", ")}</td>
               <td><span class="cell-pct ${pctCls}">${g.avgPct}%</span></td>
@@ -2811,7 +2877,7 @@ function renderTable() {
   function refreshSummary() {
     var lines = [
       val("pairInput") || "—",
-      (val("dateFrom") || "—") + " → " + (val("dateTo") || "—") + "   " + (val("timeFrom") || "—") + "–" + (val("timeTo") || "—") + " IST",
+      (fmtDMY(val("dateFrom")) || "—") + " → " + (fmtDMY(val("dateTo")) || "—") + "   " + (val("timeFrom").replace(":", "") || "—") + "–" + (val("timeTo").replace(":", "") || "—") + " IST",
       "C" + val("cycleMin") + "–C" + val("cycleMax") + "   Min " + val("minPct") + "%"
     ];
     summary.innerHTML = "";
@@ -2949,12 +3015,12 @@ function renderTable() {
   var MONTHS = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
     function yearSel(y) {
       var o = "";
-      var y0 = Math.min(2020, y);
-      var y1 = Math.max(2035, y);
+      var y0 = new Date().getFullYear() - 10;
+      var y1 = new Date().getFullYear();
       for (var yy = y0; yy <= y1; yy++) {
-        o += '<option value="' + yy + '"' + (yy === y ? ' selected' : '') + '>' + yy + '</option>';
+        o += '<button type="button" class="wsx-yr' + (yy === y ? ' on' : '') + '" data-yr="' + yy + '">' + yy + '</button>';
       }
-      return '<select class="wsx-year" data-year="1">' + o + '</select>';
+      return '<div class="wsx-years">' + o + '</div>';
     }
 
   function init() {
@@ -3041,9 +3107,8 @@ function renderTable() {
         '<div class="wsx-cal-head"><button type="button" data-nav="-1">‹</button><span>' + c.y + '</span><button type="button" data-nav="1">›</button></div>' +
                 yearSel(c.y) +
         '<div class="wsx-months">' + MONTHS.map(function(n, i) { return '<button type="button" class="wsx-mon' + (i === c.m ? ' on' : '') + '" data-mon="' + (i + 1) + '">' + n + '</button>'; }).join("") + '</div>' + '<div class="wsx-cal-grid">';
-      ["M","T","W","T","F","S","S"].forEach(function(d) { h += '<div class="wsx-dow">' + d + '</div>'; });
-      for (var i = 0; i < startDow; i++) h += '<span></span>';
-      for (var d = 1; d <= dim; d++) {
+      for (var d = 1; d <= 31; d++) {
+              if (d > dim) { h += '<button type="button" class="wsx-day off" disabled>' + d + '</button>'; continue; }
         var iso = c.y + "-" + pad2(c.m + 1) + "-" + pad2(d);
         var cls = "wsx-day";
         if (iso === ownV) cls += " sel";
@@ -3053,7 +3118,11 @@ function renderTable() {
         h += '<button type="button" class="' + cls + '" data-iso="' + iso + '">' + d + '</button>';
       }
       h += '</div>';
-      c.el.innerHTML = h;
+      var _og = c.el.querySelector(".wsx-cal-grid");
+            var _sl = _og ? _og.scrollLeft : -1;
+            c.el.innerHTML = h;
+            var _ng = c.el.querySelector(".wsx-cal-grid");
+            if (_ng && _sl >= 0) { _ng.scrollLeft = _sl; }
     }
 
     function onCalClick(key, e) {
@@ -3067,7 +3136,12 @@ function renderTable() {
         renderCal(key);
         return;
       }
-      if (t.dataset.mon) {
+      if (t.dataset.yr) {
+              c.y = +t.dataset.yr;
+              renderCal(key);
+              return;
+            }
+            if (t.dataset.mon) {
               c.m = +t.dataset.mon - 1;
               renderCal(key);
               return;
@@ -3572,6 +3646,47 @@ function renderTable() {
     document.addEventListener("DOMContentLoaded", build);
   } else {
     build();
+  }
+})();
+(function() {
+  function centerSel() {
+    var boxes = document.querySelectorAll("#settingsGrid .wsx-cal-grid, #settingsGrid .wsx-hgrid, #settingsGrid .wsx-mgrid");
+    for (var i = 0; i < boxes.length; i++) {
+      var b = boxes[i];
+      var s = b.querySelector(".sel, .on");
+      if (s) { b.scrollLeft = Math.max(0, s.offsetLeft - (b.clientWidth - s.offsetWidth) / 2); }
+    }
+  }
+  var fab = document.getElementById("settingsFab");
+  if (fab) { fab.addEventListener("click", function() { setTimeout(centerSel, 80); }); }
+})();
+(function() {
+  function merge() {
+    var grid = document.getElementById("settingsGrid");
+    if (!grid) return;
+    var dateBlock = grid.children[1];
+    var timeBlock = grid.children[2];
+    if (!dateBlock || !timeBlock) return;
+    var cals = dateBlock.querySelector(".wsx-cals");
+    var clocks = timeBlock.querySelector(".wsx-clocks");
+    if (!cals || !clocks) return;
+    var calEls = cals.querySelectorAll(".wsx-cal");
+    var clkEls = clocks.querySelectorAll(".wsx-clock");
+    if (calEls.length < 2 || clkEls.length < 2) return;
+    var toCals = document.createElement("div");
+    toCals.className = "wsx-cals";
+    toCals.appendChild(calEls[1]);
+    var toClocks = document.createElement("div");
+    toClocks.className = "wsx-clocks";
+    toClocks.appendChild(clkEls[1]);
+    dateBlock.insertBefore(clocks, cals.nextSibling);
+    timeBlock.appendChild(toCals);
+    timeBlock.appendChild(toClocks);
+  }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", merge);
+  } else {
+    setTimeout(merge, 0);
   }
 })();
 </script>
