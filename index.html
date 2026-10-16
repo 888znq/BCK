@@ -1384,6 +1384,133 @@ body, .layout { height: 100vh; height: 100dvh; }
   #settingsOverlay #settingsGrid .wsx-pairs .wsx-pair, #settingsOverlay #settingsGrid .wsx-pairs .wsx-pair.all { font-size: clamp(8px, 2.5vw, 12px) !important; }
   #settingsOverlay #settingsGrid .wsx-pairs > .wsx-pair.all { height: 26px !important; }
 }
+#settingsOverlay #settingsGrid { padding: 0 !important; }
+#settingsOverlay #settingsGrid .wsx-pairs { display: grid !important; flex-direction: row !important; flex: 0 0 auto !important; width: 100% !important; grid-template-columns: repeat(8, minmax(0, 1fr)) !important; grid-template-rows: none !important; grid-auto-rows: 30px !important; grid-auto-flow: row !important; gap: 1px !important; background: var(--border2) !important; padding: 0 !important; margin: 0 !important; overflow: hidden !important; }
+#settingsOverlay #settingsGrid .wsx-pairs .wsx-pg, #settingsOverlay #settingsGrid .wsx-pairs .wsx-pgb { display: contents !important; }
+#settingsOverlay #settingsGrid .wsx-pairs .wsx-pgh { display: none !important; }
+#settingsOverlay #settingsGrid .wsx-pairs .wsx-pair, #settingsOverlay #settingsGrid .wsx-pairs .wsx-pair.all, #settingsOverlay #settingsGrid .wsx-pairs > .wsx-pair.all { grid-column: auto !important; width: auto !important; height: auto !important; min-width: 0 !important; min-height: 0 !important; margin: 0 !important; padding: 0 !important; border: 0 !important; border-radius: 0 !important; box-shadow: none !important; display: flex !important; align-items: center !important; justify-content: center !important; writing-mode: horizontal-tb !important; letter-spacing: 0 !important; white-space: nowrap !important; overflow: hidden !important; line-height: 1 !important; font-size: clamp(8px, 2.3vw, 12px) !important; }
+#settingsOverlay #settingsGrid .wsx-pairs .wsx-pair.all, #settingsOverlay #settingsGrid .wsx-pairs > .wsx-pair.all { font-size: 0 !important; }
+#settingsOverlay #settingsGrid .wsx-pairs .wsx-pair.all::after, #settingsOverlay #settingsGrid .wsx-pairs > .wsx-pair.all::after { content: "ALL"; font-size: clamp(8px, 2.3vw, 12px); }
+#settingsOverlay #settingsGrid .wsx-pairs .wsx-pair:not(.on):hover { background: #12195a !important; }
+@media (min-width: 900px) {
+  #settingsOverlay #settingsGrid .wsx-pairs { grid-template-columns: repeat(10, minmax(0, 1fr)) !important; grid-auto-rows: 34px !important; }
+}
+#settingsOverlay #settingsGrid > div:nth-child(2), #settingsOverlay #settingsGrid > div:nth-child(3) { border-radius: 0 !important; }
+#settingsOverlay #settingsGrid .wsx-cals .wsx-cal { padding: 0 !important; gap: 0 !important; }
+#settingsOverlay #settingsGrid .wsx-cal .wsx-ch, #settingsOverlay #settingsGrid .wsx-cal .wsx-mg { width: 100% !important; max-width: none !important; margin: 0 !important; }
+#settingsOverlay #settingsGrid .wsx-cal .wsx-ch { gap: 0 !important; }
+#settingsOverlay #settingsGrid .wsx-cal .wsx-ch button { border: 0 !important; border-radius: 0 !important; background: rgba(255,255,255,0.05) !important; }
+#settingsOverlay #settingsGrid .wsx-cals .wsx-cal .wsx-mg { gap: 1px !important; padding: 0 !important; background: var(--border2) !important; }
+#settingsOverlay #settingsGrid .wsx-cal .wsx-mg .wsx-dw, #settingsOverlay #settingsGrid .wsx-cal .wsx-mg .wsx-bk { background: var(--panel) !important; }
+#settingsOverlay #settingsGrid .wsx-cal .wsx-mg .wsx-day { border: 0 !important; border-radius: 0 !important; background: var(--panel) !important; box-shadow: none !important; }
+#settingsOverlay #settingsGrid .wsx-cal .wsx-mg .wsx-day.in { background: #212b4e !important; }
+#settingsOverlay #settingsGrid .wsx-cal .wsx-mg .wsx-day.edge { background: #212b4e !important; box-shadow: inset 0 0 0 1px var(--green) !important; }
+#settingsOverlay #settingsGrid .wsx-cal .wsx-mg .wsx-day.today { box-shadow: inset 0 0 0 1px var(--amber) !important; }
+#settingsOverlay #settingsGrid .wsx-cal .wsx-mg .wsx-day:not(.sel):hover { background: #1c2a5c !important; }
+#settingsOverlay #settingsGrid .wsx-cal .wsx-mg .wsx-day.sel { background: var(--green) !important; color: #000432 !important; }
+#settingsOverlay #settingsGrid .wsx-cal .wsx-mg .wsx-day.sel.today { box-shadow: inset 0 0 0 2px #000432 !important; }
+#settingsOverlay #settingsGrid .wsx-pairs { gap: 0 !important; background: var(--panel) !important; border-top: 1px solid var(--border2) !important; border-left: 1px solid var(--border2) !important; }
+#settingsOverlay #settingsGrid .wsx-pairs .wsx-pair, #settingsOverlay #settingsGrid .wsx-pairs .wsx-pair.all, #settingsOverlay #settingsGrid .wsx-pairs > .wsx-pair.all { border: 0 !important; border-right: 1px solid var(--border2) !important; border-bottom: 1px solid var(--border2) !important; background: var(--panel) !important; }
+#settingsOverlay #settingsGrid .wsx-pairs .wsx-pair.on, #settingsOverlay #settingsGrid .wsx-pairs .wsx-pair.all.on, #settingsOverlay #settingsGrid .wsx-pairs > .wsx-pair.all.on { background: var(--green) !important; color: #000432 !important; font-weight: 700 !important; }
+#settingsOverlay #settingsGrid .wsx-cals .wsx-cal .wsx-mg { gap: 0 !important; background: var(--panel) !important; }
+#settingsOverlay #settingsGrid .wsx-cal .wsx-mg .wsx-dw, #settingsOverlay #settingsGrid .wsx-cal .wsx-mg .wsx-bk, #settingsOverlay #settingsGrid .wsx-cal .wsx-mg .wsx-day { border: 0 !important; border-right: 1px solid var(--border2) !important; border-bottom: 1px solid var(--border2) !important; border-radius: 0 !important; background: var(--panel) !important; }
+#settingsOverlay #settingsGrid .wsx-cal .wsx-mg > :nth-child(7n) { border-right: 0 !important; }
+#settingsOverlay #settingsGrid .wsx-cal .wsx-mg .wsx-day.in { background: #212b4e !important; }
+#settingsOverlay #settingsGrid .wsx-cal .wsx-mg .wsx-day.edge { background: #212b4e !important; box-shadow: inset 0 0 0 1px var(--green) !important; }
+#settingsOverlay #settingsGrid .wsx-cal .wsx-mg .wsx-day.sel { background: var(--green) !important; color: #000432 !important; }
+#settingsOverlay #settingsGrid .wsx-cal .wsx-mg .wsx-day:not(.sel):hover { background: #1c2a5c !important; }
+#settingsOverlay #settingsGrid .wsx-clocks .wsx-clock { padding: 0 !important; gap: 0 !important; }
+#settingsOverlay #settingsGrid .wsx-clocks .wsx-clock .wsx-cr { border-bottom: 1px solid var(--border2) !important; }
+#settingsOverlay #settingsGrid .wsx-clocks .wsx-clock .wsx-tin { display: grid !important; grid-template-columns: minmax(0, 1fr) 28px minmax(0, 1fr) !important; grid-template-rows: minmax(0, 1fr) !important; gap: 0 !important; align-items: stretch !important; justify-content: stretch !important; flex: 1 1 0 !important; min-height: 0 !important; }
+#settingsOverlay #settingsGrid .wsx-clocks .wsx-clock .wsx-ti { width: 100% !important; max-width: none !important; height: 100% !important; max-height: none !important; border: 0 !important; border-radius: 0 !important; background: var(--panel) !important; font-size: clamp(32px, 9vw, 80px) !important; }
+#settingsOverlay #settingsGrid .wsx-clocks .wsx-clock .wsx-tc { display: flex; align-items: center; justify-content: center; background: var(--panel); font-size: clamp(28px, 8vw, 64px); }
+#settingsOverlay #settingsGrid .wsx-cr { display: none !important; }
+#settingsOverlay #settingsGrid .wsx-cal .wsx-ch { gap: 1px !important; }
+#settingsOverlay #settingsGrid .wsx-cal .wsx-ch button { flex: 0 0 15% !important; }
+#settingsOverlay #settingsGrid .wsx-cal .wsx-ch button:nth-of-type(3) { margin-left: 8px !important; }
+#settingsOverlay #settingsGrid .wsx-cal .wsx-ch span { flex: 1 1 0 !important; }
+#settingsOverlay #settingsGrid .wsx-cal .wsx-ch span:nth-of-type(2) { color: var(--amber) !important; }
+#settingsOverlay #settingsGrid .wsx-cal .wsx-ch { gap: 0 !important; height: 32px !important; }
+#settingsOverlay #settingsGrid .wsx-cal .wsx-ch button { flex: 0 0 22% !important; margin-left: 0 !important; }
+#settingsOverlay #settingsGrid .wsx-cal .wsx-ch span { flex: 1 1 0 !important; color: var(--amber) !important; }
+#settingsOverlay #settingsGrid .wsx-cal .wsx-ch + .wsx-ch span { color: var(--green) !important; }
+#settingsOverlay #settingsGrid .wsx-cal .wsx-ch button { background: var(--panel) !important; }
+#settingsOverlay #settingsGrid .wsx-cal .wsx-ch button:hover { background: var(--panel) !important; color: var(--green) !important; }
+#settingsOverlay #settingsGrid .wsx-cal .wsx-mg { grid-template-rows: 26px repeat(6, minmax(0, 1fr)) !important; border-top: 1px solid var(--border2) !important; }
+#settingsOverlay #settingsGrid .wsx-cal .wsx-mg .wsx-dw { font-size: 15px !important; font-weight: 700 !important; line-height: 26px !important; height: 26px !important; border-top: 1px solid var(--border2) !important; border-right: 1px solid var(--border2) !important; border-bottom: 1px solid var(--border2) !important; background: var(--panel) !important; }
+#settingsOverlay #settingsGrid .wsx-cal .wsx-mg > .wsx-dw:nth-child(7n) { border-right: 0 !important; }
+#settingsOverlay #settingsGrid .wsx-cals, #settingsOverlay #settingsGrid .wsx-clocks { display: none !important; }
+#settingsOverlay #settingsGrid .wsx-dt { flex: 1 1 0 !important; width: 100% !important; min-width: 0 !important; min-height: 0 !important; display: grid !important; grid-template-columns: 1.6fr 1fr 1fr 1.7fr 1fr 1fr !important; grid-template-rows: minmax(0, 1fr) !important; gap: 0 !important; }
+#settingsOverlay #settingsGrid .wsx-dtb { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-width: 0; min-height: 0; padding: 0; background: var(--panel); border: 0; border-right: 1px solid var(--border2); color: var(--green); font-family: var(--mono); cursor: pointer; touch-action: manipulation; }
+#settingsOverlay #settingsGrid .wsx-dtb:last-child { border-right: 0; }
+#settingsOverlay #settingsGrid .wsx-dtb:hover { background: #12195a; }
+#settingsOverlay #settingsGrid .wsx-dtb span { font-size: 12px; letter-spacing: 0.14em; color: var(--text-dim); }
+#settingsOverlay #settingsGrid .wsx-dtb b { font-size: clamp(22px, 7vw, 56px); font-weight: 500; line-height: 1; }
+.wsx-pugrid.pd { grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+.wsx-pugrid.pmo { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.wsx-pugrid.py { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.wsx-pugrid.pp { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.wsx-pugrid.pp .wsx-pun { height: 40px; font-size: 12px; }
+.wsx-pun.wsx-pdone { width: 100%; margin-top: 10px; background: var(--green); color: #000432; border-color: var(--green); font-weight: 700; }
+#settingsOverlay #settingsGrid .wsx-dtb[data-i="0"] b { font-size: clamp(11px, 3vw, 24px); max-width: 100%; overflow: hidden; white-space: nowrap; }
+#settingsOverlay #settingsGrid > div:nth-child(1) { display: none !important; }
+#settingsOverlay #settingsGrid .wsx-pairs { display: none !important; }
+#settingsOverlay #settingsGrid > div:nth-child(2), #settingsOverlay #settingsGrid > div:nth-child(3), #settingsOverlay #settingsGrid > div:nth-child(4) { display: none !important; }
+#settingsOverlay #settingsGrid > div.wsx-bar { display: grid !important; flex: 1 1 0 !important; min-height: 0 !important; width: 100% !important; grid-template-columns: 1.6fr 1fr 1fr 1.7fr 1fr 1fr 1.3fr 1.3fr 1.4fr 1.6fr !important; grid-template-rows: minmax(0, 1fr) minmax(0, 1fr) !important; gap: 0 !important; }
+#settingsOverlay #settingsGrid .wsx-bar .wsx-dt { display: contents !important; }
+#settingsOverlay #settingsGrid .wsx-bar .wsx-dtb { border-right: 1px solid var(--border2) !important; border-bottom: 1px solid var(--border2) !important; }
+#settingsOverlay #settingsGrid .wsx-bar .wsx-dt:nth-of-type(1) > .wsx-dtb { grid-row: 1; border-top: 2px solid var(--sig-red) !important; }
+#settingsOverlay #settingsGrid .wsx-bar .wsx-dt:nth-of-type(2) > .wsx-dtb { grid-row: 2; border-bottom: 2px solid var(--sig-green) !important; }
+#settingsOverlay #settingsGrid .wsx-bar .wsx-dtb span { font-size: clamp(8px, 1vw, 12px); letter-spacing: 0.08em; }
+#settingsOverlay #settingsGrid .wsx-bar .wsx-dtb b { font-size: clamp(13px, 3.4vw, 48px); }
+#settingsOverlay #settingsGrid .wsx-bar .wsx-dtb[data-i="0"] b { font-size: clamp(10px, 1.8vw, 22px); text-overflow: clip; }
+#settingsOverlay #settingsGrid .wsx-bar .wsx-x1 { grid-column: 7; grid-row: 1; border-top: 2px solid var(--sig-red) !important; }
+#settingsOverlay #settingsGrid .wsx-bar .wsx-x2 { grid-column: 7; grid-row: 2; border-bottom: 2px solid var(--sig-green) !important; }
+#settingsOverlay #settingsGrid .wsx-bar .wsx-x3 { grid-column: 8; grid-row: 1 / span 2; }
+#settingsOverlay #settingsGrid .wsx-bar .wsx-x4 { grid-column: 9; grid-row: 1 / span 2; }
+#settingsOverlay #settingsGrid .wsx-bar .wsx-x5 { grid-column: 10; grid-row: 1 / span 2; background: var(--green) !important; }
+#settingsOverlay #settingsGrid .wsx-bar .wsx-x5:hover { background: #5cffa8 !important; }
+#settingsOverlay #settingsGrid .wsx-bar .wsx-x5 span, #settingsOverlay #settingsGrid .wsx-bar .wsx-x5 b { color: #000432 !important; }
+#settingsOverlay #settingsGrid .wsx-bar .wsx-x4 b, #settingsOverlay #settingsGrid .wsx-bar .wsx-x5 b { font-size: clamp(12px, 2.2vw, 30px); }
+#settingsOverlay .settings-foot .run-btn { display: none !important; }
+#settingsOverlay #settingsCloseFab { width: 100% !important; height: 40px !important; flex: 1 1 auto !important; }
+.wsx-pugrid.pk { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.wsx-pkd { text-align: center; font-family: var(--mono); font-size: 36px; color: var(--green); border: 1px solid var(--border2); border-radius: 6px; padding: 8px; margin-bottom: 10px; }
+.wsx-pun.wsx-pok { background: var(--green); color: #000432; border-color: var(--green); font-weight: 700; }
+#settingsOverlay #settingsGrid .wsx-bar .wsx-dt:nth-of-type(1) > .wsx-dtb[data-i="0"] { grid-column: 1; grid-row: 1 / span 2; border-top: 0 !important; border-bottom: 1px solid var(--border2) !important; }
+#settingsOverlay #settingsGrid .wsx-bar .wsx-dt:nth-of-type(2) > .wsx-dtb[data-i="0"] { display: none !important; }
+#settingsOverlay #settingsGrid .wsx-bar .wsx-dtb[data-i="0"] b { font-size: clamp(11px, 2.4vw, 26px); white-space: normal; word-break: break-all; text-align: center; max-width: 100%; }
+#settingsOverlay { display: flex !important; top: auto !important; left: 0; right: 0; bottom: 0; height: 9vh; height: 9dvh; padding: 0; background: var(--bg); border-top: 1px solid var(--border2); z-index: 900; }
+.layout { height: 91vh !important; height: 91dvh !important; }
+.split-pane-body { padding-bottom: 8px; }
+#toast { bottom: calc(9vh + 10px); }
+#settingsFab, #settingsCloseFab, #settingsOverlay .settings-foot { display: none !important; }
+#settingsOverlay #settingsGrid .wsx-bar .wsx-dtb span { display: none !important; }
+#settingsOverlay #settingsGrid .wsx-bar .wsx-dtb b { font-size: clamp(10px, min(2.4vw, 2.6vh), 22px) !important; }
+#settingsOverlay #settingsGrid .wsx-bar .wsx-dtb[data-i="0"].wsx-dtb b { font-size: clamp(10px, min(2.2vw, 2.8vh), 20px) !important; }
+#settingsOverlay #settingsGrid .wsx-bar .wsx-dt .wsx-dtb.wsx-dtb.wsx-dtb.wsx-dtb { border-top: 1px solid var(--border2) !important; border-bottom: 1px solid var(--border2) !important; }
+#settingsOverlay #settingsGrid .wsx-bar > .wsx-dtb.wsx-dtb.wsx-dtb { border-top: 1px solid var(--border2) !important; border-bottom: 1px solid var(--border2) !important; }
+.filter-bar label { display: none !important; }
+#settingsOverlay #scanPage { padding: 4px 10px !important; max-width: none; overflow: hidden; }
+#settingsOverlay .scan-title { display: none; }
+#settingsOverlay #scanPage .progress-wrap { padding: 2px 0; }
+#settingsOverlay #scanPage .progress-header { margin-bottom: 3px; }
+#settingsOverlay #scanPage .progress-label, #settingsOverlay #scanPage .progress-pct { font-size: 12px; }
+#settingsOverlay #scanPage .progress-bar-bg { height: 4px; }
+#settingsOverlay #scanPage .log-area { display: none !important; }
+#settingsOverlay #scanCancelBtn { width: 100%; padding: 3px 16px; font-size: 11px; margin-top: 2px; }
+#settingsOverlay.wsx-scanning { top: 0 !important; height: 100vh !important; height: 100dvh !important; z-index: 960; border-top: 0; }
+#settingsOverlay.wsx-scanning #scanPage { display: flex !important; flex-direction: column; height: 100%; padding: 14px 12px !important; }
+#settingsOverlay.wsx-scanning .scan-title { display: block; flex: none; font-size: 16px; margin-bottom: 6px; }
+#settingsOverlay.wsx-scanning #scanPage .progress-wrap { flex: none; padding: 8px 0; }
+#settingsOverlay.wsx-scanning #scanPage .progress-header { margin-bottom: 8px; }
+#settingsOverlay.wsx-scanning #scanPage .progress-label, #settingsOverlay.wsx-scanning #scanPage .progress-pct { font-size: 15px; }
+#settingsOverlay.wsx-scanning #scanPage .progress-bar-bg { height: 8px; }
+#scanLogHist { display: none; }
+#settingsOverlay.wsx-scanning #scanLogHist { display: block; flex: 1 1 0; min-height: 0; overflow-y: auto; margin-top: 8px; padding: 8px 10px; border: 1px solid var(--border2); border-radius: 4px; font-family: var(--mono); font-size: 12px; line-height: 1.6; color: var(--text-mid); }
+#settingsOverlay.wsx-scanning #scanLogHist div { white-space: normal; word-break: break-word; border-bottom: 1px solid rgba(255,255,255,0.05); padding: 1px 0; }
+#settingsOverlay.wsx-scanning #scanLogHist div:first-child { color: var(--green); }
+#settingsOverlay.wsx-scanning #scanCancelBtn { flex: none; width: 100%; padding: 14px 16px; font-size: 14px; margin-top: 10px; }
 </style>
 </head>
 <body>
@@ -1593,9 +1720,9 @@ body, .layout { height: 100vh; height: 100dvh; }
           <label>Level</label>
                     <select id="levelFilter">
                       <option value="__ALL__">ALL LEVELS</option>
-                      <option value="1-2">X1→X2</option>
+                      <option value="1-2" selected>X1→X2</option>
                       <option value="2-3">X2→X3</option>
-                      <option value="3-4" selected>X3→X4</option>
+                      <option value="3-4">X3→X4</option>
                       <option value="4-5">X4→X5</option>
                       <option value="5-6">X5→X6</option>
                       <option value="6-7">X6→X7</option>
@@ -2543,6 +2670,8 @@ async function runScan() {
     document.getElementById("filterBar").style.display = "none";
     document.getElementById("tableArea").innerHTML = '<div class="state-idle" id="stateIdle"><div class="state-icon">⬡</div><div class="state-title">Scanning…</div></div>';
     document.getElementById("daySummary").classList.remove("visible");
+        var _lh = document.getElementById("scanLogHist");
+        if (_lh) _lh.innerHTML = "";
 
   allRevs = []; allMoms = [];
     let totalTicks = 0;
@@ -3124,14 +3253,31 @@ function renderTable() {
   scanPage.innerHTML =
     '<div class="scan-title">SCANNING…</div>' +
     '<div id="scanSlot"></div>' +
+        '<div id="scanLogHist"></div>' +
     '<button type="button" class="run-btn" id="scanCancelBtn">■ CANCEL SCAN</button>';
   modal.appendChild(scanPage);
+    (function() {
+      var ll = document.getElementById("logLine");
+      var hist = document.getElementById("scanLogHist");
+      if (!ll || !hist || !window.MutationObserver) return;
+      var lastTxt = "";
+      new MutationObserver(function() {
+        var t = ll.textContent;
+        if (!t || t === lastTxt) return;
+        lastTxt = t;
+        var d = document.createElement("div");
+        d.textContent = t;
+        hist.insertBefore(d, hist.firstChild);
+        while (hist.childNodes.length > 150) hist.removeChild(hist.lastChild);
+      }).observe(ll, { childList: true, characterData: true, subtree: true });
+    })();
 
   var slot = document.getElementById("scanSlot");
   var pw = document.getElementById("progressWrap");
   if (pw && slot) slot.appendChild(pw);
 
   function showScanView() {
+      overlay.classList.add("wsx-scanning");
     head.style.display = "none";
     grid.style.display = "none";
     foot.style.display = "none";
@@ -3139,6 +3285,7 @@ function renderTable() {
   }
 
   function showSettingsView() {
+      overlay.classList.remove("wsx-scanning");
     scanPage.style.display = "none";
     head.style.display = "";
     grid.style.display = "";
@@ -3259,7 +3406,7 @@ function renderTable() {
             });
             Array.prototype.forEach.call(pairHost.querySelectorAll(".wsx-pair"), function(b) {
         var o = Array.prototype.filter.call(sel.options, function(x) { return x.value === b.dataset.value; })[0];
-        b.classList.toggle("on", !!(o && o.selected));
+        b.classList.toggle("on", allPairsMode || !!(o && o.selected));
       });
     }
 
@@ -3316,7 +3463,7 @@ function renderTable() {
       var startDow = (new Date(Date.UTC(c.y, c.m, 1)).getUTCDay() + 6) % 7;
       var dim = new Date(Date.UTC(c.y, c.m + 1, 0)).getUTCDate();
       var h = '<div class="wsx-cal-title">' + c.def.title + '</div>' +
-        '<div class="wsx-cr">' + c.def.title + ' <b>' + fmtDMY(ownV) + '</b></div>' + '<div class="wsx-ch"><button type="button" data-ynav="-1">«</button><button type="button" data-nav="-1">‹</button><span>' + MONTHS[c.m] + ' ' + c.y + '</span><button type="button" data-nav="1">›</button><button type="button" data-ynav="1">»</button></div>' +
+        '<div class="wsx-cr">' + c.def.title + ' <b>' + fmtDMY(ownV) + '</b></div>' + '<div class="wsx-ch"><button type="button" data-ynav="-1">«</button><span>' + c.y + '</span><button type="button" data-ynav="1">»</button></div><div class="wsx-ch"><button type="button" data-nav="-1">‹</button><span>' + MONTHS[c.m] + '</span><button type="button" data-nav="1">›</button></div>' +
                 '' +
         '<div class="wsx-mg">' + ["M","T","W","T","F","S","S"].map(function(n) { return '<span class="wsx-dw">' + n + '</span>'; }).join("");
       for (var pb = 0; pb < startDow; pb++) { h += '<span class="wsx-bk"></span>'; }
@@ -4355,6 +4502,285 @@ function renderTable() {
     document.addEventListener("DOMContentLoaded", merge);
   } else {
     setTimeout(merge, 0);
+  }
+})();
+</script>
+<script>
+(function() {
+  function pad2(n) { return (n < 10 ? "0" : "") + n; }
+  function fire(el) { el.dispatchEvent(new Event("change", { bubbles: true })); }
+  var NAMES = ["PAIR", "DD", "MM", "YYYY", "HH", "MM"];
+  var renders = [];
+
+  function parts(dId, tId) {
+    var dv = (document.getElementById(dId).value || "").split("-");
+    var tv = (document.getElementById(tId).value || "00:00").split(":");
+    var now = new Date();
+    return {
+      y: +dv[0] || now.getFullYear(),
+      m: +dv[1] || 1,
+      d: +dv[2] || 1,
+      h: +tv[0] || 0,
+      n: +tv[1] || 0
+    };
+  }
+
+  function refreshAll() {
+    for (var r = 0; r < renders.length; r++) { renders[r](); }
+  }
+
+  function save(dId, tId, p) {
+    var dim = new Date(Date.UTC(p.y, p.m, 0)).getUTCDate();
+    if (p.d > dim) p.d = dim;
+    var dEl = document.getElementById(dId);
+    var tEl = document.getElementById(tId);
+    var fEl = document.getElementById("dateFrom");
+    var toEl = document.getElementById("dateTo");
+    dEl.value = p.y + "-" + pad2(p.m) + "-" + pad2(p.d);
+    tEl.value = pad2(p.h) + ":" + pad2(p.n);
+    if (dId === "dateFrom" && toEl.value < fEl.value) toEl.value = fEl.value;
+    if (dId === "dateTo" && fEl.value > toEl.value) fEl.value = toEl.value;
+    fire(dEl);
+    fire(tEl);
+    fire(fEl);
+    fire(toEl);
+    refreshAll();
+  }
+
+  function popup(title, count, start, cur, cls, onPick) {
+    var pop = document.getElementById("wsxPop");
+    if (!pop) {
+      pop = document.createElement("div");
+      pop.id = "wsxPop";
+      document.body.appendChild(pop);
+    }
+    var html = '<div class="wsx-pubox"><div class="wsx-putitle">' + title + '</div><div class="wsx-pugrid ' + cls + '">';
+    for (var q = 0; q < count; q++) {
+      var v = start + q;
+      html += '<button type="button" data-v="' + v + '" class="wsx-pun' + (v === cur ? ' on' : '') + '">' + (cls === "py" ? v : pad2(v)) + '</button>';
+    }
+    html += '</div></div>';
+    pop.innerHTML = html;
+    pop.onclick = function(ev) {
+      var bt = ev.target.closest ? ev.target.closest(".wsx-pun") : null;
+      if (!bt) {
+        if (ev.target === pop) pop.style.display = "none";
+        return;
+      }
+      onPick(+bt.getAttribute("data-v"));
+      pop.style.display = "none";
+    };
+    pop.style.display = "flex";
+  }
+
+  function pairText() {
+      var sel = document.getElementById("pairSelect");
+      if (allPairsMode) return "ALL";
+      var chosen = Array.prototype.filter.call(sel.options, function(o) { return o.selected && o.value && o.value !== "__ALL__"; });
+      if (chosen.length === 0) return "-";
+      if (chosen.length === 1) return chosen[0].textContent.trim();
+      return chosen.length + " PAIRS";
+    }
+  
+    function pairPopup() {
+      var sel = document.getElementById("pairSelect");
+      var pop = document.getElementById("wsxPop");
+      if (!pop) {
+        pop = document.createElement("div");
+        pop.id = "wsxPop";
+        document.body.appendChild(pop);
+      }
+  
+      function draw() {
+        var oldBox = pop.querySelector(".wsx-pubox");
+        var keep = oldBox ? oldBox.scrollTop : 0;
+        var h = '<div class="wsx-pubox"><div class="wsx-putitle">PAIRS</div><div class="wsx-pugrid pp">';
+        Array.prototype.forEach.call(sel.options, function(o) {
+          var isAll = o.value === "__ALL__";
+          var on = isAll ? allPairsMode : (!allPairsMode && o.selected);
+          h += '<button type="button" data-v="' + o.value + '" class="wsx-pun' + (on ? ' on' : '') + '">' + (isAll ? "ALL" : o.textContent.trim()) + '</button>';
+        });
+        h += '</div><button type="button" class="wsx-pun wsx-pdone">DONE</button></div>';
+        pop.innerHTML = h;
+        var newBox = pop.querySelector(".wsx-pubox");
+        if (newBox) newBox.scrollTop = keep;
+      }
+  
+      pop.onclick = function(ev) {
+        var t = ev.target;
+        if (t === pop || (t.classList && t.classList.contains("wsx-pdone"))) {
+          pop.style.display = "none";
+          return;
+        }
+        var bt = t.closest ? t.closest(".wsx-pun") : null;
+        if (!bt) return;
+        var v = bt.getAttribute("data-v");
+        var opts = Array.prototype.slice.call(sel.options);
+        if (v === "__ALL__") {
+          opts.forEach(function(o) { o.selected = (o.value === "__ALL__"); });
+        } else {
+          var hit = opts.filter(function(x) { return x.value === v; })[0];
+          if (hit) hit.selected = !hit.selected;
+        }
+        fire(sel);
+        draw();
+      };
+  
+      draw();
+      pop.style.display = "flex";
+    }
+  
+    function keypad(title, inId, min, max, onDone) {
+        var inp = document.getElementById(inId);
+        var pop = document.getElementById("wsxPop");
+        if (!pop) {
+          pop = document.createElement("div");
+          pop.id = "wsxPop";
+          document.body.appendChild(pop);
+        }
+        var buf = String(inp.value || "");
+        var fresh = true;
+    
+        function draw() {
+          var h = '<div class="wsx-pubox"><div class="wsx-putitle">' + title + '</div><div class="wsx-pkd">' + (buf === "" ? "0" : buf) + '</div><div class="wsx-pugrid pk">';
+          for (var q = 1; q <= 9; q++) {
+            h += '<button type="button" data-k="' + q + '" class="wsx-pun">' + q + '</button>';
+          }
+          h += '<button type="button" data-k="b" class="wsx-pun">&#9003;</button><button type="button" data-k="0" class="wsx-pun">0</button><button type="button" data-k="ok" class="wsx-pun wsx-pok">OK</button></div></div>';
+          pop.innerHTML = h;
+        }
+    
+        pop.onclick = function(ev) {
+          var bt = ev.target.closest ? ev.target.closest(".wsx-pun") : null;
+          if (!bt) {
+            if (ev.target === pop) pop.style.display = "none";
+            return;
+          }
+          var k = bt.getAttribute("data-k");
+          if (k === "ok") {
+            var n = parseInt(buf, 10);
+            if (isNaN(n)) n = min;
+            n = Math.max(min, Math.min(max, n));
+            inp.value = String(n);
+            inp.dispatchEvent(new Event("input", { bubbles: true }));
+            inp.dispatchEvent(new Event("change", { bubbles: true }));
+            pop.style.display = "none";
+            if (onDone) onDone();
+            return;
+          }
+          if (k === "b") {
+            buf = buf.slice(0, -1);
+            fresh = false;
+          } else {
+            if (fresh) { buf = ""; fresh = false; }
+            if (buf.length < 3) buf += k;
+          }
+          draw();
+        };
+    
+        draw();
+        pop.style.display = "flex";
+      }
+    
+      function makeExtras(bar) {
+        var defs = [
+          { cls: "wsx-x1", lbl: "CYC MIN", id: "cycleMin", min: 1, max: 500 },
+          { cls: "wsx-x2", lbl: "CYC MAX", id: "cycleMax", min: 1, max: 500 },
+          { cls: "wsx-x3", lbl: "MIN PROB %", id: "minPct", min: 0, max: 100 }
+        ];
+        defs.forEach(function(d) {
+          var b = document.createElement("button");
+          b.type = "button";
+          b.className = "wsx-dtb " + d.cls;
+          b.innerHTML = '<span>' + d.lbl + '</span><b></b>';
+          bar.appendChild(b);
+          var v = b.querySelector("b");
+          function show() { v.textContent = document.getElementById(d.id).value || "0"; }
+          show();
+          b.addEventListener("click", function() { keypad(d.lbl, d.id, d.min, d.max, show); });
+        });
+    
+        var cc = document.createElement("button");
+        cc.type = "button";
+        cc.className = "wsx-dtb wsx-x4";
+        cc.innerHTML = '<span>CACHE</span><b>&#9003;</b>';
+        cc.addEventListener("click", function() { clearPersistedCache(); });
+        bar.appendChild(cc);
+    
+        var rn = document.createElement("button");
+        rn.type = "button";
+        rn.className = "wsx-dtb wsx-x5";
+        rn.innerHTML = '<span>APPLY &amp; RUN</span><b>&#9654;</b>';
+        rn.addEventListener("click", function() {
+          var rb = document.getElementById("settingsRunBtn");
+          if (rb) rb.click();
+        });
+        bar.appendChild(rn);
+      }
+    
+      function makeRow(host, label, dId, tId) {
+    var row = document.createElement("div");
+    row.className = "wsx-dt";
+    host.appendChild(row);
+
+    function render() {
+      var p = parts(dId, tId);
+      var vals = [pairText(), pad2(p.d), pad2(p.m), String(p.y), pad2(p.h), pad2(p.n)];
+      var h = "";
+      for (var i = 0; i < 6; i++) {
+        h += '<button type="button" class="wsx-dtb" data-i="' + i + '"><span>' + NAMES[i] + '</span><b>' + vals[i] + '</b></button>';
+      }
+      row.innerHTML = h;
+    }
+
+    row.addEventListener("click", function(e) {
+      var bt = e.target.closest ? e.target.closest(".wsx-dtb") : null;
+      if (!bt) return;
+      var i = +bt.getAttribute("data-i");
+            if (i === 0) { pairPopup(); return; }
+            i = i - 1;
+      var p = parts(dId, tId);
+      var yNow = new Date().getFullYear();
+      var y0 = Math.min(yNow - 10, p.y);
+      var y1 = Math.max(yNow, p.y);
+      var dim = new Date(Date.UTC(p.y, p.m, 0)).getUTCDate();
+
+      function done(v) {
+        if (i === 0) p.d = v;
+        else if (i === 1) p.m = v;
+        else if (i === 2) p.y = v;
+        else if (i === 3) p.h = v;
+        else p.n = v;
+        save(dId, tId, p);
+      }
+
+      if (i === 0) popup(label + " - DAY", dim, 1, p.d, "pd", done);
+      else if (i === 1) popup(label + " - MONTH", 12, 1, p.m, "pmo", done);
+      else if (i === 2) popup(label + " - YEAR", y1 - y0 + 1, y0, p.y, "py", done);
+      else if (i === 3) popup(label + " - HOUR", 24, 0, p.h, "ph", done);
+      else popup(label + " - MINUTE", 60, 0, p.n, "pm", done);
+    });
+
+    renders.push(render);
+    render();
+  }
+
+  function init() {
+    var grid = document.getElementById("settingsGrid");
+    if (!grid || !grid.children[1] || !grid.children[2]) return;
+    document.getElementById("pairSelect").addEventListener("change", refreshAll);
+        var wsxBar = document.createElement("div");
+            wsxBar.className = "wsx-bar";
+            grid.insertBefore(wsxBar, grid.querySelector(".settings-foot"));
+            makeRow(wsxBar, "FROM", "dateFrom", "timeFrom");
+    makeRow(wsxBar, "TO", "dateTo", "timeTo");
+        makeExtras(wsxBar);
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", function() { setTimeout(init, 800); });
+  } else {
+    setTimeout(init, 800);
   }
 })();
 </script>
