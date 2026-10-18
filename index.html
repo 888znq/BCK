@@ -1518,6 +1518,36 @@ body, .layout { height: 100vh; height: 100dvh; }
 #settingsOverlay.wsx-scanning #scanLogHist div { white-space: normal; word-break: break-word; border-bottom: 1px solid rgba(255,255,255,0.05); padding: 1px 0; }
 #settingsOverlay.wsx-scanning #scanLogHist div:first-child { color: var(--green); }
 #settingsOverlay.wsx-scanning #scanCancelBtn { flex: none; width: 100%; padding: 14px 16px; font-size: 14px; margin-top: 10px; }
+.xs-wrap { flex: none; width: 100%; }
+.xs-pane { background: var(--bg); border-bottom: 2px solid var(--border2); }
+.xs-head { display: flex; justify-content: space-between; padding: 6px 8px; font-family: var(--mono); font-size: 13px; letter-spacing: 0.04em; color: var(--text-mid); background: var(--panel); border-bottom: 1px solid var(--border); }
+.xs-t { table-layout: fixed; width: 100%; }
+.xs-t th:nth-child(1), .xs-t td:nth-child(1) { width: 28%; }
+.xs-t th:nth-child(2), .xs-t td:nth-child(2) { width: 13%; }
+.xs-t th:nth-child(3), .xs-t td:nth-child(3) { width: 12%; }
+.xs-t th:nth-child(4), .xs-t td:nth-child(4) { width: 19%; }
+.xs-t th:nth-child(5), .xs-t td:nth-child(5) { width: 15%; }
+.xs-t th:nth-child(6), .xs-t td:nth-child(6) { width: 13%; }
+.xs-t thead th { padding: 6px 3px; font-size: clamp(9px, 2.6vw, 12px); letter-spacing: 0; }
+.xs-t tbody td { padding: 5px 3px; font-size: clamp(11px, 3.2vw, 15px); overflow: hidden; }
+.xs-t tr.xs-m { border-bottom: 0; }
+.xs-t tr.xs-d td { padding: 0 3px 7px; font-size: clamp(9px, 2.6vw, 12px); white-space: normal; word-break: break-word; width: auto; opacity: 0.85; }
+.xs-t td.xs-hits { font-weight: 700; }
+.xs-wrap { flex: none; width: 100%; }
+.xs-pane { background: var(--bg); border-bottom: 2px solid var(--border2); }
+.xs-head { display: flex; justify-content: space-between; padding: 6px 8px; font-family: var(--mono); font-size: 13px; letter-spacing: 0.04em; color: var(--text-mid); background: var(--panel); border-bottom: 1px solid var(--border); }
+.xs-t { table-layout: fixed; width: 100%; }
+.xs-t th:nth-child(1), .xs-t td:nth-child(1) { width: 28%; }
+.xs-t th:nth-child(2), .xs-t td:nth-child(2) { width: 13%; }
+.xs-t th:nth-child(3), .xs-t td:nth-child(3) { width: 12%; }
+.xs-t th:nth-child(4), .xs-t td:nth-child(4) { width: 19%; }
+.xs-t th:nth-child(5), .xs-t td:nth-child(5) { width: 15%; }
+.xs-t th:nth-child(6), .xs-t td:nth-child(6) { width: 13%; }
+.xs-t thead th { padding: 6px 3px; font-size: clamp(9px, 2.6vw, 12px); letter-spacing: 0; }
+.xs-t tbody td { padding: 5px 3px; font-size: clamp(11px, 3.2vw, 15px); overflow: hidden; }
+.xs-t tr.xs-m { border-bottom: 0; }
+.xs-t tr.xs-d td { padding: 0 3px 7px; font-size: clamp(9px, 2.6vw, 12px); white-space: normal; word-break: break-word; width: auto; opacity: 0.85; }
+.xs-t td.xs-hits { font-weight: 700; }
 </style>
 </head>
 <body>
@@ -1750,6 +1780,8 @@ body, .layout { height: 100vh; height: 100dvh; }
                     <input type="number" id="filterC1" placeholder="1" min="1" style="display:none;"/>
                     <div class="result-count" id="resultCount">—</div>
                                         <button class="export-btn" id="row0Btn" onclick="toggleRow0()" style="margin-left: 12px;">ROW 0 ONLY</button>
+                                                                                <button class="export-btn" id="xsBtn" onclick="toggleXs()" style="display:none; margin-left: 8px;">BY SESSION</button>
+                                                                                <button class="export-btn" id="xsBtn" onclick="toggleXs()" style="display:none; margin-left: 8px;">BY SESSION</button>
                                         <button class="export-btn" id="exportCsvBtn" onclick="exportAllSignalsCSV()" style="display:none; margin-left: 12px;">⬇ EXPORT CSV</button>
                                                             <button class="export-btn" id="exportTableFormatBtn" onclick="exportAllSignalsTableFormat()" style="display:none; margin-left: 8px;">⬇ EXPORT ALL (TABLE)</button>
                                                             <span>|</span>
@@ -2153,6 +2185,8 @@ function matchesDayFilter(d, dayVal) {
   return d.date === dayVal;
 }
 
+var xsView = false;
+var xsView = false;
 var row0Only = false;
 function toggleRow0() {
   row0Only = !row0Only;
@@ -2614,12 +2648,13 @@ async function workerScanSessions(prices, cMin, cMax, pairName, startTs, winSec,
   var merged = null;
   for (var si = 0; si < n; si++) {
     if (cancelFlag) break;
-    var a = Math.round(len * si / n);
-    var b = Math.round(len * (si + 1) / n);
-    var sl = prices.slice(a, b);
-    if (sl.length <= cMax) continue;
-    var offSec = Math.round(winSec * si / n);
-    var r = await workerScan(sl, cMin, cMax, pairName, startTs + offSec, function(f) { if (onFrac) onFrac((si + f) / n); });
+    var sessSec = Math.round(winSec / n);
+        var a = si * sessSec;
+        var b = (si === n - 1) ? len : (si + 1) * sessSec;
+        var sl = prices.slice(a, b);
+        if (sl.length <= cMax) continue;
+        var offSec = a;
+    var r = await workerScan(sl, cMin, cMax, pairName, 0, function(f) { if (onFrac) onFrac((si + f) / n); });
     if (!r) continue;
     for (var k = 0; k < r.length; k++) {
       if (Array.isArray(r[k])) {
@@ -2693,6 +2728,15 @@ async function runScan() {
         var winSecV = secTo - secFrom;
         if (sessMinV && (winSecV % (sessMinV * 60) !== 0 || sessMinV * 60 >= winSecV)) { sessMinV = 0; window.wsxSessionMin = 0; }
         if (sessMinV && sessMinV * 60 <= cycleMax) { toast("Session " + sessMinV + "m must be longer than cycle max C" + cycleMax, "err"); return; }
+                window.wsxLastSessCount = sessMinV ? Math.round(winSecV / (sessMinV * 60)) : 1;
+                                window.wsxLastDays = days.length;
+                                xsView = window.wsxLastSessCount > 1;
+                                var _xb = document.getElementById("xsBtn");
+                                if (_xb) {
+                                  _xb.style.display = xsView ? "inline-block" : "none";
+                                  _xb.style.background = xsView ? "var(--green)" : "transparent";
+                                  _xb.style.color = xsView ? "#000432" : "var(--cyan)";
+                                }
   
     // ── Cache key: all pairs + date range + time window ──
     const newCacheKey = `${pairsToScan.join(",")}|${dateFrom}|${dateTo}|${secFrom}-${secTo}`;
@@ -3089,6 +3133,174 @@ function computeRepeatingWalls() {
   return out;
 }
 
+function toggleXs() {
+  xsView = !xsView;
+  var xb = document.getElementById("xsBtn");
+  if (xb) {
+    xb.style.background = xsView ? "var(--green)" : "transparent";
+    xb.style.color = xsView ? "#000432" : "var(--cyan)";
+  }
+  renderTable();
+}
+
+function computeCrossSession() {
+  var minPct = parseInt(document.getElementById("filterPct").value) || 0;
+  var minStreak = parseInt(document.getElementById("filterStreak").value) || 1;
+  var minC1 = parseInt(document.getElementById("filterC1").value) || 1;
+  var levels = parseLevelFilter(document.getElementById("levelFilter"));
+
+  function build(list) {
+    var groups = {};
+    for (var i = 0; i < list.length; i++) {
+      var d = list[i];
+      if (d.pct < minPct || d.s1 < minStreak || d.c1 < minC1) continue;
+      if (!matchesLevelFilter(d, levels)) continue;
+      if (row0Only && d.r !== 0) continue;
+      var key = d.pair + "|" + d.c + "|" + d.r + "|" + d.col + "|" + d.s1;
+      var g = groups[key];
+      if (!g) { g = { hits: [], sum: 0 }; groups[key] = g; }
+      g.hits.push(d);
+      g.sum += d.pct;
+    }
+    var out = [];
+    for (var k in groups) {
+      var gg = groups[k];
+      if (gg.hits.length < 2) continue;
+      gg.hits.sort(function(a, b) {
+        var da = a.date || "";
+        var db = b.date || "";
+        if (da < db) return -1;
+        if (da > db) return 1;
+        return (a.sess || 1) - (b.sess || 1);
+      });
+      var s = gg.hits[0];
+      out.push({ pair: s.pair, col: s.col, c: s.c, r: s.r, s1: s.s1, s2: s.s2, n: gg.hits.length, avg: Math.round(gg.sum / gg.hits.length), hits: gg.hits });
+    }
+    out.sort(function(a, b) { return (b.n - a.n) || (b.avg - a.avg); });
+    return out;
+  }
+
+  return { rev: build(allRevs || []), mom: build(allMoms || []) };
+}
+
+function buildXsPaneHTML(label, list, total) {
+  var multi = (window.wsxLastDays || 1) > 1;
+  var shown = list.slice(0, 150);
+  var rows = shown.map(function(g) {
+    var name = getPairDisplayName(g.pair);
+    var arrow = g.col === "R" ? "↓" : "↑";
+    var arrowCls = g.col === "R" ? "cell-arrow-r" : "cell-arrow-g";
+    var rowCls = g.col === "R" ? "row-red" : "row-green";
+    var det = g.hits.map(function(h) {
+      return (multi ? (h.date || "").slice(5) + " " : "") + "S" + (h.sess || 1) + ": " + h.c1 + "/" + h.c2;
+    }).join(" · ");
+    return '<tr class="' + rowCls + ' xs-m">' +
+      '<td class="cell-pair"><span class="' + arrowCls + '">' + arrow + '</span> ' + name + '</td>' +
+      '<td class="cell-dim">C' + g.c + '</td>' +
+      '<td class="cell-dim">R' + g.r + '</td>' +
+      '<td class="cell-streak">X' + g.s1 + '→X' + g.s2 + '</td>' +
+      '<td class="xs-hits">' + g.n + '/' + total + '</td>' +
+      '<td><span class="cell-pct">' + g.avg + '%</span></td>' +
+      '</tr>' +
+      '<tr class="' + rowCls + ' xs-d"><td colspan="6">' + det + '</td></tr>';
+  }).join("");
+  var body = shown.length
+    ? '<table class="xs-t"><thead><tr><th>PAIR</th><th>CYC</th><th>ROW</th><th>STREAK</th><th>HITS</th><th>AVG%</th></tr></thead><tbody>' + rows + '</tbody></table>'
+    : '<div class="state-empty" style="min-height:80px;"><div class="state-title" style="font-size:12px;">No wall repeats in 2+ sessions</div></div>';
+  return '<div class="xs-pane"><div class="xs-head"><span>' + label + ' · S: C1/C2 PER SESSION</span><span>' + list.length + '</span></div>' + body + '</div>';
+}
+
+function buildXsHTML() {
+  var total = (window.wsxLastSessCount || 1) * (window.wsxLastDays || 1);
+  var x = computeCrossSession();
+  document.getElementById("resultCount").textContent = "Datasets: " + total + " | REV " + x.rev.length + ", MOM " + x.mom.length;
+  return '<div class="xs-wrap">' + buildXsPaneHTML("REVERSAL", x.rev, total) + buildXsPaneHTML("MOMENTUM", x.mom, total) + '</div>';
+}
+
+function toggleXs() {
+  xsView = !xsView;
+  var xb = document.getElementById("xsBtn");
+  if (xb) {
+    xb.style.background = xsView ? "var(--green)" : "transparent";
+    xb.style.color = xsView ? "#000432" : "var(--cyan)";
+  }
+  renderTable();
+}
+
+function computeCrossSession() {
+  var minPct = parseInt(document.getElementById("filterPct").value) || 0;
+  var minStreak = parseInt(document.getElementById("filterStreak").value) || 1;
+  var minC1 = parseInt(document.getElementById("filterC1").value) || 1;
+  var levels = parseLevelFilter(document.getElementById("levelFilter"));
+
+  function build(list) {
+    var groups = {};
+    for (var i = 0; i < list.length; i++) {
+      var d = list[i];
+      if (d.pct < minPct || d.s1 < minStreak || d.c1 < minC1) continue;
+      if (!matchesLevelFilter(d, levels)) continue;
+      if (row0Only && d.r !== 0) continue;
+      var key = d.pair + "|" + d.c + "|" + d.r + "|" + d.col + "|" + d.s1;
+      var g = groups[key];
+      if (!g) { g = { hits: [], sum: 0 }; groups[key] = g; }
+      g.hits.push(d);
+      g.sum += d.pct;
+    }
+    var out = [];
+    for (var k in groups) {
+      var gg = groups[k];
+      if (gg.hits.length < 2) continue;
+      gg.hits.sort(function(a, b) {
+        var da = a.date || "";
+        var db = b.date || "";
+        if (da < db) return -1;
+        if (da > db) return 1;
+        return (a.sess || 1) - (b.sess || 1);
+      });
+      var s = gg.hits[0];
+      out.push({ pair: s.pair, col: s.col, c: s.c, r: s.r, s1: s.s1, s2: s.s2, n: gg.hits.length, avg: Math.round(gg.sum / gg.hits.length), hits: gg.hits });
+    }
+    out.sort(function(a, b) { return (b.n - a.n) || (b.avg - a.avg); });
+    return out;
+  }
+
+  return { rev: build(allRevs || []), mom: build(allMoms || []) };
+}
+
+function buildXsPaneHTML(label, list, total) {
+  var multi = (window.wsxLastDays || 1) > 1;
+  var shown = list.slice(0, 150);
+  var rows = shown.map(function(g) {
+    var name = getPairDisplayName(g.pair);
+    var arrow = g.col === "R" ? "↓" : "↑";
+    var arrowCls = g.col === "R" ? "cell-arrow-r" : "cell-arrow-g";
+    var rowCls = g.col === "R" ? "row-red" : "row-green";
+    var det = g.hits.map(function(h) {
+      return (multi ? (h.date || "").slice(5) + " " : "") + "S" + (h.sess || 1) + ": " + h.c1 + "/" + h.c2;
+    }).join(" · ");
+    return '<tr class="' + rowCls + ' xs-m">' +
+      '<td class="cell-pair"><span class="' + arrowCls + '">' + arrow + '</span> ' + name + '</td>' +
+      '<td class="cell-dim">C' + g.c + '</td>' +
+      '<td class="cell-dim">R' + g.r + '</td>' +
+      '<td class="cell-streak">X' + g.s1 + '→X' + g.s2 + '</td>' +
+      '<td class="xs-hits">' + g.n + '/' + total + '</td>' +
+      '<td><span class="cell-pct">' + g.avg + '%</span></td>' +
+      '</tr>' +
+      '<tr class="' + rowCls + ' xs-d"><td colspan="6">' + det + '</td></tr>';
+  }).join("");
+  var body = shown.length
+    ? '<table class="xs-t"><thead><tr><th>PAIR</th><th>CYC</th><th>ROW</th><th>STREAK</th><th>HITS</th><th>AVG%</th></tr></thead><tbody>' + rows + '</tbody></table>'
+    : '<div class="state-empty" style="min-height:80px;"><div class="state-title" style="font-size:12px;">No wall repeats in 2+ sessions</div></div>';
+  return '<div class="xs-pane"><div class="xs-head"><span>' + label + ' · S: C1/C2 PER SESSION</span><span>' + list.length + '</span></div>' + body + '</div>';
+}
+
+function buildXsHTML() {
+  var total = (window.wsxLastSessCount || 1) * (window.wsxLastDays || 1);
+  var x = computeCrossSession();
+  document.getElementById("resultCount").textContent = "Datasets: " + total + " | REV " + x.rev.length + ", MOM " + x.mom.length;
+  return '<div class="xs-wrap">' + buildXsPaneHTML("REVERSAL", x.rev, total) + buildXsPaneHTML("MOMENTUM", x.mom, total) + '</div>';
+}
+
 function buildRepeatsRowsHTML(list) {
   return list.map(function(g) {
     const name     = getPairDisplayName(g.pair);
@@ -3162,6 +3374,14 @@ function renderTable() {
   document.getElementById("resultCount").textContent = `Showing ${revData.length} REV, ${momData.length} MOM`;
 
   const area = document.getElementById("tableArea");
+    if (xsView && (window.wsxLastSessCount || 1) > 1) {
+      area.innerHTML = buildXsHTML();
+      return;
+    }
+    if (xsView && (window.wsxLastSessCount || 1) > 1) {
+      area.innerHTML = buildXsHTML();
+      return;
+    }
   const repeatsHTML = buildRepeatsSectionHTML();
 
   if (revData.length === 0 && momData.length === 0) {
