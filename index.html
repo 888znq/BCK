@@ -2729,6 +2729,8 @@ async function runScan() {
         if (sessMinV && (winSecV % (sessMinV * 60) !== 0 || sessMinV * 60 >= winSecV)) { sessMinV = 0; window.wsxSessionMin = 0; }
         if (sessMinV && sessMinV * 60 <= cycleMax) { toast("Session " + sessMinV + "m must be longer than cycle max C" + cycleMax, "err"); return; }
                 window.wsxLastSessCount = sessMinV ? Math.round(winSecV / (sessMinV * 60)) : 1;
+                window.wsxLastSessMin = sessMinV;
+                window.wsxLastStartIST = timeFrom;
                                 window.wsxLastDays = days.length;
                                 xsView = window.wsxLastSessCount > 1;
                                 var _xb = document.getElementById("xsBtn");
@@ -3369,6 +3371,58 @@ async function exportRepeatsCSV() {
   toast("Exported " + repeats.length + " repeating wall(s) to CSV", "ok");
 }
 
+function buildSessionRankHTML(filterFn) {
+  var cnt = window.wsxLastSessCount || 1;
+  if (cnt < 2) return "";
+  var agg = {};
+  var all = allRevs.concat(allMoms);
+  for (var i = 0; i < all.length; i++) {
+    var d = all[i];
+    if (!filterFn(d)) continue;
+    var sn = d.sess || 1;
+    var a = agg[sn];
+    if (!a) { a = { s: sn, n: 0, sumP: 0, sumW: 0, sumC: 0 }; agg[sn] = a; }
+    a.n++;
+    a.sumP += d.pct;
+    a.sumW += d.pct * d.c1;
+    a.sumC += d.c1;
+  }
+  var list = [];
+  for (var k in agg) {
+    var g = agg[k];
+    g.win = g.sumC ? g.sumW / g.sumC : 0;
+    g.avg = g.sumP / g.n;
+    list.push(g);
+  }
+  if (list.length === 0) return "";
+  list.sort(function(x, y) { return (y.win - x.win) || (y.n - x.n); });
+  var sessTime = function(sn) {
+    var st = window.wsxLastStartIST;
+    var m = window.wsxLastSessMin;
+    if (!st || !m) return "";
+    var p = st.split(":");
+    var t0 = (parseInt(p[0]) * 60 + parseInt(p[1]) + (sn - 1) * m) % 1440;
+    var t1 = (t0 + m) % 1440;
+    var f = function(v) { return ("0" + Math.floor(v / 60)).slice(-2) + ":" + ("0" + (v % 60)).slice(-2); };
+    return f(t0) + "-" + f(t1);
+  };
+  var cards = list.map(function(g2, idx) {
+    var top = idx < 3;
+    var tl = sessTime(g2.s);
+    return '<div style="flex:0 0 auto;min-width:96px;padding:5px 8px;border:1px solid ' + (top ? 'var(--green)' : 'var(--border2)') + ';border-radius:5px;text-align:center;">' +
+      '<div style="font-size:10px;color:var(--text-dim);">' + (idx === 0 ? '🏆 ' : '#' + (idx + 1) + ' ') + 'S' + g2.s + '</div>' +
+      (tl ? '<div style="font-size:9px;color:var(--text-dim);">' + tl + ' IST</div>' : '') +
+      '<div style="font-size:14px;font-weight:700;' + (top ? 'color:var(--green);' : '') + '">' + g2.win.toFixed(1) + '%</div>' +
+      '<div style="font-size:9px;color:var(--text-dim);">' + g2.n + ' signals · avg ' + g2.avg.toFixed(1) + '%</div>' +
+      '</div>';
+  }).join("");
+  var daysN = window.wsxLastDays || 1;
+  return '<div style="flex:0 0 auto;margin-bottom:6px;">' +
+    '<div class="split-pane-header"><span>🏆 BEST SESSION OF THE DAY · S1–S' + cnt + ' ranked by C1-weighted win% · ' + daysN + ' day(s) · ' + (cnt * daysN) + ' sessions</span><span>' + list.length + '</span></div>' +
+    '<div style="display:flex;flex-wrap:wrap;gap:6px;padding:6px 2px;">' + cards + '</div>' +
+    '</div>';
+}
+
 function buildRepeatsSectionHTML() {
   const repMinDaysVal = document.getElementById("repMinDays").value || 2;
   const repMinC1Val   = document.getElementById("repMinC1").value || 2;
@@ -3404,25 +3458,22 @@ function renderTable() {
   document.getElementById("resultCount").textContent = `Showing ${revData.length} REV, ${momData.length} MOM`;
 
   const area = document.getElementById("tableArea");
+    var sessRankHTML = buildSessionRankHTML(filterFn);
     if (xsView && (window.wsxLastSessCount || 1) > 1) {
-      area.innerHTML = buildXsHTML();
+      area.innerHTML = sessRankHTML + buildXsHTML();
       return;
     }
-    if (xsView && (window.wsxLastSessCount || 1) > 1) {
-      area.innerHTML = buildXsHTML();
+    const repeatsHTML = buildRepeatsSectionHTML();
+  
+    if (revData.length === 0 && momData.length === 0) {
+      area.innerHTML = sessRankHTML + `<div class="state-empty"><div class="state-icon">○</div><div class="state-title">No signals at current filters</div><div>Try lowering Min % or adjusting filters</div></div>` + repeatsHTML;
       return;
     }
-  const repeatsHTML = buildRepeatsSectionHTML();
-
-  if (revData.length === 0 && momData.length === 0) {
-    area.innerHTML = `<div class="state-empty"><div class="state-icon">○</div><div class="state-title">No signals at current filters</div><div>Try lowering Min % or adjusting filters</div></div>` + repeatsHTML;
-    return;
-  }
-
-  area.innerHTML = `<div class="split-table-wrap">
-    ${buildPaneHTML("REVERSAL", revData, "revCount")}
-    ${buildPaneHTML("MOMENTUM", momData, "momCount")}
-  </div>` + repeatsHTML;
+  
+    area.innerHTML = sessRankHTML + `<div class="split-table-wrap">
+      ${buildPaneHTML("REVERSAL", revData, "revCount")}
+      ${buildPaneHTML("MOMENTUM", momData, "momCount")}
+    </div>` + repeatsHTML;
 }
 (function() {
   var sb = document.querySelector(".sidebar");
