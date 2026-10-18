@@ -2179,12 +2179,13 @@ function startClock() {
   setInterval(tick, 1000);
 }
 
-function getWeekdays(from, to) {
+function getWeekdays(from, to, skipWE) {
   const days = [];
   const cur = new Date(from + "T00:00:00Z");
   const end = new Date(to   + "T00:00:00Z");
   while (cur <= end) {
-    days.push(new Date(cur));
+    const dw = cur.getUTCDay();
+    if (!(skipWE && (dw === 0 || dw === 6))) days.push(new Date(cur));
     cur.setUTCDate(cur.getUTCDate() + 1);
   }
   return days;
@@ -2194,7 +2195,9 @@ function updateDayCount() {
   const from = document.getElementById("dateFrom").value;
   const to   = document.getElementById("dateTo").value;
   if (!from || !to) { document.getElementById("dayCountHint").textContent = "Days selected: —"; return; }
-  const days = getWeekdays(from, to);
+  var _sp = allPairsMode ? ALL_PAIRS : getSelectedPairs();
+    var _skip = !(_sp.length > 0 && _sp.every(function(p) { return /^(cry|1HZ)/i.test(String(p).trim()); }));
+    const days = getWeekdays(from, to, _skip);
   document.getElementById("dayCountHint").textContent = `Days selected: ${days.length}`;
 }
 
@@ -2744,7 +2747,8 @@ async function runScan() {
 
   if (!dateFrom || !dateTo) { toast("Please set date range", "err"); return; }
   
-    const days = getWeekdays(dateFrom, dateTo);
+    const _skipWE = !pairsToScan.every(function(p) { return /^(cry|1HZ)/i.test(p); });
+        const days = getWeekdays(dateFrom, dateTo, _skipWE);
     if (days.length === 0) { toast("No days in selected range", "err"); return; }
   
     // Time window: inputs are IST (UTC+5:30) → convert to UTC seconds-from-midnight
