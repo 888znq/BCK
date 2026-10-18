@@ -3092,8 +3092,19 @@ async function exportAllSignalsCSV() {
       return;
     }
     // Fallback for browsers that don't support the File System Access API
-    try {
-      var blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        try {
+          var blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+          if (navigator.canShare && navigator.share) {
+            try {
+              var shFile = new File([blob], filename, { type: "text/csv" });
+              if (navigator.canShare({ files: [shFile] })) {
+                await navigator.share({ files: [shFile], title: filename });
+                return;
+              }
+            } catch (shErr) {
+              if (shErr && shErr.name === "AbortError") return;
+            }
+          }
       var url  = URL.createObjectURL(blob);
       var a    = document.createElement("a");
       a.href     = url;
