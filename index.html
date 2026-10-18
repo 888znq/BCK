@@ -3035,7 +3035,7 @@ async function exportAllSignalsCSV() {
           });
 
   var csv = [headers.join(",")].concat(rows).join("\n");
-    var filename = "wallspectrum_ALL_signals_" + new Date().toISOString().slice(0,10) + ".csv";
+    var filename = "wallspectrum_ALL_signals_" + ((data[0] && data[0].date) ? data[0].date : new Date().toISOString().slice(0,10)) + ".csv";
       await downloadCSV(csv, filename);
       toast("Exported " + data.length + " signals to CSV", "ok");
     }
