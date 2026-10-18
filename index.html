@@ -2672,6 +2672,47 @@ async function sessionScan(prices, minC, maxC, pair, startTsUtc, progressCb) {
   return [revs, moms];
 }
 
+function combineSessions(revs) {
+  var map = {}, order = [];
+  for (var i = 0; i < revs.length; i++) {
+    var x = revs[i];
+    var key = x.pair + "|" + x.c + "|" + x.r + "|" + x.col + "|" + x.s1;
+    var g = map[key];
+    if (!g) {
+      g = { pair: x.pair, c: x.c, r: x.r, s1: x.s1, s2: x.s2, c1: 0, c2: 0, col: x.col, type: "REV", date: x.date, sess: 0, sessLbl: "ALL", gap: 0, curGap: 0, gapCount: 0, gapFreq: {}, pct: 0 };
+      map[key] = g;
+      order.push(g);
+    }
+    g.c1 += x.c1;
+    g.c2 += x.c2;
+    g.curGap = x.curGap;
+    var f = x.gapFreq || {};
+    for (var k in f) { g.gapFreq[k] = (g.gapFreq[k] || 0) + f[k]; }
+  }
+  var outR = [], outM = [];
+  for (var j = 0; j < order.length; j++) {
+    var o = order[j];
+    var bestLen = 0, bestCnt = 0;
+    for (var kk in o.gapFreq) {
+      var ln = kk | 0;
+      var ct = o.gapFreq[kk];
+      if (ct > bestCnt || (ct === bestCnt && ln > bestLen)) { bestCnt = ct; bestLen = ln; }
+    }
+    o.gap = bestLen;
+    o.gapCount = bestCnt;
+    o.pct = o.c1 ? 100 - Math.round((o.c2 / o.c1) * 100) : 0;
+    outR.push(o);
+    if (o.c1 > 1) {
+      var m = {};
+      for (var pk in o) { m[pk] = o[pk]; }
+      m.type = "MOM";
+      m.pct = Math.round((o.c2 / o.c1) * 100);
+      outM.push(m);
+    }
+  }
+  return [outR, outM];
+}
+
 function wallFilter(raw, minPct) {
   return raw
     .filter(x => x.pct >= minPct)
@@ -2863,7 +2904,12 @@ async function runScan() {
   }
 
   // ── Final filter + render ──
-  setProgress(90, "Filtering signals…", `${allRevs.length} raw REV  |  ${allMoms.length} raw MOM`);
+    if (SESS_SEC > 0) {
+      var _cs = combineSessions(allRevs);
+      allRevs = _cs[0];
+      allMoms = _cs[1];
+    }
+    setProgress(90, "Filtering signals…", `${allRevs.length} raw REV  |  ${allMoms.length} raw MOM`);
   await sleep(30);
 
   const filtRevs = wallFilter(allRevs, minPct);
