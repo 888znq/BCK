@@ -3324,6 +3324,36 @@ function buildRepeatsRowsHTML(list) {
   }).join("");
 }
 
+function buildXsHTML() {
+  var total = (window.wsxLastSessCount || 1) * (window.wsxLastDays || 1);
+  var x = computeCrossSession();
+  document.getElementById("resultCount").textContent = "Datasets: " + total + " | REV " + x.rev.length + ", MOM " + x.mom.length;
+  return '<div class="xs-wrap">' +
+    '<div class="xs-head" style="align-items:center;"><span>DATASETS ' + total + '</span><button type="button" class="export-btn" style="margin:0;" onclick="exportXsCSV()">⬇ EXPORT CSV (' + (x.rev.length + x.mom.length) + ')</button></div>' +
+    buildXsPaneHTML("REVERSAL", x.rev, total) + buildXsPaneHTML("MOMENTUM", x.mom, total) + '</div>';
+}
+
+async function exportXsCSV() {
+  var x = computeCrossSession();
+  var total = (window.wsxLastSessCount || 1) * (window.wsxLastDays || 1);
+  var multi = (window.wsxLastDays || 1) > 1;
+  var headers = ["TYPE","PAIR","DIRECTION","CYCLE","ROW","STREAK_FROM","STREAK_TO","HITS","DATASETS","AVG_PROB_%","DETAIL_SESSION:C1/C2"];
+  var rows = [];
+  [["REV", x.rev], ["MOM", x.mom]].forEach(function(t) {
+    t[1].forEach(function(g) {
+      var det = g.hits.map(function(h) {
+        return (multi ? (h.date || "") + " " : "") + "S" + (h.sess || 1) + ":" + h.c1 + "/" + h.c2;
+      }).join("|");
+      rows.push([t[0], getPairDisplayName(g.pair), g.col === "R" ? "BEARISH" : "BULLISH", g.c, g.r, g.s1, g.s2, g.n, total, g.avg, det].join(","));
+    });
+  });
+  if (rows.length === 0) { toast("No session repeats to export", "err"); return; }
+  var csv = [headers.join(",")].concat(rows).join("\n");
+  var filename = "wallspectrum_session_repeats_" + new Date().toISOString().slice(0, 10) + ".csv";
+  await downloadCSV(csv, filename);
+  toast("Exported " + rows.length + " session repeat(s) to CSV", "ok");
+}
+
 async function exportRepeatsCSV() {
   const repeats = computeRepeatingWalls();
   if (repeats.length === 0) { toast("No repeats to export", "err"); return; }
