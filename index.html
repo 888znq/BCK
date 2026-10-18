@@ -3335,6 +3335,7 @@ function renderTable() {
   function pad2(n) { return (n < 10 ? "0" : "") + n; }
   function fire(el) { el.dispatchEvent(new Event("change", { bubbles: true })); }
   var MONTHS = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+    var MONTHS_FULL = ["January","February","March","April","May","June","July","August","September","October","November","December"];
     function yearSel(y) {
       var o = "";
       var y0 = new Date().getFullYear() - 10;
@@ -3434,8 +3435,14 @@ function renderTable() {
       var p = (s || "").split("-");
       if (p.length !== 3) return null;
       return { y: +p[0], m: +p[1] - 1, d: +p[2] };
-    }
-    var cals = {};
+          }
+          var DAYN = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+          function dayName(s) {
+            var q = parseISO(s);
+            if (!q) return "";
+            return DAYN[new Date(Date.UTC(q.y, q.m, q.d)).getUTCDay()];
+          }
+          var cals = {};
     var calsHost = document.createElement("div");
     calsHost.className = "wsx-cals";
     [{ key: "from", id: "dateFrom", title: "FROM" }, { key: "to", id: "dateTo", title: "TO" }].forEach(function(def) {
@@ -3463,7 +3470,7 @@ function renderTable() {
       var startDow = (new Date(Date.UTC(c.y, c.m, 1)).getUTCDay() + 6) % 7;
       var dim = new Date(Date.UTC(c.y, c.m + 1, 0)).getUTCDate();
       var h = '<div class="wsx-cal-title">' + c.def.title + '</div>' +
-        '<div class="wsx-cr">' + c.def.title + ' <b>' + fmtDMY(ownV) + '</b></div>' + '<div class="wsx-ch"><button type="button" data-ynav="-1">«</button><span>' + c.y + '</span><button type="button" data-ynav="1">»</button></div><div class="wsx-ch"><button type="button" data-nav="-1">‹</button><span>' + MONTHS[c.m] + '</span><button type="button" data-nav="1">›</button></div>' +
+        '<div class="wsx-cr">' + c.def.title + ' <b>' + fmtDMY(ownV) + '</b> <span class="wsx-dn">' + dayName(ownV) + '</span></div>' + '<div class="wsx-ch"><button type="button" data-ynav="-1">«</button><span>' + c.y + '</span><button type="button" data-ynav="1">»</button></div><div class="wsx-ch"><button type="button" data-nav="-1">‹</button><button type="button" class="wsx-mname" data-mp="1" style="cursor:pointer;">' + MONTHS_FULL[c.m] + ' ▾</button><button type="button" data-nav="1">›</button></div>' +
                 '' +
         '<div class="wsx-mg">' + ["M","T","W","T","F","S","S"].map(function(n) { return '<span class="wsx-dw">' + n + '</span>'; }).join("");
       for (var pb = 0; pb < startDow; pb++) { h += '<span class="wsx-bk"></span>'; }
@@ -3475,10 +3482,18 @@ function renderTable() {
         else if (iso === fromV || iso === toV) cls += " edge";
         else if (fromV && toV && iso > fromV && iso < toV) cls += " in";
         if (iso === todayIso) cls += " today";
-        h += '<button type="button" class="' + cls + '" data-iso="' + iso + '">' + d + '</button>';
+        h += '<button type="button" class="' + cls + '" data-iso="' + iso + '" title="' + dayName(iso) + '">' + d + '</button>';
       }
       h += '</div>';
-      var _og = c.el.querySelector(".wsx-cal-grid");
+            c.el.style.position = "relative";
+            if (c.mp) {
+              h += '<div class="wsx-mpop" style="position:absolute;left:0;right:0;top:0;bottom:0;z-index:20;background:var(--bg,#14171c);display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:8px;align-content:center;">';
+              for (var mi = 0; mi < 12; mi++) {
+                h += '<button type="button" class="wsx-day' + (mi === c.m ? ' sel' : '') + '" data-mon="' + (mi + 1) + '" style="font-size:11px;width:auto;">' + MONTHS_FULL[mi] + '</button>';
+              }
+              h += '</div>';
+            }
+            var _og = c.el.querySelector(".wsx-cal-grid");
             var _sl = _og ? _og.scrollLeft : -1;
             c.el.innerHTML = h;
             var _ng = c.el.querySelector(".wsx-cal-grid");
@@ -3506,9 +3521,15 @@ function renderTable() {
               renderCal(key);
               return;
             }
-            if (t.dataset.mon) {
-              c.m = +t.dataset.mon - 1;
-              renderCal(key);
+            if (t.dataset.mp) {
+                          c.mp = !c.mp;
+                          renderCal(key);
+                          return;
+                        }
+                        if (t.dataset.mon) {
+                          c.m = +t.dataset.mon - 1;
+                          c.mp = false;
+                          renderCal(key);
               return;
             }
             if (t.dataset.iso) {
@@ -4547,7 +4568,7 @@ function renderTable() {
     refreshAll();
   }
 
-  function popup(title, count, start, cur, cls, onPick) {
+  function popup(title, count, start, cur, cls, onPick, ex) {
     var pop = document.getElementById("wsxPop");
     if (!pop) {
       pop = document.createElement("div");
@@ -4555,9 +4576,18 @@ function renderTable() {
       document.body.appendChild(pop);
     }
     var html = '<div class="wsx-pubox"><div class="wsx-putitle">' + title + '</div><div class="wsx-pugrid ' + cls + '">';
-    for (var q = 0; q < count; q++) {
-      var v = start + q;
-      html += '<button type="button" data-v="' + v + '" class="wsx-pun' + (v === cur ? ' on' : '') + '">' + (cls === "py" ? v : pad2(v)) + '</button>';
+    if (ex && ex.head) {
+          for (var hi = 0; hi < ex.head.length; hi++) {
+            html += '<div style="text-align:center;font-family:var(--mono);font-size:13px;font-weight:700;color:var(--amber);padding:2px 0;">' + ex.head[hi] + '</div>';
+          }
+        }
+        if (ex && ex.lead) {
+          for (var li = 0; li < ex.lead; li++) { html += '<span></span>'; }
+        }
+        for (var q = 0; q < count; q++) {
+          var v = start + q;
+          var lbl = (ex && ex.label) ? ex.label(v) : (cls === "py" ? v : pad2(v));
+          html += '<button type="button" data-v="' + v + '" class="wsx-pun' + (v === cur ? ' on' : '') + '">' + lbl + '</button>';
     }
     html += '</div></div>';
     pop.innerHTML = html;
@@ -4695,7 +4725,7 @@ function renderTable() {
           b.innerHTML = '<span>' + d.lbl + '</span><b></b>';
           bar.appendChild(b);
           var v = b.querySelector("b");
-          function show() { v.textContent = document.getElementById(d.id).value || "0"; }
+          function show() { v.textContent = (document.getElementById(d.id).value || "0") + (d.id === "minPct" ? "%" : ""); }
           show();
           b.addEventListener("click", function() { keypad(d.lbl, d.id, d.min, d.max, show); });
         });
@@ -4725,7 +4755,7 @@ function renderTable() {
 
     function render() {
       var p = parts(dId, tId);
-      var vals = [pairText(), pad2(p.d), pad2(p.m), String(p.y), pad2(p.h), pad2(p.n)];
+      var vals = [pairText(), pad2(p.d), ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"][p.m - 1], String(p.y), pad2(p.h), pad2(p.n)];
       var h = "";
       for (var i = 0; i < 6; i++) {
         h += '<button type="button" class="wsx-dtb" data-i="' + i + '"><span>' + NAMES[i] + '</span><b>' + vals[i] + '</b></button>';
@@ -4754,8 +4784,16 @@ function renderTable() {
         save(dId, tId, p);
       }
 
-      if (i === 0) popup(label + " - DAY", dim, 1, p.d, "pd", done);
-      else if (i === 1) popup(label + " - MONTH", 12, 1, p.m, "pmo", done);
+      if (i === 0) popup(label + " - DAY", dim, 1, p.d, "pd", done, {
+              head: ["M", "T", "W", "T", "F", "S", "S"],
+                      lead: (new Date(Date.UTC(p.y, p.m - 1, 1)).getUTCDay() + 6) % 7
+                    });
+      else if (i === 1) popup(label + " - MONTH", 12, 1, p.m, "pmo", done, {
+              label: function(v) {
+                var mn = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"][v - 1];
+                return '<span style="font-size:13px;">' + mn + '</span>';
+              }
+            });
       else if (i === 2) popup(label + " - YEAR", y1 - y0 + 1, y0, p.y, "py", done);
       else if (i === 3) popup(label + " - HOUR", 24, 0, p.h, "ph", done);
       else popup(label + " - MINUTE", 60, 0, p.n, "pm", done);
