@@ -1447,7 +1447,8 @@ body, .layout { height: 100vh; height: 100dvh; }
 #settingsOverlay #settingsGrid .wsx-dtb span { font-size: 12px; letter-spacing: 0.14em; color: var(--text-dim); }
 #settingsOverlay #settingsGrid .wsx-dtb b { font-size: clamp(22px, 7vw, 56px); font-weight: 500; line-height: 1; }
 .wsx-pugrid.pd { grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
-.wsx-pugrid.pmo { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.wsx-pugrid.pmo { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.wsx-pugrid.pmo .wsx-pun { font-size: 13px; letter-spacing: 0; white-space: nowrap; overflow: hidden; }
 .wsx-pugrid.py { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
 .wsx-pugrid.pp { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
 .wsx-pugrid.pp .wsx-pun { height: 40px; font-size: 12px; }
@@ -1456,7 +1457,7 @@ body, .layout { height: 100vh; height: 100dvh; }
 #settingsOverlay #settingsGrid > div:nth-child(1) { display: none !important; }
 #settingsOverlay #settingsGrid .wsx-pairs { display: none !important; }
 #settingsOverlay #settingsGrid > div:nth-child(2), #settingsOverlay #settingsGrid > div:nth-child(3), #settingsOverlay #settingsGrid > div:nth-child(4) { display: none !important; }
-#settingsOverlay #settingsGrid > div.wsx-bar { display: grid !important; flex: 1 1 0 !important; min-height: 0 !important; width: 100% !important; grid-template-columns: 1.6fr 1fr 1fr 1.7fr 1fr 1fr 1.3fr 1.3fr 1.4fr 1.6fr !important; grid-template-rows: minmax(0, 1fr) minmax(0, 1fr) !important; gap: 0 !important; }
+#settingsOverlay #settingsGrid > div.wsx-bar { display: grid !important; flex: 1 1 0 !important; min-height: 0 !important; width: 100% !important; grid-template-columns: 1.4fr 0.9fr 2.4fr 1.4fr 0.9fr 0.9fr 1.2fr 1.2fr 1.3fr 1.5fr !important; grid-template-rows: minmax(0, 1fr) minmax(0, 1fr) !important; gap: 0 !important; }
 #settingsOverlay #settingsGrid .wsx-bar .wsx-dt { display: contents !important; }
 #settingsOverlay #settingsGrid .wsx-bar .wsx-dtb { border-right: 1px solid var(--border2) !important; border-bottom: 1px solid var(--border2) !important; }
 #settingsOverlay #settingsGrid .wsx-bar .wsx-dt:nth-of-type(1) > .wsx-dtb { grid-row: 1; border-top: 2px solid var(--sig-red) !important; }
@@ -1473,6 +1474,7 @@ body, .layout { height: 100vh; height: 100dvh; }
 #settingsOverlay #settingsGrid .wsx-bar .wsx-x5 span, #settingsOverlay #settingsGrid .wsx-bar .wsx-x5 b { color: #000432 !important; }
 #settingsOverlay #settingsGrid .wsx-bar .wsx-x4 b, #settingsOverlay #settingsGrid .wsx-bar .wsx-x5 b { font-size: clamp(12px, 2.2vw, 30px); }
 #settingsOverlay .settings-foot .run-btn { display: none !important; }
+#settingsOverlay #settingsGrid .wsx-bar .wsx-dtb[data-i="2"] b { font-size: clamp(7px, 2.6vw, 14px) !important; letter-spacing: 0 !important; white-space: nowrap !important; overflow: hidden !important; max-width: 100% !important; }
 #settingsOverlay #settingsCloseFab { width: 100% !important; height: 40px !important; flex: 1 1 auto !important; }
 .wsx-pugrid.pk { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
 .wsx-pkd { text-align: center; font-family: var(--mono); font-size: 36px; color: var(--green); border: 1px solid var(--border2); border-radius: 6px; padding: 8px; margin-bottom: 10px; }
@@ -4547,20 +4549,29 @@ function renderTable() {
     refreshAll();
   }
 
-  function popup(title, count, start, cur, cls, onPick) {
-    var pop = document.getElementById("wsxPop");
-    if (!pop) {
-      pop = document.createElement("div");
-      pop.id = "wsxPop";
-      document.body.appendChild(pop);
-    }
-    var html = '<div class="wsx-pubox"><div class="wsx-putitle">' + title + '</div><div class="wsx-pugrid ' + cls + '">';
-    for (var q = 0; q < count; q++) {
-      var v = start + q;
-      html += '<button type="button" data-v="' + v + '" class="wsx-pun' + (v === cur ? ' on' : '') + '">' + (cls === "py" ? v : pad2(v)) + '</button>';
-    }
-    html += '</div></div>';
-    pop.innerHTML = html;
+  function popup(title, count, start, cur, cls, onPick, dow) {
+      var pop = document.getElementById("wsxPop");
+      if (!pop) {
+        pop = document.createElement("div");
+        pop.id = "wsxPop";
+        document.body.appendChild(pop);
+      }
+      var MN_TXT = ["JANUARY","FEBRUARY","MARCH","APRIL","MAY","JUNE","JULY","AUGUST","SEPTEMBER","OCTOBER","NOVEMBER","DECEMBER"];
+      var html = '<div class="wsx-pubox"><div class="wsx-putitle">' + title + '</div><div class="wsx-pugrid ' + cls + '">';
+      if (cls === "pd") {
+        var wdn = ["M","T","W","T","F","S","S"];
+        for (var w = 0; w < 7; w++) {
+          html += '<span style="text-align:center;font-family:var(--mono);font-size:12px;font-weight:700;line-height:24px;color:' + (w >= 5 ? '#e58f99' : 'var(--text-dim)') + '">' + wdn[w] + '</span>';
+        }
+        for (var bk = 0; bk < (dow || 0); bk++) { html += '<span></span>'; }
+      }
+      for (var q = 0; q < count; q++) {
+        var v = start + q;
+        var lbl = cls === "py" ? v : (cls === "pmo" ? MN_TXT[v - 1] : pad2(v));
+        html += '<button type="button" data-v="' + v + '" class="wsx-pun' + (v === cur ? ' on' : '') + '">' + lbl + '</button>';
+      }
+      html += '</div></div>';
+      pop.innerHTML = html;
     pop.onclick = function(ev) {
       var bt = ev.target.closest ? ev.target.closest(".wsx-pun") : null;
       if (!bt) {
@@ -4642,7 +4653,7 @@ function renderTable() {
         var fresh = true;
     
         function draw() {
-          var h = '<div class="wsx-pubox"><div class="wsx-putitle">' + title + '</div><div class="wsx-pkd">' + (buf === "" ? "0" : buf) + '</div><div class="wsx-pugrid pk">';
+          var h = '<div class="wsx-pubox"><div class="wsx-putitle">' + title + '</div><div class="wsx-pkd">' + (buf === "" ? "0" : buf) + (inId === "minPct" ? "%" : "") + '</div><div class="wsx-pugrid pk">';
           for (var q = 1; q <= 9; q++) {
             h += '<button type="button" data-k="' + q + '" class="wsx-pun">' + q + '</button>';
           }
@@ -4695,7 +4706,7 @@ function renderTable() {
           b.innerHTML = '<span>' + d.lbl + '</span><b></b>';
           bar.appendChild(b);
           var v = b.querySelector("b");
-          function show() { v.textContent = document.getElementById(d.id).value || "0"; }
+          function show() { v.textContent = (document.getElementById(d.id).value || "0") + (d.id === "minPct" ? "%" : ""); }
           show();
           b.addEventListener("click", function() { keypad(d.lbl, d.id, d.min, d.max, show); });
         });
@@ -4725,7 +4736,7 @@ function renderTable() {
 
     function render() {
       var p = parts(dId, tId);
-      var vals = [pairText(), pad2(p.d), pad2(p.m), String(p.y), pad2(p.h), pad2(p.n)];
+      var vals = [pairText(), pad2(p.d), ["JANUARY","FEBRUARY","MARCH","APRIL","MAY","JUNE","JULY","AUGUST","SEPTEMBER","OCTOBER","NOVEMBER","DECEMBER"][p.m - 1] || pad2(p.m), String(p.y), pad2(p.h), pad2(p.n)];
       var h = "";
       for (var i = 0; i < 6; i++) {
         h += '<button type="button" class="wsx-dtb" data-i="' + i + '"><span>' + NAMES[i] + '</span><b>' + vals[i] + '</b></button>';
@@ -4754,7 +4765,7 @@ function renderTable() {
         save(dId, tId, p);
       }
 
-      if (i === 0) popup(label + " - DAY", dim, 1, p.d, "pd", done);
+      if (i === 0) popup(label + " - DAY", dim, 1, p.d, "pd", done, (new Date(Date.UTC(p.y, p.m - 1, 1)).getUTCDay() + 6) % 7);
       else if (i === 1) popup(label + " - MONTH", 12, 1, p.m, "pmo", done);
       else if (i === 2) popup(label + " - YEAR", y1 - y0 + 1, y0, p.y, "py", done);
       else if (i === 3) popup(label + " - HOUR", 24, 0, p.h, "ph", done);
