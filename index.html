@@ -1452,12 +1452,15 @@ body, .layout { height: 100vh; height: 100dvh; }
 .wsx-pugrid.py { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
 .wsx-pugrid.pp { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
 .wsx-pugrid.pp .wsx-pun { height: 40px; font-size: 12px; }
+.wsx-pugrid.pss { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.wsx-pugrid.pss .wsx-pun { height: auto; min-height: 58px; padding: 4px 2px; font-size: 14px; line-height: 1.15; }
+.wsx-pun.dim { opacity: 0.28; cursor: not-allowed; }
 .wsx-pun.wsx-pdone { width: 100%; margin-top: 10px; background: var(--green); color: #000432; border-color: var(--green); font-weight: 700; }
 #settingsOverlay #settingsGrid .wsx-dtb[data-i="0"] b { font-size: clamp(11px, 3vw, 24px); max-width: 100%; overflow: hidden; white-space: nowrap; }
 #settingsOverlay #settingsGrid > div:nth-child(1) { display: none !important; }
 #settingsOverlay #settingsGrid .wsx-pairs { display: none !important; }
 #settingsOverlay #settingsGrid > div:nth-child(2), #settingsOverlay #settingsGrid > div:nth-child(3), #settingsOverlay #settingsGrid > div:nth-child(4) { display: none !important; }
-#settingsOverlay #settingsGrid > div.wsx-bar { display: grid !important; flex: 1 1 0 !important; min-height: 0 !important; width: 100% !important; grid-template-columns: 1.4fr 0.9fr 2.4fr 1.4fr 0.9fr 0.9fr 1.2fr 1.2fr 1.3fr 1.5fr !important; grid-template-rows: minmax(0, 1fr) minmax(0, 1fr) !important; gap: 0 !important; }
+#settingsOverlay #settingsGrid > div.wsx-bar { display: grid !important; flex: 1 1 0 !important; min-height: 0 !important; width: 100% !important; grid-template-columns: 1.4fr 0.9fr 2.4fr 1.4fr 0.9fr 0.9fr 1.3fr 1.2fr 1.2fr 1.3fr 1.5fr !important; grid-template-rows: minmax(0, 1fr) minmax(0, 1fr) !important; gap: 0 !important; }
 #settingsOverlay #settingsGrid .wsx-bar .wsx-dt { display: contents !important; }
 #settingsOverlay #settingsGrid .wsx-bar .wsx-dtb { border-right: 1px solid var(--border2) !important; border-bottom: 1px solid var(--border2) !important; }
 #settingsOverlay #settingsGrid .wsx-bar .wsx-dt:nth-of-type(1) > .wsx-dtb { grid-row: 1; border-top: 2px solid var(--sig-red) !important; }
@@ -1465,11 +1468,13 @@ body, .layout { height: 100vh; height: 100dvh; }
 #settingsOverlay #settingsGrid .wsx-bar .wsx-dtb span { font-size: clamp(8px, 1vw, 12px); letter-spacing: 0.08em; }
 #settingsOverlay #settingsGrid .wsx-bar .wsx-dtb b { font-size: clamp(13px, 3.4vw, 48px); }
 #settingsOverlay #settingsGrid .wsx-bar .wsx-dtb[data-i="0"] b { font-size: clamp(10px, 1.8vw, 22px); text-overflow: clip; }
-#settingsOverlay #settingsGrid .wsx-bar .wsx-x1 { grid-column: 7; grid-row: 1; border-top: 2px solid var(--sig-red) !important; }
-#settingsOverlay #settingsGrid .wsx-bar .wsx-x2 { grid-column: 7; grid-row: 2; border-bottom: 2px solid var(--sig-green) !important; }
-#settingsOverlay #settingsGrid .wsx-bar .wsx-x3 { grid-column: 8; grid-row: 1 / span 2; }
-#settingsOverlay #settingsGrid .wsx-bar .wsx-x4 { grid-column: 9; grid-row: 1 / span 2; }
-#settingsOverlay #settingsGrid .wsx-bar .wsx-x5 { grid-column: 10; grid-row: 1 / span 2; background: var(--green) !important; }
+#settingsOverlay #settingsGrid .wsx-bar .wsx-x1 { grid-column: 8; grid-row: 1; border-top: 2px solid var(--sig-red) !important; }
+#settingsOverlay #settingsGrid .wsx-bar .wsx-x2 { grid-column: 8; grid-row: 2; border-bottom: 2px solid var(--sig-green) !important; }
+#settingsOverlay #settingsGrid .wsx-bar .wsx-x3 { grid-column: 9; grid-row: 1 / span 2; }
+#settingsOverlay #settingsGrid .wsx-bar .wsx-x4 { grid-column: 10; grid-row: 1 / span 2; }
+#settingsOverlay #settingsGrid .wsx-bar .wsx-x6 { grid-column: 7; grid-row: 1 / span 2; }
+#settingsOverlay #settingsGrid .wsx-bar .wsx-x6.wsx-dtb b { font-size: clamp(9px, 1.8vw, 18px) !important; white-space: nowrap; line-height: 1.2 !important; text-align: center; }
+#settingsOverlay #settingsGrid .wsx-bar .wsx-x5 { grid-column: 11; grid-row: 1 / span 2; background: var(--green) !important; }
 #settingsOverlay #settingsGrid .wsx-bar .wsx-x5:hover { background: #5cffa8 !important; }
 #settingsOverlay #settingsGrid .wsx-bar .wsx-x5 span, #settingsOverlay #settingsGrid .wsx-bar .wsx-x5 b { color: #000432 !important; }
 #settingsOverlay #settingsGrid .wsx-bar .wsx-x4 b, #settingsOverlay #settingsGrid .wsx-bar .wsx-x5 b { font-size: clamp(12px, 2.2vw, 30px); }
@@ -2602,6 +2607,36 @@ function workerScan(prices, minC, maxC, pair, startTsUtc, progressCb) {
 // ═══════════════════════════════════════════════════════
 //  WALL FILTER
 // ═══════════════════════════════════════════════════════
+async function workerScanSessions(prices, cMin, cMax, pairName, startTs, winSec, sessMin, onFrac) {
+  if (!sessMin) return workerScan(prices, cMin, cMax, pairName, startTs, onFrac);
+  var n = Math.max(1, Math.round(winSec / (sessMin * 60)));
+  var len = prices.length;
+  var merged = null;
+  for (var si = 0; si < n; si++) {
+    if (cancelFlag) break;
+    var a = Math.round(len * si / n);
+    var b = Math.round(len * (si + 1) / n);
+    var sl = prices.slice(a, b);
+    if (sl.length <= cMax) continue;
+    var offSec = Math.round(winSec * si / n);
+    var r = await workerScan(sl, cMin, cMax, pairName, startTs + offSec, function(f) { if (onFrac) onFrac((si + f) / n); });
+    if (!r) continue;
+    for (var k = 0; k < r.length; k++) {
+      if (Array.isArray(r[k])) {
+        r[k].forEach(function(it) { if (it && typeof it === "object") it.sess = si + 1; });
+      }
+    }
+    if (!merged) {
+      merged = r;
+    } else {
+      for (var k2 = 0; k2 < r.length; k2++) {
+        if (Array.isArray(merged[k2]) && Array.isArray(r[k2])) merged[k2] = merged[k2].concat(r[k2]);
+      }
+    }
+  }
+  return merged || [[], []];
+}
+
 function wallFilter(raw, minPct) {
   return raw
     .filter(x => x.pct >= minPct)
@@ -2654,6 +2689,10 @@ async function runScan() {
       if (secTo <= secFrom) secTo += 86400; // IST window crosses UTC midnight
     }
     if (secTo <= secFrom) { toast("End time must be after start time", "err"); return; }
+        var sessMinV = window.wsxSessionMin || 0;
+        var winSecV = secTo - secFrom;
+        if (sessMinV && (winSecV % (sessMinV * 60) !== 0 || sessMinV * 60 >= winSecV)) { sessMinV = 0; window.wsxSessionMin = 0; }
+        if (sessMinV && sessMinV * 60 <= cycleMax) { toast("Session " + sessMinV + "m must be longer than cycle max C" + cycleMax, "err"); return; }
   
     // ── Cache key: all pairs + date range + time window ──
     const newCacheKey = `${pairsToScan.join(",")}|${dateFrom}|${dateTo}|${secFrom}-${secTo}`;
@@ -2744,7 +2783,7 @@ async function runScan() {
                             `[${pi+1}/${totalPairs}] ${curPair}  scanning day ${di2+1}/${allDayPrices.length} (${dayLabel2})…`,
                             `Cycles C${cycleMin}–C${cycleMax}`);
                   
-                          var dayScanResult = await workerScan(dayPrices2, cycleMin, cycleMax, curPair, startTsUtc, function(frac) {
+                          var dayScanResult = await workerScanSessions(dayPrices2, cycleMin, cycleMax, curPair, startTsUtc, winSecV, sessMinV, function(frac) {
                             setProgress(scanBase + (dayFrac2 + frac / allDayPrices.length) * scanSlice,
                               `[${pi+1}/${totalPairs}] ${curPair}  ${dayLabel2}  scanning… ${Math.round(frac * 100)}%`,
                               `C${cycleMin}–C${cycleMax}  [${totalCores} workers]`);
@@ -4693,7 +4732,72 @@ function renderTable() {
         pop.style.display = "flex";
       }
     
-      function makeExtras(bar) {
+      window.wsxSessionMin = 0;
+      
+            function winMinutes() {
+              var a = (document.getElementById("timeFrom").value || "00:00").split(":");
+              var b = (document.getElementById("timeTo").value || "20:57").split(":");
+              var f = (+a[0] || 0) * 60 + (+a[1] || 0);
+              var t = (+b[0] || 0) * 60 + (+b[1] || 0);
+              if (f === t) return 1440;
+              if (t < f) t += 1440;
+              return t - f;
+            }
+      
+            function fmtSess(m) {
+              if (m < 60) return m + "m";
+              var hh = Math.floor(m / 60);
+              var rr = m % 60;
+              return hh + "h" + (rr ? rr + "m" : "");
+            }
+      
+            function sessionPopup(onDone) {
+              var pop = document.getElementById("wsxPop");
+              if (!pop) {
+                pop = document.createElement("div");
+                pop.id = "wsxPop";
+                document.body.appendChild(pop);
+              }
+              var N = winMinutes();
+              var cMaxV = parseInt(document.getElementById("cycleMax").value, 10) || 0;
+              var cur = window.wsxSessionMin || N;
+                      var stp = (document.getElementById("timeFrom").value || "00:00").split(":");
+                      var st = (+stp[0] || 0) * 60 + (+stp[1] || 0);
+                      function hm(tm) {
+                        var q = ((tm % 1440) + 1440) % 1440;
+                        return pad2(Math.floor(q / 60)) + ":" + pad2(q % 60);
+                      }
+              var h = '<div class="wsx-pubox"><div class="wsx-putitle">SESSION - ' + hm(st) + '-' + hm(st + N) + ' (' + fmtSess(N) + ')</div><div class="wsx-pkd" style="font-size:12px;padding:6px">CYCLE MAX C' + cMaxV + ' - SESSION MUST BE LONGER (DIMMED = TOO SHORT)</div><div class="wsx-pugrid pss">';
+              for (var d = 1; d <= N; d++) {
+                if (N % d !== 0) continue;
+                var ok = d * 60 > cMaxV;
+                var cnt = N / d;
+                          var tl = "";
+                          if (cnt <= 4) {
+                            for (var ri = 0; ri < cnt; ri++) { tl += (ri ? "<br>" : "") + hm(st + ri * d) + "-" + hm(st + (ri + 1) * d); }
+                          } else {
+                            tl = hm(st) + "-" + hm(st + d) + "<br>...<br>" + hm(st + (cnt - 1) * d) + "-" + hm(st + cnt * d);
+                          }
+                          h += '<button type="button" data-d="' + d + '" data-ok="' + (ok ? 1 : 0) + '" class="wsx-pun' + (d === cur ? ' on' : '') + (ok ? '' : ' dim') + '">' + fmtSess(d) + ' &times;' + cnt + '<br><span style="font-size:10px;font-weight:400;line-height:1.3;display:block">' + tl + '</span></button>';
+              }
+              h += '</div></div>';
+              pop.innerHTML = h;
+              pop.onclick = function(ev) {
+                var bt = ev.target.closest ? ev.target.closest(".wsx-pun") : null;
+                if (!bt) {
+                  if (ev.target === pop) pop.style.display = "none";
+                  return;
+                }
+                if (bt.getAttribute("data-ok") !== "1") return;
+                var dv = +bt.getAttribute("data-d");
+                window.wsxSessionMin = (dv === N) ? 0 : dv;
+                pop.style.display = "none";
+                if (onDone) onDone();
+              };
+              pop.style.display = "flex";
+            }
+      
+            function makeExtras(bar) {
         var defs = [
           { cls: "wsx-x1", lbl: "CYC MIN", id: "cycleMin", min: 1, max: 500 },
           { cls: "wsx-x2", lbl: "CYC MAX", id: "cycleMax", min: 1, max: 500 },
@@ -4715,6 +4819,27 @@ function renderTable() {
         cc.type = "button";
         cc.className = "wsx-dtb wsx-x4";
         cc.innerHTML = '<span>CACHE</span><b>&#9003;</b>';
+        
+                var sb = document.createElement("button");
+                sb.type = "button";
+                sb.className = "wsx-dtb wsx-x6";
+                sb.innerHTML = '<span>SESSION</span><b></b>';
+                bar.appendChild(sb);
+                var sv = sb.querySelector("b");
+                function showSess() {
+                  var N2 = winMinutes();
+                  var sm = window.wsxSessionMin || 0;
+                  if (sm && (sm >= N2 || N2 % sm !== 0)) { sm = 0; window.wsxSessionMin = 0; }
+                  var dd = sm || N2;
+                            var cn = Math.round(N2 / dd);
+                            var sp = (document.getElementById("timeFrom").value || "00:00").split(":");
+                            var s0 = (+sp[0] || 0) * 60 + (+sp[1] || 0);
+                            function hh2(tm) { var q = ((tm % 1440) + 1440) % 1440; return pad2(Math.floor(q / 60)) + ":" + pad2(q % 60); }
+                            sv.textContent = fmtSess(dd);
+                }
+                showSess();
+                renders.push(showSess);
+                sb.addEventListener("click", function() { sessionPopup(showSess); });
         cc.addEventListener("click", function() { clearPersistedCache(); });
         bar.appendChild(cc);
     
