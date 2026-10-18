@@ -1188,7 +1188,7 @@ thead th { font-size: 12px; }
 .split-pane-header { text-align: left; }
 body, .layout { height: 100vh; height: 100dvh; }
 .day-summary { display: none !important; }
-#dayFilter, #levelFilter + span + label, #resultCount, #exportCsvBtn, #exportTableFormatBtn { display: none !important; }
+#dayFilter, #levelFilter + span + label, #resultCount, #exportTableFormatBtn { display: none !important; }
 .filter-bar > span { display: none !important; }
 .repeats-section > .split-pane-header { display: none !important; }
 .repeats-section:has(.state-empty) { display: none !important; }
@@ -1491,6 +1491,7 @@ body, .layout { height: 100vh; height: 100dvh; }
 #settingsOverlay #settingsGrid .wsx-bar .wsx-dt .wsx-dtb.wsx-dtb.wsx-dtb.wsx-dtb { border-top: 1px solid var(--border2) !important; border-bottom: 1px solid var(--border2) !important; }
 #settingsOverlay #settingsGrid .wsx-bar > .wsx-dtb.wsx-dtb.wsx-dtb { border-top: 1px solid var(--border2) !important; border-bottom: 1px solid var(--border2) !important; }
 .filter-bar label { display: none !important; }
+.filter-bar #exportCsvBtn { display: inline-block !important; }
 #settingsOverlay #scanPage { padding: 4px 10px !important; max-width: none; overflow: hidden; }
 #settingsOverlay .scan-title { display: none; }
 #settingsOverlay #scanPage .progress-wrap { padding: 2px 0; }
@@ -2813,6 +2814,9 @@ async function runScan() {
 
   allRevs = []; allMoms = [];
     let totalTicks = 0;
+        var _badDays = [];
+        var _fab0 = document.getElementById("exportFab");
+        if (_fab0) _fab0.style.setProperty("display", "none", "important");
     const totalPairs = pairsToScan.length;
   
     // ── For each pair: fetch all days, then scan ──
@@ -2862,7 +2866,21 @@ async function runScan() {
         totalTicks += real;
       }
   
-      // ── Run streak scan for this pair, PER DAY (each day scanned & kept separate) ──
+      // ── Day health check: flag missing / low-tick days ──
+            var _hReal = [];
+            for (var _hi = 0; _hi < allDayPrices.length; _hi++) {
+              var _hp = allDayPrices[_hi];
+              _hReal.push(_hp ? _hp.filter(function(p) { return p !== -1.0; }).length : 0);
+            }
+            var _hSorted = _hReal.slice().sort(function(a, b) { return a - b; });
+            var _hMed = _hSorted.length ? _hSorted[Math.floor(_hSorted.length / 2)] : 0;
+            for (var _hj = 0; _hj < _hReal.length; _hj++) {
+              if (_hReal[_hj] === 0 || (_hReal.length >= 3 && _hReal[_hj] < 0.6 * _hMed)) {
+                _badDays.push(curPair + " " + days[_hj].toISOString().slice(0, 10) + " (" + _hReal[_hj] + " ticks vs median " + _hMed + ")");
+              }
+            }
+      
+            // ── Run streak scan for this pair, PER DAY (each day scanned & kept separate) ──
             var totalCores = Math.min(navigator.hardwareConcurrency || 4, 16);
             var scanBase = 60 + (pi / totalPairs) * 28;
             var scanSlice = (1 / totalPairs) * 28;
@@ -2909,7 +2927,7 @@ async function runScan() {
 
   // ── Final filter + render ──
     if (SESS_SEC > 0) {
-      var _cs = combineSessions(allRevs);
+      var _cs = [allRevs, allMoms];
       allRevs = _cs[0];
       allMoms = _cs[1];
     }
@@ -2950,11 +2968,27 @@ async function runScan() {
   document.getElementById("momCount").textContent     = filtMoms.length;
 
   renderTable();
-      document.getElementById("exportCsvBtn").style.display = "inline-block";
+      document.getElementById("exportCsvBtn").style.setProperty("display", "inline-block", "important");
+            var _fab = document.getElementById("exportFab");
+            if (!_fab) {
+              _fab = document.createElement("button");
+              _fab.type = "button";
+              _fab.id = "exportFab";
+              _fab.className = "export-btn";
+              _fab.textContent = "⬇ EXPORT CSV";
+              _fab.onclick = function() { exportAllSignalsCSV(); };
+              document.body.appendChild(_fab);
+            }
+            _fab.style.cssText = "display:block !important; position:fixed !important; right:8px !important; bottom:calc(9vh + 8px) !important; bottom:calc(9dvh + 8px) !important; z-index:950 !important; padding:10px 14px !important; font-size:13px !important; background:var(--bg) !important; opacity:1 !important; visibility:visible !important;";
       document.getElementById("exportTableFormatBtn").style.display = "inline-block";
       setTimeout(() => document.getElementById("progressWrap").classList.remove("visible"), 2000);
   
-    toast(`Scan complete — ${filtRevs.length + filtMoms.length} signals`, "ok");
+    if (_badDays.length > 0) {
+          toast("Scan complete, but " + _badDays.length + " day(s) have missing or low data: " + _badDays.slice(0, 3).join("; ") + (_badDays.length > 3 ? " …" : ""), "err");
+          document.getElementById("logLine").textContent = "LOW DATA: " + _badDays.join("; ");
+        } else {
+          toast(`Scan complete — ${filtRevs.length + filtMoms.length} signals — all ${days.length} days complete`, "ok");
+        }
     resetRunBtn();
 }
 
@@ -2979,7 +3013,7 @@ async function exportAllSignalsCSV() {
             "PAIR","DATE","TYPE","DIRECTION","CYCLE","ROW",
             "STREAK_FROM","STREAK_TO","C1_OCCURRENCES","C2_OCCURRENCES","GAP_MODE","GAP_COUNT",
             "PROBABILITY_%","REVERSAL_PROB_%","MOMENTUM_PROB_%",
-            "SCORE","SIGNAL_STRENGTH"
+            "SCORE","SIGNAL_STRENGTH","SESSION"
           ];
         
           var rows = data.map(function(d) {
@@ -2996,7 +3030,7 @@ async function exportAllSignalsCSV() {
               name, dateVal, d.type, direction, d.c, d.r,
               d.s1, d.s2, d.c1, d.c2, gapVal, gapCountVal,
               d.pct, revPct, momPct,
-              score, strength
+              score, strength, (d.sessLbl || "")
             ].join(",");
           });
 
