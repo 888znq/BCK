@@ -2558,7 +2558,31 @@ self.onmessage = function(e) {
   return _workerBlobURL;
 }
 
-function workerScan(prices, minC, maxC, pair, startTsUtc, progressCb) {
+var SESS_SEC = 0;
+async function workerScan(prices, minC, maxC, pair, startTsUtc, progressCb) {
+  var S = SESS_SEC;
+  if (!S || prices.length <= S) return workerScanRaw(prices, minC, maxC, pair, startTsUtc, progressCb);
+  var n = Math.floor((prices.length - 1) / S);
+  var revs = [], moms = [];
+  function p2(x) { return (x < 10 ? "0" : "") + x; }
+  for (var k = 0; k < n; k++) {
+    if (cancelFlag) break;
+    var sl = prices.slice(k * S, (k + 1) * S);
+    var has = false;
+    for (var q = 0; q < sl.length; q++) { if (sl[q] !== -1.0) { has = true; break; } }
+    if (!has) { if (progressCb) progressCb((k + 1) / n); continue; }
+    var res = await workerScanRaw(sl, minC, maxC, pair, startTsUtc + k * S, function(f) {
+      if (progressCb) progressCb((k + f) / n);
+    });
+    var ist = ((startTsUtc + k * S + 19800) % 86400 + 86400) % 86400;
+    var lbl = p2(Math.floor(ist / 3600)) + ":" + p2(Math.floor((ist % 3600) / 60));
+    for (var a = 0; a < res[0].length; a++) { res[0][a].sess = k + 1; res[0][a].sessLbl = lbl; revs.push(res[0][a]); }
+    for (var b = 0; b < res[1].length; b++) { res[1][b].sess = k + 1; res[1][b].sessLbl = lbl; moms.push(res[1][b]); }
+  }
+  return [revs, moms];
+}
+
+function workerScanRaw(prices, minC, maxC, pair, startTsUtc, progressCb) {
   return new Promise(function(resolve) {
     var totalCores  = Math.min(navigator.hardwareConcurrency || 4, 16);
     var totalCycles = maxC - minC + 1;
@@ -2600,6 +2624,54 @@ function workerScan(prices, minC, maxC, pair, startTsUtc, progressCb) {
 // ═══════════════════════════════════════════════════════
 //  WALL FILTER
 // ═══════════════════════════════════════════════════════
+var SESS_SEC = 0;
+async function sessionScan(prices, minC, maxC, pair, startTsUtc, progressCb) {
+  var S = SESS_SEC;
+  if (!S || prices.length <= S) return workerScan(prices, minC, maxC, pair, startTsUtc, progressCb);
+  var n = Math.floor((prices.length - 1) / S);
+  var revs = [], moms = [];
+  function p2(x) { return (x < 10 ? "0" : "") + x; }
+  for (var k = 0; k < n; k++) {
+    if (cancelFlag) break;
+    var sl = prices.slice(k * S, (k + 1) * S);
+    var has = false;
+    for (var q = 0; q < sl.length; q++) { if (sl[q] !== -1.0) { has = true; break; } }
+    if (!has) { if (progressCb) progressCb((k + 1) / n); continue; }
+    var res = await workerScan(sl, minC, maxC, pair, startTsUtc + k * S, function(f) {
+      if (progressCb) progressCb((k + f) / n);
+    });
+    var ist = ((startTsUtc + k * S + 19800) % 86400 + 86400) % 86400;
+    var lbl = p2(Math.floor(ist / 3600)) + ":" + p2(Math.floor((ist % 3600) / 60));
+    for (var a = 0; a < res[0].length; a++) { res[0][a].sess = k + 1; res[0][a].sessLbl = lbl; revs.push(res[0][a]); }
+    for (var b = 0; b < res[1].length; b++) { res[1][b].sess = k + 1; res[1][b].sessLbl = lbl; moms.push(res[1][b]); }
+  }
+  return [revs, moms];
+}
+
+var SESS_SEC = 0;
+async function sessionScan(prices, minC, maxC, pair, startTsUtc, progressCb) {
+  var S = SESS_SEC;
+  if (!S || prices.length <= S) return workerScan(prices, minC, maxC, pair, startTsUtc, progressCb);
+  var n = Math.floor((prices.length - 1) / S);
+  var revs = [], moms = [];
+  function p2(x) { return (x < 10 ? "0" : "") + x; }
+  for (var k = 0; k < n; k++) {
+    if (cancelFlag) break;
+    var sl = prices.slice(k * S, (k + 1) * S);
+    var has = false;
+    for (var q = 0; q < sl.length; q++) { if (sl[q] !== -1.0) { has = true; break; } }
+    if (!has) { if (progressCb) progressCb((k + 1) / n); continue; }
+    var res = await workerScan(sl, minC, maxC, pair, startTsUtc + k * S, function(f) {
+      if (progressCb) progressCb((k + f) / n);
+    });
+    var ist = ((startTsUtc + k * S + 19800) % 86400 + 86400) % 86400;
+    var lbl = p2(Math.floor(ist / 3600)) + ":" + p2(Math.floor((ist % 3600) / 60));
+    for (var a = 0; a < res[0].length; a++) { res[0][a].sess = k + 1; res[0][a].sessLbl = lbl; revs.push(res[0][a]); }
+    for (var b = 0; b < res[1].length; b++) { res[1][b].sess = k + 1; res[1][b].sessLbl = lbl; moms.push(res[1][b]); }
+  }
+  return [revs, moms];
+}
+
 function wallFilter(raw, minPct) {
   return raw
     .filter(x => x.pct >= minPct)
@@ -2650,8 +2722,29 @@ async function runScan() {
       secFrom = istFromSec - IST_OFFSET_SEC;
       secTo   = istToSec   - IST_OFFSET_SEC;
       if (secTo <= secFrom) secTo += 86400; // IST window crosses UTC midnight
-    }
-    if (secTo <= secFrom) { toast("End time must be after start time", "err"); return; }
+          }
+          if (secTo <= secFrom) { toast("End time must be after start time", "err"); return; }
+          SESS_SEC = 0;
+          var _sessMin = parseInt((document.getElementById("sessionLen") || {}).value, 10) || 0;
+          if (_sessMin > 0 && _sessMin * 60 < secTo - secFrom) {
+            if ((secTo - secFrom) % (_sessMin * 60) !== 0) { toast("Session " + _sessMin + "m does not divide the time window", "err"); return; }
+            if (_sessMin * 60 <= cycleMin) { toast("Session must be longer than Cycle Min (" + cycleMin + "s)", "err"); return; }
+            SESS_SEC = _sessMin * 60;
+          }
+          SESS_SEC = 0;
+          var _sessMin = parseInt((document.getElementById("sessionLen") || {}).value, 10) || 0;
+          if (_sessMin > 0 && _sessMin * 60 < secTo - secFrom) {
+            if ((secTo - secFrom) % (_sessMin * 60) !== 0) { toast("Session " + _sessMin + "m does not divide the time window", "err"); return; }
+            if (_sessMin * 60 <= cycleMin) { toast("Session must be longer than Cycle Min (" + cycleMin + "s)", "err"); return; }
+            SESS_SEC = _sessMin * 60;
+          }
+        SESS_SEC = 0;
+        var _sessMin = parseInt((document.getElementById("sessionLen") || {}).value, 10) || 0;
+        if (_sessMin > 0 && _sessMin * 60 < secTo - secFrom) {
+          if ((secTo - secFrom) % (_sessMin * 60) !== 0) { toast("Session " + _sessMin + "m does not divide the time window", "err"); return; }
+          if (_sessMin * 60 <= cycleMin) { toast("Session must be longer than Cycle Min (" + cycleMin + "s)", "err"); return; }
+          SESS_SEC = _sessMin * 60;
+        }
   
     // ── Cache key: all pairs + date range + time window ──
     const newCacheKey = `${pairsToScan.join(",")}|${dateFrom}|${dateTo}|${secFrom}-${secTo}`;
@@ -2742,7 +2835,7 @@ async function runScan() {
                             `[${pi+1}/${totalPairs}] ${curPair}  scanning day ${di2+1}/${allDayPrices.length} (${dayLabel2})…`,
                             `Cycles C${cycleMin}–C${cycleMax}`);
                   
-                          var dayScanResult = await workerScan(dayPrices2, cycleMin, cycleMax, curPair, startTsUtc, function(frac) {
+                          var dayScanResult = await sessionScan(dayPrices2, cycleMin, cycleMax, curPair, startTsUtc, function(frac) {
                             setProgress(scanBase + (dayFrac2 + frac / allDayPrices.length) * scanSlice,
                               `[${pi+1}/${totalPairs}] ${curPair}  ${dayLabel2}  scanning… ${Math.round(frac * 100)}%`,
                               `C${cycleMin}–C${cycleMax}  [${totalCores} workers]`);
@@ -4734,6 +4827,90 @@ function renderTable() {
         cc.type = "button";
         cc.className = "wsx-dtb wsx-x4";
         cc.innerHTML = '<span>CACHE</span><b>&#9003;</b>';
+        
+                var sh = document.getElementById("sessionLen");
+                if (!sh) {
+                  sh = document.createElement("input");
+                  sh.type = "hidden";
+                  sh.id = "sessionLen";
+                  sh.value = "0";
+                  document.body.appendChild(sh);
+                }
+                if (!document.getElementById("wsxSessCss")) {
+                  var sst = document.createElement("style");
+                  sst.id = "wsxSessCss";
+                  sst.textContent = "#settingsOverlay #settingsGrid > div.wsx-bar.wsx-bar { grid-template-columns: 1.6fr 1fr 1fr 1.7fr 1fr 1fr 1.3fr 1.3fr 1.3fr 1.4fr 1.6fr !important; } " +
+                              "#settingsOverlay #settingsGrid .wsx-bar .wsx-x6 { grid-column: 7 !important; grid-row: 1 / span 2 !important; } " +
+                              "#settingsOverlay #settingsGrid .wsx-bar .wsx-x1 { grid-column: 8 !important; grid-row: 1 !important; } " +
+                              "#settingsOverlay #settingsGrid .wsx-bar .wsx-x2 { grid-column: 8 !important; grid-row: 2 !important; } " +
+                              "#settingsOverlay #settingsGrid .wsx-bar .wsx-x3 { grid-column: 9 !important; grid-row: 1 / span 2 !important; } " +
+                              "#settingsOverlay #settingsGrid .wsx-bar .wsx-x4 { grid-column: 10 !important; grid-row: 1 / span 2 !important; } " +
+                              "#settingsOverlay #settingsGrid .wsx-bar .wsx-x5 { grid-column: 11 !important; grid-row: 1 / span 2 !important; }";
+                  document.head.appendChild(sst);
+                }
+                function winMin() {
+                  var ta = (document.getElementById("timeFrom").value || "00:00").split(":");
+                  var tb = (document.getElementById("timeTo").value || "00:00").split(":");
+                  var xa = (+ta[0]) * 60 + (+ta[1]);
+                  var xb = (+tb[0]) * 60 + (+tb[1]);
+                  var dm = (xb - xa + 1440) % 1440;
+                  return dm === 0 ? 1440 : dm;
+                }
+                function fmtMin(dm) {
+                  if (dm % 60 === 0) return (dm / 60) + "h";
+                  if (dm < 60) return dm + "m";
+                  return Math.floor(dm / 60) + "h" + pad2(dm % 60) + "m";
+                }
+                var sb = document.createElement("button");
+                sb.type = "button";
+                sb.className = "wsx-dtb wsx-x6";
+                sb.innerHTML = '<span>SESSION</span><b></b>';
+                bar.appendChild(sb);
+                var sv = sb.querySelector("b");
+                function showSess() {
+                  var wm0 = winMin();
+                  var cs = parseInt(sh.value, 10) || 0;
+                  var txt = fmtMin(wm0);
+                            if (cs > 0 && cs < wm0) txt = (wm0 % cs === 0 ? "" : "!") + fmtMin(cs);
+                            sv.textContent = txt;
+                }
+                showSess();
+                ["timeFrom", "timeTo"].forEach(function(tid) {
+                  var te = document.getElementById(tid);
+                  if (te) te.addEventListener("change", showSess);
+                });
+                sb.addEventListener("click", function() {
+                  var pop = document.getElementById("wsxPop");
+                  if (!pop) {
+                    pop = document.createElement("div");
+                    pop.id = "wsxPop";
+                    document.body.appendChild(pop);
+                  }
+                  var wm = winMin();
+                  var cur = parseInt(sh.value, 10) || 0;
+                  if (!cur || cur >= wm || wm % cur !== 0) cur = 0;
+                  var hh = '<div class="wsx-pubox"><div class="wsx-putitle">SESSION - WINDOW ' + fmtMin(wm) + '</div><div class="wsx-pugrid pp">';
+                  for (var dv = 1; dv <= wm; dv++) {
+                    if (wm % dv !== 0) continue;
+                    var on = (cur === 0 && dv === wm) || dv === cur;
+                    hh += '<button type="button" data-v="' + dv + '" class="wsx-pun' + (on ? ' on' : '') + '">' + fmtMin(dv) + '</button>';
+                  }
+                  hh += '</div></div>';
+                  pop.innerHTML = hh;
+                  pop.onclick = function(ev) {
+                    var bt = ev.target.closest ? ev.target.closest(".wsx-pun") : null;
+                    if (!bt) {
+                      if (ev.target === pop) pop.style.display = "none";
+                      return;
+                    }
+                    var pv = +bt.getAttribute("data-v");
+                    sh.value = (pv >= wm) ? "0" : String(pv);
+                    fire(sh);
+                    showSess();
+                    pop.style.display = "none";
+                  };
+                  pop.style.display = "flex";
+                });
         cc.addEventListener("click", function() { clearPersistedCache(); });
         bar.appendChild(cc);
     
