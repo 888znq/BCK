@@ -1188,7 +1188,7 @@ thead th { font-size: 12px; }
 .split-pane-header { text-align: left; }
 body, .layout { height: 100vh; height: 100dvh; }
 .day-summary { display: none !important; }
-#dayFilter, #levelFilter + span + label, #resultCount, #exportTableFormatBtn { display: none !important; }
+#dayFilter, #levelFilter + span + label, #resultCount, #exportCsvBtn, #exportTableFormatBtn { display: none !important; }
 .filter-bar > span { display: none !important; }
 .repeats-section > .split-pane-header { display: none !important; }
 .repeats-section:has(.state-empty) { display: none !important; }
@@ -1491,7 +1491,6 @@ body, .layout { height: 100vh; height: 100dvh; }
 #settingsOverlay #settingsGrid .wsx-bar .wsx-dt .wsx-dtb.wsx-dtb.wsx-dtb.wsx-dtb { border-top: 1px solid var(--border2) !important; border-bottom: 1px solid var(--border2) !important; }
 #settingsOverlay #settingsGrid .wsx-bar > .wsx-dtb.wsx-dtb.wsx-dtb { border-top: 1px solid var(--border2) !important; border-bottom: 1px solid var(--border2) !important; }
 .filter-bar label { display: none !important; }
-.filter-bar #exportCsvBtn { display: inline-block !important; }
 #settingsOverlay #scanPage { padding: 4px 10px !important; max-width: none; overflow: hidden; }
 #settingsOverlay .scan-title { display: none; }
 #settingsOverlay #scanPage .progress-wrap { padding: 2px 0; }
@@ -2180,13 +2179,12 @@ function startClock() {
   setInterval(tick, 1000);
 }
 
-function getWeekdays(from, to, skipWE) {
+function getWeekdays(from, to) {
   const days = [];
   const cur = new Date(from + "T00:00:00Z");
   const end = new Date(to   + "T00:00:00Z");
   while (cur <= end) {
-    const dw = cur.getUTCDay();
-    if (!(skipWE && (dw === 0 || dw === 6))) days.push(new Date(cur));
+    days.push(new Date(cur));
     cur.setUTCDate(cur.getUTCDate() + 1);
   }
   return days;
@@ -2196,9 +2194,7 @@ function updateDayCount() {
   const from = document.getElementById("dateFrom").value;
   const to   = document.getElementById("dateTo").value;
   if (!from || !to) { document.getElementById("dayCountHint").textContent = "Days selected: —"; return; }
-  var _sp = allPairsMode ? ALL_PAIRS : getSelectedPairs();
-    var _skip = !(_sp.length > 0 && _sp.every(function(p) { return /^(cry|1HZ)/i.test(String(p).trim()); }));
-    const days = getWeekdays(from, to, _skip);
+  const days = getWeekdays(from, to);
   document.getElementById("dayCountHint").textContent = `Days selected: ${days.length}`;
 }
 
@@ -2562,31 +2558,7 @@ self.onmessage = function(e) {
   return _workerBlobURL;
 }
 
-var SESS_SEC = 0;
-async function workerScan(prices, minC, maxC, pair, startTsUtc, progressCb) {
-  var S = SESS_SEC;
-  if (!S || prices.length <= S) return workerScanRaw(prices, minC, maxC, pair, startTsUtc, progressCb);
-  var n = Math.floor((prices.length - 1) / S);
-  var revs = [], moms = [];
-  function p2(x) { return (x < 10 ? "0" : "") + x; }
-  for (var k = 0; k < n; k++) {
-    if (cancelFlag) break;
-    var sl = prices.slice(k * S, (k + 1) * S);
-    var has = false;
-    for (var q = 0; q < sl.length; q++) { if (sl[q] !== -1.0) { has = true; break; } }
-    if (!has) { if (progressCb) progressCb((k + 1) / n); continue; }
-    var res = await workerScanRaw(sl, minC, maxC, pair, startTsUtc + k * S, function(f) {
-      if (progressCb) progressCb((k + f) / n);
-    });
-    var ist = ((startTsUtc + k * S + 19800) % 86400 + 86400) % 86400;
-    var lbl = p2(Math.floor(ist / 3600)) + ":" + p2(Math.floor((ist % 3600) / 60));
-    for (var a = 0; a < res[0].length; a++) { res[0][a].sess = k + 1; res[0][a].sessLbl = lbl; revs.push(res[0][a]); }
-    for (var b = 0; b < res[1].length; b++) { res[1][b].sess = k + 1; res[1][b].sessLbl = lbl; moms.push(res[1][b]); }
-  }
-  return [revs, moms];
-}
-
-function workerScanRaw(prices, minC, maxC, pair, startTsUtc, progressCb) {
+function workerScan(prices, minC, maxC, pair, startTsUtc, progressCb) {
   return new Promise(function(resolve) {
     var totalCores  = Math.min(navigator.hardwareConcurrency || 4, 16);
     var totalCycles = maxC - minC + 1;
@@ -2628,95 +2600,6 @@ function workerScanRaw(prices, minC, maxC, pair, startTsUtc, progressCb) {
 // ═══════════════════════════════════════════════════════
 //  WALL FILTER
 // ═══════════════════════════════════════════════════════
-var SESS_SEC = 0;
-async function sessionScan(prices, minC, maxC, pair, startTsUtc, progressCb) {
-  var S = SESS_SEC;
-  if (!S || prices.length <= S) return workerScan(prices, minC, maxC, pair, startTsUtc, progressCb);
-  var n = Math.floor((prices.length - 1) / S);
-  var revs = [], moms = [];
-  function p2(x) { return (x < 10 ? "0" : "") + x; }
-  for (var k = 0; k < n; k++) {
-    if (cancelFlag) break;
-    var sl = prices.slice(k * S, (k + 1) * S);
-    var has = false;
-    for (var q = 0; q < sl.length; q++) { if (sl[q] !== -1.0) { has = true; break; } }
-    if (!has) { if (progressCb) progressCb((k + 1) / n); continue; }
-    var res = await workerScan(sl, minC, maxC, pair, startTsUtc + k * S, function(f) {
-      if (progressCb) progressCb((k + f) / n);
-    });
-    var ist = ((startTsUtc + k * S + 19800) % 86400 + 86400) % 86400;
-    var lbl = p2(Math.floor(ist / 3600)) + ":" + p2(Math.floor((ist % 3600) / 60));
-    for (var a = 0; a < res[0].length; a++) { res[0][a].sess = k + 1; res[0][a].sessLbl = lbl; revs.push(res[0][a]); }
-    for (var b = 0; b < res[1].length; b++) { res[1][b].sess = k + 1; res[1][b].sessLbl = lbl; moms.push(res[1][b]); }
-  }
-  return [revs, moms];
-}
-
-var SESS_SEC = 0;
-async function sessionScan(prices, minC, maxC, pair, startTsUtc, progressCb) {
-  var S = SESS_SEC;
-  if (!S || prices.length <= S) return workerScan(prices, minC, maxC, pair, startTsUtc, progressCb);
-  var n = Math.floor((prices.length - 1) / S);
-  var revs = [], moms = [];
-  function p2(x) { return (x < 10 ? "0" : "") + x; }
-  for (var k = 0; k < n; k++) {
-    if (cancelFlag) break;
-    var sl = prices.slice(k * S, (k + 1) * S);
-    var has = false;
-    for (var q = 0; q < sl.length; q++) { if (sl[q] !== -1.0) { has = true; break; } }
-    if (!has) { if (progressCb) progressCb((k + 1) / n); continue; }
-    var res = await workerScan(sl, minC, maxC, pair, startTsUtc + k * S, function(f) {
-      if (progressCb) progressCb((k + f) / n);
-    });
-    var ist = ((startTsUtc + k * S + 19800) % 86400 + 86400) % 86400;
-    var lbl = p2(Math.floor(ist / 3600)) + ":" + p2(Math.floor((ist % 3600) / 60));
-    for (var a = 0; a < res[0].length; a++) { res[0][a].sess = k + 1; res[0][a].sessLbl = lbl; revs.push(res[0][a]); }
-    for (var b = 0; b < res[1].length; b++) { res[1][b].sess = k + 1; res[1][b].sessLbl = lbl; moms.push(res[1][b]); }
-  }
-  return [revs, moms];
-}
-
-function combineSessions(revs) {
-  var map = {}, order = [];
-  for (var i = 0; i < revs.length; i++) {
-    var x = revs[i];
-    var key = x.pair + "|" + x.c + "|" + x.r + "|" + x.col + "|" + x.s1;
-    var g = map[key];
-    if (!g) {
-      g = { pair: x.pair, c: x.c, r: x.r, s1: x.s1, s2: x.s2, c1: 0, c2: 0, col: x.col, type: "REV", date: x.date, sess: 0, sessLbl: "ALL", gap: 0, curGap: 0, gapCount: 0, gapFreq: {}, pct: 0 };
-      map[key] = g;
-      order.push(g);
-    }
-    g.c1 += x.c1;
-    g.c2 += x.c2;
-    g.curGap = x.curGap;
-    var f = x.gapFreq || {};
-    for (var k in f) { g.gapFreq[k] = (g.gapFreq[k] || 0) + f[k]; }
-  }
-  var outR = [], outM = [];
-  for (var j = 0; j < order.length; j++) {
-    var o = order[j];
-    var bestLen = 0, bestCnt = 0;
-    for (var kk in o.gapFreq) {
-      var ln = kk | 0;
-      var ct = o.gapFreq[kk];
-      if (ct > bestCnt || (ct === bestCnt && ln > bestLen)) { bestCnt = ct; bestLen = ln; }
-    }
-    o.gap = bestLen;
-    o.gapCount = bestCnt;
-    o.pct = o.c1 ? 100 - Math.round((o.c2 / o.c1) * 100) : 0;
-    outR.push(o);
-    if (o.c1 > 1) {
-      var m = {};
-      for (var pk in o) { m[pk] = o[pk]; }
-      m.type = "MOM";
-      m.pct = Math.round((o.c2 / o.c1) * 100);
-      outM.push(m);
-    }
-  }
-  return [outR, outM];
-}
-
 function wallFilter(raw, minPct) {
   return raw
     .filter(x => x.pct >= minPct)
@@ -2748,8 +2631,7 @@ async function runScan() {
 
   if (!dateFrom || !dateTo) { toast("Please set date range", "err"); return; }
   
-    const _skipWE = !pairsToScan.every(function(p) { return /^(cry|1HZ)/i.test(p); });
-        const days = getWeekdays(dateFrom, dateTo, _skipWE);
+    const days = getWeekdays(dateFrom, dateTo);
     if (days.length === 0) { toast("No days in selected range", "err"); return; }
   
     // Time window: inputs are IST (UTC+5:30) → convert to UTC seconds-from-midnight
@@ -2768,29 +2650,8 @@ async function runScan() {
       secFrom = istFromSec - IST_OFFSET_SEC;
       secTo   = istToSec   - IST_OFFSET_SEC;
       if (secTo <= secFrom) secTo += 86400; // IST window crosses UTC midnight
-          }
-          if (secTo <= secFrom) { toast("End time must be after start time", "err"); return; }
-          SESS_SEC = 0;
-          var _sessMin = parseInt((document.getElementById("sessionLen") || {}).value, 10) || 0;
-          if (_sessMin > 0 && _sessMin * 60 < secTo - secFrom) {
-            if ((secTo - secFrom) % (_sessMin * 60) !== 0) { toast("Session " + _sessMin + "m does not divide the time window", "err"); return; }
-            if (_sessMin * 60 <= cycleMin) { toast("Session must be longer than Cycle Min (" + cycleMin + "s)", "err"); return; }
-            SESS_SEC = _sessMin * 60;
-          }
-          SESS_SEC = 0;
-          var _sessMin = parseInt((document.getElementById("sessionLen") || {}).value, 10) || 0;
-          if (_sessMin > 0 && _sessMin * 60 < secTo - secFrom) {
-            if ((secTo - secFrom) % (_sessMin * 60) !== 0) { toast("Session " + _sessMin + "m does not divide the time window", "err"); return; }
-            if (_sessMin * 60 <= cycleMin) { toast("Session must be longer than Cycle Min (" + cycleMin + "s)", "err"); return; }
-            SESS_SEC = _sessMin * 60;
-          }
-        SESS_SEC = 0;
-        var _sessMin = parseInt((document.getElementById("sessionLen") || {}).value, 10) || 0;
-        if (_sessMin > 0 && _sessMin * 60 < secTo - secFrom) {
-          if ((secTo - secFrom) % (_sessMin * 60) !== 0) { toast("Session " + _sessMin + "m does not divide the time window", "err"); return; }
-          if (_sessMin * 60 <= cycleMin) { toast("Session must be longer than Cycle Min (" + cycleMin + "s)", "err"); return; }
-          SESS_SEC = _sessMin * 60;
-        }
+    }
+    if (secTo <= secFrom) { toast("End time must be after start time", "err"); return; }
   
     // ── Cache key: all pairs + date range + time window ──
     const newCacheKey = `${pairsToScan.join(",")}|${dateFrom}|${dateTo}|${secFrom}-${secTo}`;
@@ -2814,9 +2675,6 @@ async function runScan() {
 
   allRevs = []; allMoms = [];
     let totalTicks = 0;
-        var _badDays = [];
-        var _fab0 = document.getElementById("exportFab");
-        if (_fab0) _fab0.style.setProperty("display", "none", "important");
     const totalPairs = pairsToScan.length;
   
     // ── For each pair: fetch all days, then scan ──
@@ -2866,21 +2724,7 @@ async function runScan() {
         totalTicks += real;
       }
   
-      // ── Day health check: flag missing / low-tick days ──
-            var _hReal = [];
-            for (var _hi = 0; _hi < allDayPrices.length; _hi++) {
-              var _hp = allDayPrices[_hi];
-              _hReal.push(_hp ? _hp.filter(function(p) { return p !== -1.0; }).length : 0);
-            }
-            var _hSorted = _hReal.slice().sort(function(a, b) { return a - b; });
-            var _hMed = _hSorted.length ? _hSorted[Math.floor(_hSorted.length / 2)] : 0;
-            for (var _hj = 0; _hj < _hReal.length; _hj++) {
-              if (_hReal[_hj] === 0 || (_hReal.length >= 3 && _hReal[_hj] < 0.6 * _hMed)) {
-                _badDays.push(curPair + " " + days[_hj].toISOString().slice(0, 10) + " (" + _hReal[_hj] + " ticks vs median " + _hMed + ")");
-              }
-            }
-      
-            // ── Run streak scan for this pair, PER DAY (each day scanned & kept separate) ──
+      // ── Run streak scan for this pair, PER DAY (each day scanned & kept separate) ──
             var totalCores = Math.min(navigator.hardwareConcurrency || 4, 16);
             var scanBase = 60 + (pi / totalPairs) * 28;
             var scanSlice = (1 / totalPairs) * 28;
@@ -2898,7 +2742,7 @@ async function runScan() {
                             `[${pi+1}/${totalPairs}] ${curPair}  scanning day ${di2+1}/${allDayPrices.length} (${dayLabel2})…`,
                             `Cycles C${cycleMin}–C${cycleMax}`);
                   
-                          var dayScanResult = await sessionScan(dayPrices2, cycleMin, cycleMax, curPair, startTsUtc, function(frac) {
+                          var dayScanResult = await workerScan(dayPrices2, cycleMin, cycleMax, curPair, startTsUtc, function(frac) {
                             setProgress(scanBase + (dayFrac2 + frac / allDayPrices.length) * scanSlice,
                               `[${pi+1}/${totalPairs}] ${curPair}  ${dayLabel2}  scanning… ${Math.round(frac * 100)}%`,
                               `C${cycleMin}–C${cycleMax}  [${totalCores} workers]`);
@@ -2926,12 +2770,7 @@ async function runScan() {
   }
 
   // ── Final filter + render ──
-    if (SESS_SEC > 0) {
-      var _cs = [allRevs, allMoms];
-      allRevs = _cs[0];
-      allMoms = _cs[1];
-    }
-    setProgress(90, "Filtering signals…", `${allRevs.length} raw REV  |  ${allMoms.length} raw MOM`);
+  setProgress(90, "Filtering signals…", `${allRevs.length} raw REV  |  ${allMoms.length} raw MOM`);
   await sleep(30);
 
   const filtRevs = wallFilter(allRevs, minPct);
@@ -2968,27 +2807,11 @@ async function runScan() {
   document.getElementById("momCount").textContent     = filtMoms.length;
 
   renderTable();
-      document.getElementById("exportCsvBtn").style.setProperty("display", "inline-block", "important");
-            var _fab = document.getElementById("exportFab");
-            if (!_fab) {
-              _fab = document.createElement("button");
-              _fab.type = "button";
-              _fab.id = "exportFab";
-              _fab.className = "export-btn";
-              _fab.textContent = "⬇ EXPORT CSV";
-              _fab.onclick = function() { exportAllSignalsCSV(); };
-              document.body.appendChild(_fab);
-            }
-            _fab.style.cssText = "display:block !important; position:fixed !important; right:8px !important; bottom:calc(9vh + 8px) !important; bottom:calc(9dvh + 8px) !important; z-index:950 !important; padding:10px 14px !important; font-size:13px !important; background:var(--bg) !important; opacity:1 !important; visibility:visible !important;";
+      document.getElementById("exportCsvBtn").style.display = "inline-block";
       document.getElementById("exportTableFormatBtn").style.display = "inline-block";
       setTimeout(() => document.getElementById("progressWrap").classList.remove("visible"), 2000);
   
-    if (_badDays.length > 0) {
-          toast("Scan complete, but " + _badDays.length + " day(s) have missing or low data: " + _badDays.slice(0, 3).join("; ") + (_badDays.length > 3 ? " …" : ""), "err");
-          document.getElementById("logLine").textContent = "LOW DATA: " + _badDays.join("; ");
-        } else {
-          toast(`Scan complete — ${filtRevs.length + filtMoms.length} signals — all ${days.length} days complete`, "ok");
-        }
+    toast(`Scan complete — ${filtRevs.length + filtMoms.length} signals`, "ok");
     resetRunBtn();
 }
 
@@ -3013,7 +2836,7 @@ async function exportAllSignalsCSV() {
             "PAIR","DATE","TYPE","DIRECTION","CYCLE","ROW",
             "STREAK_FROM","STREAK_TO","C1_OCCURRENCES","C2_OCCURRENCES","GAP_MODE","GAP_COUNT",
             "PROBABILITY_%","REVERSAL_PROB_%","MOMENTUM_PROB_%",
-            "SCORE","SIGNAL_STRENGTH","SESSION"
+            "SCORE","SIGNAL_STRENGTH"
           ];
         
           var rows = data.map(function(d) {
@@ -3030,12 +2853,12 @@ async function exportAllSignalsCSV() {
               name, dateVal, d.type, direction, d.c, d.r,
               d.s1, d.s2, d.c1, d.c2, gapVal, gapCountVal,
               d.pct, revPct, momPct,
-              score, strength, (d.sessLbl || "")
+              score, strength
             ].join(",");
           });
 
   var csv = [headers.join(",")].concat(rows).join("\n");
-    var filename = "wallspectrum_ALL_signals_" + ((data[0] && data[0].date) ? data[0].date : new Date().toISOString().slice(0,10)) + ".csv";
+    var filename = "wallspectrum_ALL_signals_" + new Date().toISOString().slice(0,10) + ".csv";
       await downloadCSV(csv, filename);
       toast("Exported " + data.length + " signals to CSV", "ok");
     }
@@ -3092,19 +2915,8 @@ async function exportAllSignalsCSV() {
       return;
     }
     // Fallback for browsers that don't support the File System Access API
-        try {
-          var blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-          if (navigator.canShare && navigator.share) {
-            try {
-              var shFile = new File([blob], filename, { type: "text/csv" });
-              if (navigator.canShare({ files: [shFile] })) {
-                await navigator.share({ files: [shFile], title: filename });
-                return;
-              }
-            } catch (shErr) {
-              if (shErr && shErr.name === "AbortError") return;
-            }
-          }
+    try {
+      var blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
       var url  = URL.createObjectURL(blob);
       var a    = document.createElement("a");
       a.href     = url;
@@ -3523,7 +3335,6 @@ function renderTable() {
   function pad2(n) { return (n < 10 ? "0" : "") + n; }
   function fire(el) { el.dispatchEvent(new Event("change", { bubbles: true })); }
   var MONTHS = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
-    var MONTHS_FULL = ["January","February","March","April","May","June","July","August","September","October","November","December"];
     function yearSel(y) {
       var o = "";
       var y0 = new Date().getFullYear() - 10;
@@ -3623,14 +3434,8 @@ function renderTable() {
       var p = (s || "").split("-");
       if (p.length !== 3) return null;
       return { y: +p[0], m: +p[1] - 1, d: +p[2] };
-          }
-          var DAYN = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-          function dayName(s) {
-            var q = parseISO(s);
-            if (!q) return "";
-            return DAYN[new Date(Date.UTC(q.y, q.m, q.d)).getUTCDay()];
-          }
-          var cals = {};
+    }
+    var cals = {};
     var calsHost = document.createElement("div");
     calsHost.className = "wsx-cals";
     [{ key: "from", id: "dateFrom", title: "FROM" }, { key: "to", id: "dateTo", title: "TO" }].forEach(function(def) {
@@ -3658,7 +3463,7 @@ function renderTable() {
       var startDow = (new Date(Date.UTC(c.y, c.m, 1)).getUTCDay() + 6) % 7;
       var dim = new Date(Date.UTC(c.y, c.m + 1, 0)).getUTCDate();
       var h = '<div class="wsx-cal-title">' + c.def.title + '</div>' +
-        '<div class="wsx-cr">' + c.def.title + ' <b>' + fmtDMY(ownV) + '</b> <span class="wsx-dn">' + dayName(ownV) + '</span></div>' + '<div class="wsx-ch"><button type="button" data-ynav="-1">«</button><span>' + c.y + '</span><button type="button" data-ynav="1">»</button></div><div class="wsx-ch"><button type="button" data-nav="-1">‹</button><button type="button" class="wsx-mname" data-mp="1" style="cursor:pointer;">' + MONTHS_FULL[c.m] + ' ▾</button><button type="button" data-nav="1">›</button></div>' +
+        '<div class="wsx-cr">' + c.def.title + ' <b>' + fmtDMY(ownV) + '</b></div>' + '<div class="wsx-ch"><button type="button" data-ynav="-1">«</button><span>' + c.y + '</span><button type="button" data-ynav="1">»</button></div><div class="wsx-ch"><button type="button" data-nav="-1">‹</button><span>' + MONTHS[c.m] + '</span><button type="button" data-nav="1">›</button></div>' +
                 '' +
         '<div class="wsx-mg">' + ["M","T","W","T","F","S","S"].map(function(n) { return '<span class="wsx-dw">' + n + '</span>'; }).join("");
       for (var pb = 0; pb < startDow; pb++) { h += '<span class="wsx-bk"></span>'; }
@@ -3670,18 +3475,10 @@ function renderTable() {
         else if (iso === fromV || iso === toV) cls += " edge";
         else if (fromV && toV && iso > fromV && iso < toV) cls += " in";
         if (iso === todayIso) cls += " today";
-        h += '<button type="button" class="' + cls + '" data-iso="' + iso + '" title="' + dayName(iso) + '">' + d + '</button>';
+        h += '<button type="button" class="' + cls + '" data-iso="' + iso + '">' + d + '</button>';
       }
       h += '</div>';
-            c.el.style.position = "relative";
-            if (c.mp) {
-              h += '<div class="wsx-mpop" style="position:absolute;left:0;right:0;top:0;bottom:0;z-index:20;background:var(--bg,#14171c);display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:8px;align-content:center;">';
-              for (var mi = 0; mi < 12; mi++) {
-                h += '<button type="button" class="wsx-day' + (mi === c.m ? ' sel' : '') + '" data-mon="' + (mi + 1) + '" style="font-size:11px;width:auto;">' + MONTHS_FULL[mi] + '</button>';
-              }
-              h += '</div>';
-            }
-            var _og = c.el.querySelector(".wsx-cal-grid");
+      var _og = c.el.querySelector(".wsx-cal-grid");
             var _sl = _og ? _og.scrollLeft : -1;
             c.el.innerHTML = h;
             var _ng = c.el.querySelector(".wsx-cal-grid");
@@ -3709,15 +3506,9 @@ function renderTable() {
               renderCal(key);
               return;
             }
-            if (t.dataset.mp) {
-                          c.mp = !c.mp;
-                          renderCal(key);
-                          return;
-                        }
-                        if (t.dataset.mon) {
-                          c.m = +t.dataset.mon - 1;
-                          c.mp = false;
-                          renderCal(key);
+            if (t.dataset.mon) {
+              c.m = +t.dataset.mon - 1;
+              renderCal(key);
               return;
             }
             if (t.dataset.iso) {
@@ -4756,7 +4547,7 @@ function renderTable() {
     refreshAll();
   }
 
-  function popup(title, count, start, cur, cls, onPick, ex) {
+  function popup(title, count, start, cur, cls, onPick) {
     var pop = document.getElementById("wsxPop");
     if (!pop) {
       pop = document.createElement("div");
@@ -4764,18 +4555,9 @@ function renderTable() {
       document.body.appendChild(pop);
     }
     var html = '<div class="wsx-pubox"><div class="wsx-putitle">' + title + '</div><div class="wsx-pugrid ' + cls + '">';
-    if (ex && ex.head) {
-          for (var hi = 0; hi < ex.head.length; hi++) {
-            html += '<div style="text-align:center;font-family:var(--mono);font-size:13px;font-weight:700;color:var(--amber);padding:2px 0;">' + ex.head[hi] + '</div>';
-          }
-        }
-        if (ex && ex.lead) {
-          for (var li = 0; li < ex.lead; li++) { html += '<span></span>'; }
-        }
-        for (var q = 0; q < count; q++) {
-          var v = start + q;
-          var lbl = (ex && ex.label) ? ex.label(v) : (cls === "py" ? v : pad2(v));
-          html += '<button type="button" data-v="' + v + '" class="wsx-pun' + (v === cur ? ' on' : '') + '">' + lbl + '</button>';
+    for (var q = 0; q < count; q++) {
+      var v = start + q;
+      html += '<button type="button" data-v="' + v + '" class="wsx-pun' + (v === cur ? ' on' : '') + '">' + (cls === "py" ? v : pad2(v)) + '</button>';
     }
     html += '</div></div>';
     pop.innerHTML = html;
@@ -4913,7 +4695,7 @@ function renderTable() {
           b.innerHTML = '<span>' + d.lbl + '</span><b></b>';
           bar.appendChild(b);
           var v = b.querySelector("b");
-          function show() { v.textContent = (document.getElementById(d.id).value || "0") + (d.id === "minPct" ? "%" : ""); }
+          function show() { v.textContent = document.getElementById(d.id).value || "0"; }
           show();
           b.addEventListener("click", function() { keypad(d.lbl, d.id, d.min, d.max, show); });
         });
@@ -4922,90 +4704,6 @@ function renderTable() {
         cc.type = "button";
         cc.className = "wsx-dtb wsx-x4";
         cc.innerHTML = '<span>CACHE</span><b>&#9003;</b>';
-        
-                var sh = document.getElementById("sessionLen");
-                if (!sh) {
-                  sh = document.createElement("input");
-                  sh.type = "hidden";
-                  sh.id = "sessionLen";
-                  sh.value = "0";
-                  document.body.appendChild(sh);
-                }
-                if (!document.getElementById("wsxSessCss")) {
-                  var sst = document.createElement("style");
-                  sst.id = "wsxSessCss";
-                  sst.textContent = "#settingsOverlay #settingsGrid > div.wsx-bar.wsx-bar { grid-template-columns: 1.6fr 1fr 1fr 1.7fr 1fr 1fr 1.3fr 1.3fr 1.3fr 1.4fr 1.6fr !important; } " +
-                              "#settingsOverlay #settingsGrid .wsx-bar .wsx-x6 { grid-column: 7 !important; grid-row: 1 / span 2 !important; } " +
-                              "#settingsOverlay #settingsGrid .wsx-bar .wsx-x1 { grid-column: 8 !important; grid-row: 1 !important; } " +
-                              "#settingsOverlay #settingsGrid .wsx-bar .wsx-x2 { grid-column: 8 !important; grid-row: 2 !important; } " +
-                              "#settingsOverlay #settingsGrid .wsx-bar .wsx-x3 { grid-column: 9 !important; grid-row: 1 / span 2 !important; } " +
-                              "#settingsOverlay #settingsGrid .wsx-bar .wsx-x4 { grid-column: 10 !important; grid-row: 1 / span 2 !important; } " +
-                              "#settingsOverlay #settingsGrid .wsx-bar .wsx-x5 { grid-column: 11 !important; grid-row: 1 / span 2 !important; }";
-                  document.head.appendChild(sst);
-                }
-                function winMin() {
-                  var ta = (document.getElementById("timeFrom").value || "00:00").split(":");
-                  var tb = (document.getElementById("timeTo").value || "00:00").split(":");
-                  var xa = (+ta[0]) * 60 + (+ta[1]);
-                  var xb = (+tb[0]) * 60 + (+tb[1]);
-                  var dm = (xb - xa + 1440) % 1440;
-                  return dm === 0 ? 1440 : dm;
-                }
-                function fmtMin(dm) {
-                  if (dm % 60 === 0) return (dm / 60) + "h";
-                  if (dm < 60) return dm + "m";
-                  return Math.floor(dm / 60) + "h" + pad2(dm % 60) + "m";
-                }
-                var sb = document.createElement("button");
-                sb.type = "button";
-                sb.className = "wsx-dtb wsx-x6";
-                sb.innerHTML = '<span>SESSION</span><b></b>';
-                bar.appendChild(sb);
-                var sv = sb.querySelector("b");
-                function showSess() {
-                  var wm0 = winMin();
-                  var cs = parseInt(sh.value, 10) || 0;
-                  var txt = fmtMin(wm0);
-                            if (cs > 0 && cs < wm0) txt = (wm0 % cs === 0 ? "" : "!") + fmtMin(cs);
-                            sv.textContent = txt;
-                }
-                showSess();
-                ["timeFrom", "timeTo"].forEach(function(tid) {
-                  var te = document.getElementById(tid);
-                  if (te) te.addEventListener("change", showSess);
-                });
-                sb.addEventListener("click", function() {
-                  var pop = document.getElementById("wsxPop");
-                  if (!pop) {
-                    pop = document.createElement("div");
-                    pop.id = "wsxPop";
-                    document.body.appendChild(pop);
-                  }
-                  var wm = winMin();
-                  var cur = parseInt(sh.value, 10) || 0;
-                  if (!cur || cur >= wm || wm % cur !== 0) cur = 0;
-                  var hh = '<div class="wsx-pubox"><div class="wsx-putitle">SESSION - WINDOW ' + fmtMin(wm) + '</div><div class="wsx-pugrid pp">';
-                  for (var dv = 1; dv <= wm; dv++) {
-                    if (wm % dv !== 0) continue;
-                    var on = (cur === 0 && dv === wm) || dv === cur;
-                    hh += '<button type="button" data-v="' + dv + '" class="wsx-pun' + (on ? ' on' : '') + '">' + fmtMin(dv) + '</button>';
-                  }
-                  hh += '</div></div>';
-                  pop.innerHTML = hh;
-                  pop.onclick = function(ev) {
-                    var bt = ev.target.closest ? ev.target.closest(".wsx-pun") : null;
-                    if (!bt) {
-                      if (ev.target === pop) pop.style.display = "none";
-                      return;
-                    }
-                    var pv = +bt.getAttribute("data-v");
-                    sh.value = (pv >= wm) ? "0" : String(pv);
-                    fire(sh);
-                    showSess();
-                    pop.style.display = "none";
-                  };
-                  pop.style.display = "flex";
-                });
         cc.addEventListener("click", function() { clearPersistedCache(); });
         bar.appendChild(cc);
     
@@ -5027,7 +4725,7 @@ function renderTable() {
 
     function render() {
       var p = parts(dId, tId);
-      var vals = [pairText(), pad2(p.d), ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"][p.m - 1], String(p.y), pad2(p.h), pad2(p.n)];
+      var vals = [pairText(), pad2(p.d), pad2(p.m), String(p.y), pad2(p.h), pad2(p.n)];
       var h = "";
       for (var i = 0; i < 6; i++) {
         h += '<button type="button" class="wsx-dtb" data-i="' + i + '"><span>' + NAMES[i] + '</span><b>' + vals[i] + '</b></button>';
@@ -5056,16 +4754,8 @@ function renderTable() {
         save(dId, tId, p);
       }
 
-      if (i === 0) popup(label + " - DAY", dim, 1, p.d, "pd", done, {
-              head: ["M", "T", "W", "T", "F", "S", "S"],
-                      lead: (new Date(Date.UTC(p.y, p.m - 1, 1)).getUTCDay() + 6) % 7
-                    });
-      else if (i === 1) popup(label + " - MONTH", 12, 1, p.m, "pmo", done, {
-              label: function(v) {
-                var mn = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"][v - 1];
-                return '<span style="font-size:13px;">' + mn + '</span>';
-              }
-            });
+      if (i === 0) popup(label + " - DAY", dim, 1, p.d, "pd", done);
+      else if (i === 1) popup(label + " - MONTH", 12, 1, p.m, "pmo", done);
       else if (i === 2) popup(label + " - YEAR", y1 - y0 + 1, y0, p.y, "py", done);
       else if (i === 3) popup(label + " - HOUR", 24, 0, p.h, "ph", done);
       else popup(label + " - MINUTE", 60, 0, p.n, "pm", done);
