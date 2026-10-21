@@ -1515,6 +1515,10 @@ html body #settingsOverlay #settingsGrid .wsx-bar .wsx-dtb.wsx-dtb.wsx-dtb.wsx-d
 html body #settingsOverlay #settingsGrid .wsx-bar .wsx-dtb.wsx-dtb.wsx-dtb.wsx-dtb.wsx-dtb.wsx-x4 { background: #FF9F43 !important; }
 html body #settingsOverlay #settingsGrid .wsx-bar .wsx-dtb.wsx-dtb.wsx-dtb.wsx-dtb.wsx-dtb.wsx-x5 { background: #CCF5DF !important; }
 .filter-bar label { display: none !important; }
+#settingsOverlay #settingsGrid .wsx-bar .wsx-dt:nth-of-type(1) > .wsx-dtb[data-i="1"], #settingsOverlay #settingsGrid .wsx-bar .wsx-dt:nth-of-type(1) > .wsx-dtb[data-i="2"], #settingsOverlay #settingsGrid .wsx-bar .wsx-dt:nth-of-type(1) > .wsx-dtb[data-i="3"] { grid-row: 1 / span 2 !important; }
+#settingsOverlay #settingsGrid .wsx-bar .wsx-dt:nth-of-type(1) > .wsx-dtb[data-i="4"], #settingsOverlay #settingsGrid .wsx-bar .wsx-dt:nth-of-type(1) > .wsx-dtb[data-i="5"], #settingsOverlay #settingsGrid .wsx-bar .wsx-dt:nth-of-type(2) > .wsx-dtb[data-i="4"], #settingsOverlay #settingsGrid .wsx-bar .wsx-dt:nth-of-type(2) > .wsx-dtb[data-i="5"] { position: relative; }
+#settingsOverlay #settingsGrid .wsx-bar .wsx-dt:nth-of-type(1) > .wsx-dtb[data-i="4"]::before { content: "START"; position: absolute; top: 1px; left: 3px; font-size: 7px; letter-spacing: 0.06em; color: #000432; opacity: 0.7; }
+#settingsOverlay #settingsGrid .wsx-bar .wsx-dt:nth-of-type(2) > .wsx-dtb[data-i="4"]::before { content: "END"; position: absolute; top: 1px; left: 3px; font-size: 7px; letter-spacing: 0.06em; color: #000432; opacity: 0.7; }
 #settingsOverlay #scanPage { padding: 4px 10px !important; max-width: none; overflow: hidden; }
 #settingsOverlay .scan-title { display: none; }
 #settingsOverlay #scanPage .progress-wrap { padding: 2px 0; }
@@ -1638,18 +1642,15 @@ html body #settingsOverlay #settingsGrid .wsx-bar .wsx-dtb.wsx-dtb.wsx-dtb.wsx-d
 
     <!-- DATE RANGE -->
     <div>
-      <div class="section-label">Date Range (All days)</div>
-      <div class="field-row">
-        <div class="field">
-          <label>From</label>
-          <input type="date" id="dateFrom"/>
-        </div>
-        <div class="field">
-          <label>To</label>
-          <input type="date" id="dateTo"/>
-        </div>
-      </div>
-      <p class="hint" id="dayCountHint">Weekdays selected: —</p>
+      <div class="section-label">Date (one day = 05:30 → 05:30 IST)</div>
+            <div class="field-row">
+              <div class="field">
+                <label>Date</label>
+                <input type="date" id="dateFrom"/>
+                <input type="hidden" id="dateTo"/>
+              </div>
+            </div>
+            <p class="hint" id="dayCountHint">Window: —</p>
     </div>
 
     <hr class="divider"/>
@@ -1660,14 +1661,14 @@ html body #settingsOverlay #settingsGrid .wsx-bar .wsx-dtb.wsx-dtb.wsx-dtb.wsx-d
       <div class="field-row">
         <div class="field">
           <label>Start time</label>
-          <input type="time" id="timeFrom" value="10:30"/>
+          <input type="time" id="timeFrom" value="05:30"/>
                   </div>
                   <div class="field">
                     <label>End time</label>
-                    <input type="time" id="timeTo" value="22:30"/>
+                    <input type="time" id="timeTo" value="05:30"/>
         </div>
       </div>
-      <p class="hint">Enter times in IST. Equal start/end = full 24h day (00:00–00:00 UTC). Ticks are only fetched in this window each day</p>
+      <p class="hint">One day = 05:30 IST to 05:30 IST (next day). Pick any start/end inside it, max 24h. Equal start/end = the full day.</p>
       <div class="pair-grid" style="margin-top:6px">
         <div class="pair-chip" data-preset="00:00-20:57" title="Full session" style="display:none">Full Session</div>
                 <div class="pair-chip" data-preset="08:00-10:00" title="London open" style="display:none">London Open</div>
@@ -1797,17 +1798,17 @@ html body #settingsOverlay #settingsGrid .wsx-bar .wsx-dtb.wsx-dtb.wsx-dtb.wsx-d
                     <input type="number" id="filterC1" placeholder="1" min="1" style="display:none;"/>
                     <div class="result-count" id="resultCount">—</div>
                                         <button class="export-btn" id="row0Btn" onclick="toggleRow0()" style="margin-left: 12px;">ROW 0 ONLY</button>
-                                                                                <button class="export-btn" id="ceilBtn" onclick="toggleCeil()" style="margin-left: 8px;">CEILING</button>
+                                                                                
                                                                                 <button class="export-btn" id="xsBtn" onclick="toggleXs()" style="display:none; margin-left: 8px;">BY SESSION</button>
                                                                                 <button class="export-btn" id="xsBtn" onclick="toggleXs()" style="display:none; margin-left: 8px;">BY SESSION</button>
                                         <button class="export-btn" id="exportCsvBtn" onclick="exportAllSignalsCSV()" style="display:none; margin-left: 12px;">⬇ EXPORT CSV</button>
                                                             <button class="export-btn" id="exportTableFormatBtn" onclick="exportAllSignalsTableFormat()" style="display:none; margin-left: 8px;">⬇ EXPORT ALL (TABLE)</button>
                                                             <span>|</span>
-                                                            <label>Rep Days≥</label>
-                                                            <input type="number" id="repMinDays" value="2" min="2" style="width:48px;"/>
-                                                            <label>Rep C1≥</label>
-                                                            <input type="number" id="repMinC1" value="2" min="1" style="width:48px;"/>
-                                                            <button class="export-btn" id="exportRepeatsBtn" onclick="exportRepeatsCSV()" style="display:none; margin-left: 8px;">⬇ EXPORT REPEATS</button>
+                                                            
+                                                            
+                                                            
+                                                            
+                                                            
                                                           </div>
 
     <!-- TABLE AREA -->
@@ -2174,7 +2175,7 @@ document.getElementById("cycleMin").addEventListener("input", updateCycleLabel);
 document.getElementById("cycleMax").addEventListener("input", updateCycleLabel);
 
 // Filter bar inputs → re-render
-["filterPct","filterStreak","filterC1","repMinDays","repMinC1"].forEach(id => {
+["filterPct","filterStreak","filterC1"].forEach(id => {
   document.getElementById(id).addEventListener("input", renderTable);
 });
 document.getElementById("levelFilter").addEventListener("change", renderTable);
@@ -2251,10 +2252,10 @@ function getWeekdays(from, to) {
 
 function updateDayCount() {
   const from = document.getElementById("dateFrom").value;
-  const to   = document.getElementById("dateTo").value;
-  if (!from || !to) { document.getElementById("dayCountHint").textContent = "Days selected: —"; return; }
-  const days = getWeekdays(from, to);
-  document.getElementById("dayCountHint").textContent = `Days selected: ${days.length}`;
+  if (!from) { document.getElementById("dayCountHint").textContent = "Window: —"; return; }
+    const nxt = new Date(from + "T00:00:00Z");
+    nxt.setUTCDate(nxt.getUTCDate() + 1);
+    document.getElementById("dayCountHint").textContent = `Window: ${from} 05:30 → ${nxt.toISOString().slice(0, 10)} 05:30 IST`;
 }
 
 function updateCycleLabel() {
@@ -2712,14 +2713,14 @@ async function runScan() {
           .map(p => p.trim());
         const pair        = pairsToScan[0]; // kept for single-pair backward compat label
     const dateFrom = document.getElementById("dateFrom").value;
-  const dateTo   = document.getElementById("dateTo").value;
-  const timeFrom = document.getElementById("timeFrom").value || "00:00";
-  const timeTo   = document.getElementById("timeTo").value   || "20:57";
+  const dateTo   = dateFrom; // single date: one day = 05:30 → 05:30 IST
+    const timeFrom = document.getElementById("timeFrom").value || "05:30";
+    const timeTo   = document.getElementById("timeTo").value   || "05:30";
   const cycleMin = Math.max(1, parseInt(document.getElementById("cycleMin").value) || 120);
     const cycleMax = Math.max(cycleMin, parseInt(document.getElementById("cycleMax").value) || 180);
   const minPct   = parseInt(document.getElementById("minPct").value) || 100;
 
-  if (!dateFrom || !dateTo) { toast("Please set date range", "err"); return; }
+  if (!dateFrom) { toast("Please select a date", "err"); return; }
   
     const days = getWeekdays(dateFrom, dateTo);
     if (days.length === 0) { toast("No days in selected range", "err"); return; }
@@ -2737,11 +2738,12 @@ async function runScan() {
       secFrom = 0;
       secTo   = 86400;
     } else {
-      secFrom = istFromSec - IST_OFFSET_SEC;
-      secTo   = istToSec   - IST_OFFSET_SEC;
-      if (secTo <= secFrom) secTo += 86400; // IST window crosses UTC midnight
+      // day window = 05:30 IST (UTC 00:00 of selected date) → 05:30 IST next day (UTC 24:00)
+            secFrom = ((istFromSec - IST_OFFSET_SEC) % 86400 + 86400) % 86400;
+            secTo   = ((istToSec   - IST_OFFSET_SEC) % 86400 + 86400) % 86400;
+            if (secTo === 0) secTo = 86400;
     }
-    if (secTo <= secFrom) { toast("End time must be after start time", "err"); return; }
+    if (secTo <= secFrom) { toast("Time window must stay inside 05:30 → 05:30 IST (end after start)", "err"); return; }
         var sessMinV = window.wsxSessionMin || 0;
         var winSecV = secTo - secFrom;
         if (sessMinV && (winSecV % (sessMinV * 60) !== 0 || sessMinV * 60 >= winSecV)) { sessMinV = 0; window.wsxSessionMin = 0; }
@@ -3111,47 +3113,7 @@ function buildPaneHTML(label, data, countId) {
     </div>`;
   }
 
-function computeRepeatingWalls() {
-  const minPct     = parseInt(document.getElementById("filterPct").value) || 0;
-  const minStreak  = parseInt(document.getElementById("filterStreak").value) || 1;
-  const levels     = parseLevelFilter(document.getElementById("levelFilter"));
-  const repMinDays = Math.max(2, parseInt(document.getElementById("repMinDays").value) || 2);
-  const repMinC1   = Math.max(1, parseInt(document.getElementById("repMinC1").value) || 1);
 
-  const passesBase = x => x.pct >= minPct && x.s1 >= minStreak && matchesLevelFilter(x, levels) && x.c1 >= repMinC1 && !!x.date && (!row0Only || x.r === 0);
-
-  const combined = (allRevs || []).filter(passesBase).concat((allMoms || []).filter(passesBase));
-
-  const groups = new Map(); // key -> { rows: [], days: Set, sample: obj }
-  combined.forEach(function(d) {
-    const key = d.pair + "|" + d.type + "|" + d.c + "|" + d.r + "|" + d.col + "|" + d.s1 + "-" + d.s2;
-    let g = groups.get(key);
-    if (!g) { g = { rows: [], days: new Set(), sample: d }; groups.set(key, g); }
-    g.rows.push(d);
-    g.days.add(d.date);
-  });
-
-  const out = [];
-  groups.forEach(function(g) {
-    if (g.days.size < repMinDays) return;
-    const sample     = g.sample;
-    const daysSorted = Array.from(g.days).sort();
-    const avgPct     = Math.round(g.rows.reduce(function(s, r) { return s + r.pct; }, 0) / g.rows.length);
-    const rowsByDay  = g.rows.slice().sort(function(a, b) { return a.date < b.date ? -1 : (a.date > b.date ? 1 : 0); });
-    out.push({
-      pair: sample.pair, type: sample.type, col: sample.col,
-      c: sample.c, r: sample.r, s1: sample.s1, s2: sample.s2,
-      daysSeen: g.days.size, dayList: daysSorted,
-      totalOcc: g.rows.length, avgPct: avgPct,
-      c1List: rowsByDay.map(function(r) { return r.c1; })
-    });
-  });
-
-  out.sort(function(a, b) {
-    return (b.daysSeen - a.daysSeen) || (b.totalOcc - a.totalOcc) || (b.avgPct - a.avgPct);
-  });
-  return out;
-}
 
 function toggleXs() {
   xsView = !xsView;
@@ -3445,196 +3407,15 @@ var ceilView = false;
 var ceilMinLvl = 2;
 var ceilMinChunks = 3;
 
-function toggleCeil() {
-  ceilView = !ceilView;
-  var b = document.getElementById("ceilBtn");
-  if (b) {
-    b.style.background = ceilView ? "var(--green)" : "transparent";
-    b.style.color = ceilView ? "#000432" : "var(--cyan)";
-  }
-  renderTable();
-}
 
-function setCeilParams() {
-  var a = document.getElementById("ceilMinLvl");
-  var b = document.getElementById("ceilMinChunks");
-  ceilMinLvl = Math.max(1, parseInt(a ? a.value : "") || 2);
-  ceilMinChunks = Math.max(1, parseInt(b ? b.value : "") || 3);
-  renderTable();
-}
 
-function computeCeiling() {
-  var pairs = {};
-  var SENT = "\u0001";
-  var i, d, pc = null, lastPair = null, lastDate = SENT, lastSess = null, ck, id = 0;
 
-  for (i = 0; i < allRevs.length; i++) {
-    d = allRevs[i];
-    if (d.pair !== lastPair) {
-      pc = pairs[d.pair];
-      if (!pc) { pc = pairs[d.pair] = { n: 0, ids: {}, combos: {} }; }
-      lastPair = d.pair; lastDate = SENT; lastSess = null;
-    }
-    if (d.date !== lastDate || d.sess !== lastSess) {
-      ck = (d.date || "") + "#" + (d.sess || 1);
-      if (pc.ids[ck] === undefined) { pc.ids[ck] = pc.n; pc.n++; }
-      lastDate = d.date; lastSess = d.sess;
-    }
-  }
 
-  var co = null, key;
-  lastPair = null; lastDate = SENT; lastSess = null; pc = null;
-  for (i = 0; i < allRevs.length; i++) {
-    d = allRevs[i];
-    if (d.pair !== lastPair) {
-      pc = pairs[d.pair];
-      lastPair = d.pair; lastDate = SENT; lastSess = null; co = null;
-    }
-    if (d.date !== lastDate || d.sess !== lastSess) {
-      id = pc.ids[(d.date || "") + "#" + (d.sess || 1)];
-      lastDate = d.date; lastSess = d.sess;
-    }
-    if (!co || d.c !== co.c || d.r !== co.r || d.col !== co.col) {
-      key = d.c + "|" + d.r + "|" + d.col;
-      co = pc.combos[key];
-      if (!co) { co = pc.combos[key] = { pair: d.pair, c: d.c, r: d.r, col: d.col, top: new Uint16Array(pc.n) }; }
-    }
-    if (co.top[id] < d.s1) co.top[id] = d.s1;
-  }
 
-  var minL = ceilMinLvl, minN = ceilMinChunks;
-  var list = [], chunks = {};
-  var pk, k, T, n, j, ceil, H, L, peak, peakN, reach, above;
-  for (pk in pairs) {
-    pc = pairs[pk];
-    n = pc.n;
-    chunks[pk] = n;
-    for (k in pc.combos) {
-      co = pc.combos[k];
-      T = co.top;
-      ceil = 0;
-      for (j = 0; j < n; j++) { if (T[j] > ceil) ceil = T[j]; }
-      if (ceil < minL) continue;
-      H = new Array(ceil + 1);
-      for (L = 0; L <= ceil; L++) H[L] = 0;
-      for (j = 0; j < n; j++) H[T[j]]++;
-      peak = 0; peakN = 0;
-      for (L = minL; L <= ceil; L++) {
-        if (H[L] > 0 && H[L] >= peakN) { peak = L; peakN = H[L]; }
-      }
-      if (peakN < minN) continue;
-      reach = 0;
-      for (L = peak; L <= ceil; L++) reach += H[L];
-      above = reach - peakN;
-      list.push({
-        pair: co.pair, c: co.c, r: co.r, col: co.col, n: n, H: H,
-        peak: peak, peakN: peakN, reach: reach, above: above,
-        hitPct: reach ? (peakN / reach) * 100 : 0,
-        reachPct: n ? (reach / n) * 100 : 0,
-        upToPct: n ? ((n - above) / n) * 100 : 0,
-        ceil: ceil, ceilN: H[ceil]
-      });
-    }
-  }
 
-  list.sort(function(a, b) {
-    var a0 = a.above === 0 ? 1 : 0;
-    var b0 = b.above === 0 ? 1 : 0;
-    if (a0 !== b0) return b0 - a0;
-    if (a0) return (b.peakN - a.peakN) || (b.peak - a.peak);
-    return (b.hitPct * b.reach) - (a.hitPct * a.reach);
-  });
 
-  return { list: list, chunks: chunks };
-}
 
-function buildCeilingHTML() {
-  var ctl = '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:6px 2px;font-size:11px;">' +
-    '<label>Wall level ≥ X</label><input type="number" id="ceilMinLvl" value="' + ceilMinLvl + '" min="1" style="width:48px;" onchange="setCeilParams()"/>' +
-    '<label>Min chunks ≥</label><input type="number" id="ceilMinChunks" value="' + ceilMinChunks + '" min="1" style="width:56px;" onchange="setCeilParams()"/>' +
-    '</div>';
 
-  if (!allRevs.length) {
-    return ctl + '<div class="state-empty"><div class="state-icon">○</div><div class="state-title">Run a scan first</div></div>';
-  }
-
-  var res = computeCeiling();
-  var list = res.list;
-  var cnt = window.wsxLastSessCount || 1;
-  var note = cnt < 2
-    ? '<div style="font-size:10px;color:var(--red);padding:2px 2px 6px;">Set Session length (e.g. 60 min) before scanning, otherwise each day is one chunk and rows do not line up across days.</div>'
-    : '';
-  var chunkTxt = Object.keys(res.chunks).map(function(p) { return p + ': ' + res.chunks[p] + ' chunks'; }).join(' · ');
-
-  if (list.length === 0) {
-    return ctl + note + '<div class="state-empty"><div class="state-icon">○</div><div class="state-title">No cycle/row wall at current settings</div><div>' + chunkTxt + ' · try lowering Wall level or Min chunks</div></div>';
-  }
-
-  var b = list[0];
-  var maxH = 0, L, bars = '';
-  for (L = 1; L <= b.ceil; L++) { if (b.H[L] > maxH) maxH = b.H[L]; }
-  for (L = 1; L <= b.ceil; L++) {
-    var w = maxH ? Math.round((b.H[L] / maxH) * 100) : 0;
-    bars += '<div style="display:flex;align-items:center;gap:6px;font-size:10px;margin:1px 0;">' +
-      '<span style="width:30px;">X' + L + '</span>' +
-      '<div style="height:10px;width:' + w + '%;max-width:60%;min-width:2px;background:' + (L === b.peak ? 'var(--green)' : 'var(--cyan)') + ';"></div>' +
-      '<span>' + b.H[L] + '</span></div>';
-  }
-
-  var summary = '<div style="padding:8px 10px;margin-bottom:6px;border:1px solid var(--green);border-radius:5px;">' +
-    '<div style="font-size:12px;font-weight:700;color:var(--green);">BEST WALL · ' + b.pair + ' · C' + b.c + ' · ROW ' + b.r + ' · ' + (b.col === 'G' ? 'GREEN' : 'RED') + ' streak</div>' +
-    '<div style="font-size:11px;margin:4px 0;">Most often tops out at <b>X' + b.peak + '</b> (' + b.peakN + ' of ' + b.n + ' chunks). ' +
-    b.upToPct.toFixed(0) + '% of chunks never went past it. Ceiling <b>X' + b.ceil + '</b>, reached in ' + b.ceilN + ' chunk(s).</div>' +
-    bars + '</div>';
-
-  var rows = list.slice(0, 200).map(function(x) {
-    var bell = '';
-    for (var L2 = 1; L2 <= x.ceil; L2++) { bell += 'X' + L2 + ':' + x.H[L2] + (L2 < x.ceil ? '  ' : ''); }
-    var hit = x.above === 0
-      ? '<td style="color:var(--green);font-weight:700;">100%</td>'
-      : '<td>' + x.hitPct.toFixed(1) + '%</td>';
-    return '<tr>' +
-      '<td>' + x.pair + '</td>' +
-      '<td style="color:' + (x.col === 'G' ? 'var(--green)' : 'var(--red)') + ';">' + (x.col === 'G' ? 'GREEN' : 'RED') + '</td>' +
-      '<td>C' + x.c + '</td>' +
-      '<td>' + x.r + '</td>' +
-      '<td>' + x.n + '</td>' +
-      '<td>X' + x.peak + '</td>' +
-      '<td>' + x.peakN + '</td>' +
-      hit +
-      '<td>' + x.reachPct.toFixed(0) + '%</td>' +
-      '<td>' + x.upToPct.toFixed(0) + '%</td>' +
-      '<td>X' + x.ceil + '</td>' +
-      '<td>' + x.ceilN + '</td>' +
-      '<td style="font-size:10px;white-space:nowrap;">' + bell + '</td>' +
-      '</tr>';
-  }).join("");
-
-  return ctl + note + summary +
-    '<div class="repeats-section">' +
-    '<div class="split-pane-header"><span>🎯 CEILING FINDER · hour chunks pooled across all days · ' + chunkTxt + '</span><span>' + list.length + '</span></div>' +
-    '<table><thead><tr><th>PAIR</th><th>COLOR</th><th>CYCLE</th><th>ROW</th><th>CHUNKS</th><th>PEAK LVL</th><th>PEAK CHUNKS</th><th>HIT%</th><th>REACH%</th><th>≤PEAK%</th><th>CEILING</th><th>CEIL CHUNKS</th><th>BELL (chunks per top level)</th></tr></thead>' +
-    '<tbody>' + rows + '</tbody></table></div>';
-}
-
-function buildRepeatsSectionHTML() {
-  const repMinDaysVal = document.getElementById("repMinDays").value || 2;
-  const repMinC1Val   = document.getElementById("repMinC1").value || 2;
-  const repeats = computeRepeatingWalls().slice(0, 300);
-  document.getElementById("exportRepeatsBtn").style.display = repeats.length ? "inline-block" : "none";
-
-  const body = repeats.length === 0
-    ? `<div class="state-empty" style="min-height:100px;"><div class="state-icon" style="font-size:20px;">○</div><div class="state-title" style="font-size:11px;">No repeats at current thresholds</div></div>`
-    : `<table>
-          <thead><tr><th>PAIR</th><th>TYPE</th><th>CYCLE</th><th>ROW</th><th>STREAK</th><th>DAYS</th><th>DAY LIST</th><th>TOTAL</th><th>C1 PER DAY</th><th>AVG%</th></tr></thead>
-          <tbody>${buildRepeatsRowsHTML(repeats)}</tbody>
-        </table>`;
-
-  return `<div class="repeats-section">
-      <div class="split-pane-header"><span>🔁 CROSS-DAY REPEATS (same cycle/row/streak/result, ≥${repMinDaysVal} days, C1≥${repMinC1Val})</span><span>${repeats.length}</span></div>
-      ${body}
-    </div>`;
-}
 
 function renderTable() {
   const minPct    = parseInt(document.getElementById("filterPct").value) || 0;
@@ -3652,23 +3433,23 @@ function renderTable() {
   document.getElementById("resultCount").textContent = `Showing ${revData.length} REV, ${momData.length} MOM`;
 
   const area = document.getElementById("tableArea");
-    if (ceilView) { area.innerHTML = buildCeilingHTML(); return; }
+    
         var sessRankHTML = buildSessionRankHTML(filterFn);
     if (xsView && (window.wsxLastSessCount || 1) > 1) {
       area.innerHTML = sessRankHTML + buildXsHTML();
       return;
     }
-    const repeatsHTML = buildRepeatsSectionHTML();
+    
   
     if (revData.length === 0 && momData.length === 0) {
-      area.innerHTML = sessRankHTML + `<div class="state-empty"><div class="state-icon">○</div><div class="state-title">No signals at current filters</div><div>Try lowering Min % or adjusting filters</div></div>` + repeatsHTML;
+      area.innerHTML = sessRankHTML + `<div class="state-empty"><div class="state-icon">○</div><div class="state-title">No signals at current filters</div><div>Try lowering Min % or adjusting filters</div></div>`;
       return;
     }
   
     area.innerHTML = sessRankHTML + `<div class="split-table-wrap">
       ${buildPaneHTML("REVERSAL", revData, "revCount")}
       ${buildPaneHTML("MOMENTUM", momData, "momCount")}
-    </div>` + repeatsHTML;
+          </div>`;
 }
 (function() {
   var sb = document.querySelector(".sidebar");
@@ -3718,7 +3499,7 @@ function renderTable() {
   function refreshSummary() {
     var lines = [
       val("pairInput") || "—",
-      (fmtDMY(val("dateFrom")) || "—") + " → " + (fmtDMY(val("dateTo")) || "—") + "   " + (val("timeFrom").replace(":", "") || "—") + "–" + (val("timeTo").replace(":", "") || "—") + " IST",
+      (fmtDMY(val("dateFrom")) || "—") + "   " + (val("timeFrom").replace(":", "") || "—") + "–" + (val("timeTo").replace(":", "") || "—") + " IST",
       "C" + val("cycleMin") + "–C" + val("cycleMax") + "   Min " + val("minPct") + "%"
     ];
     summary.innerHTML = "";
@@ -3975,7 +3756,7 @@ function renderTable() {
     var cals = {};
     var calsHost = document.createElement("div");
     calsHost.className = "wsx-cals";
-    [{ key: "from", id: "dateFrom", title: "FROM" }, { key: "to", id: "dateTo", title: "TO" }].forEach(function(def) {
+    [{ key: "from", id: "dateFrom", title: "DATE" }].forEach(function(def) {
       var el = document.createElement("div");
       el.className = "wsx-cal";
       calsHost.appendChild(el);
@@ -3995,7 +3776,7 @@ function renderTable() {
     function renderCal(key) {
       var c = cals[key];
       var fromV = document.getElementById("dateFrom").value;
-      var toV = document.getElementById("dateTo").value;
+            var toV = fromV;
       var ownV = c.def.key === "from" ? fromV : toV;
       var startDow = (new Date(Date.UTC(c.y, c.m, 1)).getUTCDay() + 6) % 7;
       var dim = new Date(Date.UTC(c.y, c.m + 1, 0)).getUTCDate();
@@ -4052,21 +3833,14 @@ function renderTable() {
         var iso = t.dataset.iso;
         var fEl = document.getElementById("dateFrom");
         var tEl = document.getElementById("dateTo");
-        if (key === "from") {
-          fEl.value = iso;
-          if (!tEl.value || tEl.value < iso) tEl.value = iso;
-        } else {
-          tEl.value = iso;
-          if (!fEl.value || fEl.value > iso) fEl.value = iso;
-        }
-        fire(fEl);
-        fire(tEl);
-        renderCal("from");
-        renderCal("to");
-      }
-    }
-    renderCal("from");
-    renderCal("to");
+        fEl.value = iso;
+                tEl.value = iso;
+                fire(fEl);
+                fire(tEl);
+                renderCal("from");
+              }
+            }
+            renderCal("from");
 
     // ── ANALOG CLOCKS ──
     function makeClock(host, inputId, title) {
@@ -5075,8 +4849,8 @@ function renderTable() {
     var toEl = document.getElementById("dateTo");
     dEl.value = p.y + "-" + pad2(p.m) + "-" + pad2(p.d);
     tEl.value = pad2(p.h) + ":" + pad2(p.n);
-    if (dId === "dateFrom" && toEl.value < fEl.value) toEl.value = fEl.value;
-    if (dId === "dateTo" && fEl.value > toEl.value) fEl.value = toEl.value;
+    toEl.value = fEl.value;
+    // single date: dateTo always follows dateFrom
     fire(dEl);
     fire(tEl);
     fire(fEl);
@@ -5350,7 +5124,7 @@ function renderTable() {
         bar.appendChild(rn);
       }
     
-      function makeRow(host, label, dId, tId) {
+      function makeRow(host, label, dId, tId, timeOnly) {
     var row = document.createElement("div");
     row.className = "wsx-dt";
     host.appendChild(row);
@@ -5359,7 +5133,7 @@ function renderTable() {
       var p = parts(dId, tId);
       var vals = [pairText(), pad2(p.d), ["JANUARY","FEBRUARY","MARCH","APRIL","MAY","JUNE","JULY","AUGUST","SEPTEMBER","OCTOBER","NOVEMBER","DECEMBER"][p.m - 1] || pad2(p.m), String(p.y), pad2(p.h), pad2(p.n)];
       var h = "";
-      for (var i = 0; i < 6; i++) {
+      for (var i = timeOnly ? 4 : 0; i < 6; i++) {
         h += '<button type="button" class="wsx-dtb" data-i="' + i + '"><span>' + NAMES[i] + '</span><b>' + vals[i] + '</b></button>';
       }
       row.innerHTML = h;
@@ -5405,7 +5179,7 @@ function renderTable() {
             wsxBar.className = "wsx-bar";
             grid.insertBefore(wsxBar, grid.querySelector(".settings-foot"));
             makeRow(wsxBar, "FROM", "dateFrom", "timeFrom");
-    makeRow(wsxBar, "TO", "dateTo", "timeTo");
+    makeRow(wsxBar, "TO", "dateTo", "timeTo", true);
         makeExtras(wsxBar);
   }
 
