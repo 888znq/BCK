@@ -1498,7 +1498,11 @@ body, .layout { height: 100vh; height: 100dvh; }
 #settingsOverlay #settingsGrid .wsx-bar .wsx-dt .wsx-dtb.wsx-dtb.wsx-dtb.wsx-dtb { border-top: 1px solid var(--border2) !important; border-bottom: 1px solid var(--border2) !important; }
 #settingsOverlay #settingsGrid .wsx-bar > .wsx-dtb.wsx-dtb.wsx-dtb { border-top: 1px solid var(--border2) !important; border-bottom: 1px solid var(--border2) !important; }
 html body #settingsOverlay:not(.wsx-scanning) { padding: 4px 6px !important; box-sizing: border-box !important; background: #000432 !important; border-top: 0 !important; }
-html body #settingsOverlay #settingsGrid > div.wsx-bar { gap: 1px !important; background: #000432 !important; border-radius: 20px !important; overflow: hidden !important; }
+html body #settingsOverlay #settingsGrid > div.wsx-bar { gap: 0 !important; background: #000432 !important; border-radius: 999px !important; overflow: hidden !important; }
+html body #settingsOverlay #settingsGrid .wsx-bar .wsx-dtb.wsx-dtb.wsx-dtb.wsx-dtb.wsx-dtb.wsx-dtb.wsx-dtb.wsx-dtb { border-right: 1px solid rgba(0,4,50,0.3) !important; }
+html body #settingsOverlay #settingsGrid .wsx-bar .wsx-dt:nth-of-type(1) > .wsx-dtb.wsx-dtb.wsx-dtb.wsx-dtb.wsx-dtb.wsx-dtb.wsx-dtb.wsx-dtb[data-i="4"], html body #settingsOverlay #settingsGrid .wsx-bar .wsx-dt:nth-of-type(1) > .wsx-dtb.wsx-dtb.wsx-dtb.wsx-dtb.wsx-dtb.wsx-dtb.wsx-dtb.wsx-dtb[data-i="5"], html body #settingsOverlay #settingsGrid .wsx-bar .wsx-dtb.wsx-dtb.wsx-dtb.wsx-dtb.wsx-dtb.wsx-dtb.wsx-dtb.wsx-x1 { border-bottom: 1px solid rgba(0,4,50,0.3) !important; }
+html body #settingsOverlay #settingsGrid .wsx-bar .wsx-dt:nth-of-type(1) > .wsx-dtb.wsx-dtb.wsx-dtb.wsx-dtb.wsx-dtb.wsx-dtb.wsx-dtb.wsx-dtb[data-i="0"] { padding-left: 14px !important; }
+html body #settingsOverlay #settingsGrid .wsx-bar .wsx-dtb.wsx-dtb.wsx-dtb.wsx-dtb.wsx-dtb.wsx-dtb.wsx-dtb.wsx-dtb.wsx-x5 { border-right: 0 !important; padding-right: 14px !important; }
 html body #settingsOverlay #settingsGrid .wsx-bar .wsx-dtb.wsx-dtb.wsx-dtb.wsx-dtb.wsx-dtb { border: 0 !important; border-radius: 0 !important; box-shadow: none !important; color: #000432 !important; -webkit-text-fill-color: #000432 !important; }
 html body #settingsOverlay #settingsGrid .wsx-bar .wsx-dtb.wsx-dtb.wsx-dtb.wsx-dtb.wsx-dtb b { color: #000432 !important; -webkit-text-fill-color: #000432 !important; }
 html body #settingsOverlay #settingsGrid .wsx-bar .wsx-dtb.wsx-dtb.wsx-dtb.wsx-dtb.wsx-dtb:hover { filter: brightness(1.15) !important; }
@@ -1569,6 +1573,17 @@ html body #settingsOverlay #settingsGrid .wsx-bar .wsx-dtb.wsx-dtb.wsx-dtb.wsx-d
 .xs-t tr.xs-m { border-bottom: 0; }
 .xs-t tr.xs-d td { padding: 0 3px 7px; font-size: clamp(9px, 2.6vw, 12px); white-space: normal; word-break: break-word; width: auto; opacity: 0.85; }
 .xs-t td.xs-hits { font-weight: 700; }
+html, body { background: #000432 !important; }
+body::before { content: ""; position: fixed; top: 8px; left: 8px; right: 8px; bottom: 8px; border: 2px solid var(--green); border-radius: 32px; pointer-events: none; z-index: 1100; }
+html body .layout { position: fixed !important; top: 8px !important; left: 8px !important; right: 8px !important; bottom: calc(8px + 9vh) !important; bottom: calc(8px + 9dvh) !important; height: auto !important; border-radius: 32px 32px 0 0 !important; overflow: hidden !important; background: var(--bg) !important; }
+html body .filter-bar { padding: 12px 26px 6px !important; }
+html body #settingsOverlay:not(.wsx-scanning) { left: 8px !important; right: 8px !important; bottom: 8px !important; top: auto !important; height: 9vh !important; height: 9dvh !important; padding: 0 !important; border-radius: 0 0 32px 32px !important; overflow: hidden !important; background: #000432 !important; border-top: 1px solid var(--border2) !important; }
+html body #settingsOverlay.wsx-scanning { top: 8px !important; left: 8px !important; right: 8px !important; bottom: 8px !important; height: auto !important; border-radius: 32px !important; overflow: hidden !important; }
+html body #settingsOverlay .settings-modal { border-radius: 0 !important; }
+html body #settingsOverlay #settingsGrid > div.wsx-bar { gap: 0 !important; background: #000432 !important; border-radius: 0 0 30px 30px !important; overflow: hidden !important; }
+html body #settingsOverlay #settingsGrid .wsx-bar .wsx-dtb.wsx-dtb.wsx-dtb.wsx-dtb.wsx-dtb.wsx-dtb.wsx-dtb.wsx-dtb.wsx-dtb { border: 0 !important; border-right: 1px solid rgba(0,4,50,0.3) !important; border-radius: 0 !important; }
+html body #settingsOverlay #settingsGrid .wsx-bar .wsx-dtb.wsx-dtb.wsx-dtb.wsx-dtb.wsx-dtb.wsx-dtb.wsx-dtb.wsx-dtb.wsx-dtb.wsx-x5 { border-right: 0 !important; }
+html body #toast { bottom: calc(9vh + 24px) !important; bottom: calc(9dvh + 24px) !important; }
 </style>
 </head>
 <body>
