@@ -1797,6 +1797,7 @@ html body #settingsOverlay #settingsGrid .wsx-bar .wsx-dtb.wsx-dtb.wsx-dtb.wsx-d
                     <input type="number" id="filterC1" placeholder="1" min="1" style="display:none;"/>
                     <div class="result-count" id="resultCount">—</div>
                                         <button class="export-btn" id="row0Btn" onclick="toggleRow0()" style="margin-left: 12px;">ROW 0 ONLY</button>
+                                                                                <button class="export-btn" id="ceilBtn" onclick="toggleCeil()" style="margin-left: 8px;">CEILING</button>
                                                                                 <button class="export-btn" id="xsBtn" onclick="toggleXs()" style="display:none; margin-left: 8px;">BY SESSION</button>
                                                                                 <button class="export-btn" id="xsBtn" onclick="toggleXs()" style="display:none; margin-left: 8px;">BY SESSION</button>
                                         <button class="export-btn" id="exportCsvBtn" onclick="exportAllSignalsCSV()" style="display:none; margin-left: 12px;">⬇ EXPORT CSV</button>
@@ -3440,6 +3441,182 @@ function buildSessionRankHTML(filterFn) {
     '</div>';
 }
 
+var ceilView = false;
+var ceilMinLvl = 2;
+var ceilMinChunks = 3;
+
+function toggleCeil() {
+  ceilView = !ceilView;
+  var b = document.getElementById("ceilBtn");
+  if (b) {
+    b.style.background = ceilView ? "var(--green)" : "transparent";
+    b.style.color = ceilView ? "#000432" : "var(--cyan)";
+  }
+  renderTable();
+}
+
+function setCeilParams() {
+  var a = document.getElementById("ceilMinLvl");
+  var b = document.getElementById("ceilMinChunks");
+  ceilMinLvl = Math.max(1, parseInt(a ? a.value : "") || 2);
+  ceilMinChunks = Math.max(1, parseInt(b ? b.value : "") || 3);
+  renderTable();
+}
+
+function computeCeiling() {
+  var pairs = {};
+  var SENT = "\u0001";
+  var i, d, pc = null, lastPair = null, lastDate = SENT, lastSess = null, ck, id = 0;
+
+  for (i = 0; i < allRevs.length; i++) {
+    d = allRevs[i];
+    if (d.pair !== lastPair) {
+      pc = pairs[d.pair];
+      if (!pc) { pc = pairs[d.pair] = { n: 0, ids: {}, combos: {} }; }
+      lastPair = d.pair; lastDate = SENT; lastSess = null;
+    }
+    if (d.date !== lastDate || d.sess !== lastSess) {
+      ck = (d.date || "") + "#" + (d.sess || 1);
+      if (pc.ids[ck] === undefined) { pc.ids[ck] = pc.n; pc.n++; }
+      lastDate = d.date; lastSess = d.sess;
+    }
+  }
+
+  var co = null, key;
+  lastPair = null; lastDate = SENT; lastSess = null; pc = null;
+  for (i = 0; i < allRevs.length; i++) {
+    d = allRevs[i];
+    if (d.pair !== lastPair) {
+      pc = pairs[d.pair];
+      lastPair = d.pair; lastDate = SENT; lastSess = null; co = null;
+    }
+    if (d.date !== lastDate || d.sess !== lastSess) {
+      id = pc.ids[(d.date || "") + "#" + (d.sess || 1)];
+      lastDate = d.date; lastSess = d.sess;
+    }
+    if (!co || d.c !== co.c || d.r !== co.r || d.col !== co.col) {
+      key = d.c + "|" + d.r + "|" + d.col;
+      co = pc.combos[key];
+      if (!co) { co = pc.combos[key] = { pair: d.pair, c: d.c, r: d.r, col: d.col, top: new Uint16Array(pc.n) }; }
+    }
+    if (co.top[id] < d.s1) co.top[id] = d.s1;
+  }
+
+  var minL = ceilMinLvl, minN = ceilMinChunks;
+  var list = [], chunks = {};
+  var pk, k, T, n, j, ceil, H, L, peak, peakN, reach, above;
+  for (pk in pairs) {
+    pc = pairs[pk];
+    n = pc.n;
+    chunks[pk] = n;
+    for (k in pc.combos) {
+      co = pc.combos[k];
+      T = co.top;
+      ceil = 0;
+      for (j = 0; j < n; j++) { if (T[j] > ceil) ceil = T[j]; }
+      if (ceil < minL) continue;
+      H = new Array(ceil + 1);
+      for (L = 0; L <= ceil; L++) H[L] = 0;
+      for (j = 0; j < n; j++) H[T[j]]++;
+      peak = 0; peakN = 0;
+      for (L = minL; L <= ceil; L++) {
+        if (H[L] > 0 && H[L] >= peakN) { peak = L; peakN = H[L]; }
+      }
+      if (peakN < minN) continue;
+      reach = 0;
+      for (L = peak; L <= ceil; L++) reach += H[L];
+      above = reach - peakN;
+      list.push({
+        pair: co.pair, c: co.c, r: co.r, col: co.col, n: n, H: H,
+        peak: peak, peakN: peakN, reach: reach, above: above,
+        hitPct: reach ? (peakN / reach) * 100 : 0,
+        reachPct: n ? (reach / n) * 100 : 0,
+        upToPct: n ? ((n - above) / n) * 100 : 0,
+        ceil: ceil, ceilN: H[ceil]
+      });
+    }
+  }
+
+  list.sort(function(a, b) {
+    var a0 = a.above === 0 ? 1 : 0;
+    var b0 = b.above === 0 ? 1 : 0;
+    if (a0 !== b0) return b0 - a0;
+    if (a0) return (b.peakN - a.peakN) || (b.peak - a.peak);
+    return (b.hitPct * b.reach) - (a.hitPct * a.reach);
+  });
+
+  return { list: list, chunks: chunks };
+}
+
+function buildCeilingHTML() {
+  var ctl = '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:6px 2px;font-size:11px;">' +
+    '<label>Wall level ≥ X</label><input type="number" id="ceilMinLvl" value="' + ceilMinLvl + '" min="1" style="width:48px;" onchange="setCeilParams()"/>' +
+    '<label>Min chunks ≥</label><input type="number" id="ceilMinChunks" value="' + ceilMinChunks + '" min="1" style="width:56px;" onchange="setCeilParams()"/>' +
+    '</div>';
+
+  if (!allRevs.length) {
+    return ctl + '<div class="state-empty"><div class="state-icon">○</div><div class="state-title">Run a scan first</div></div>';
+  }
+
+  var res = computeCeiling();
+  var list = res.list;
+  var cnt = window.wsxLastSessCount || 1;
+  var note = cnt < 2
+    ? '<div style="font-size:10px;color:var(--red);padding:2px 2px 6px;">Set Session length (e.g. 60 min) before scanning, otherwise each day is one chunk and rows do not line up across days.</div>'
+    : '';
+  var chunkTxt = Object.keys(res.chunks).map(function(p) { return p + ': ' + res.chunks[p] + ' chunks'; }).join(' · ');
+
+  if (list.length === 0) {
+    return ctl + note + '<div class="state-empty"><div class="state-icon">○</div><div class="state-title">No cycle/row wall at current settings</div><div>' + chunkTxt + ' · try lowering Wall level or Min chunks</div></div>';
+  }
+
+  var b = list[0];
+  var maxH = 0, L, bars = '';
+  for (L = 1; L <= b.ceil; L++) { if (b.H[L] > maxH) maxH = b.H[L]; }
+  for (L = 1; L <= b.ceil; L++) {
+    var w = maxH ? Math.round((b.H[L] / maxH) * 100) : 0;
+    bars += '<div style="display:flex;align-items:center;gap:6px;font-size:10px;margin:1px 0;">' +
+      '<span style="width:30px;">X' + L + '</span>' +
+      '<div style="height:10px;width:' + w + '%;max-width:60%;min-width:2px;background:' + (L === b.peak ? 'var(--green)' : 'var(--cyan)') + ';"></div>' +
+      '<span>' + b.H[L] + '</span></div>';
+  }
+
+  var summary = '<div style="padding:8px 10px;margin-bottom:6px;border:1px solid var(--green);border-radius:5px;">' +
+    '<div style="font-size:12px;font-weight:700;color:var(--green);">BEST WALL · ' + b.pair + ' · C' + b.c + ' · ROW ' + b.r + ' · ' + (b.col === 'G' ? 'GREEN' : 'RED') + ' streak</div>' +
+    '<div style="font-size:11px;margin:4px 0;">Most often tops out at <b>X' + b.peak + '</b> (' + b.peakN + ' of ' + b.n + ' chunks). ' +
+    b.upToPct.toFixed(0) + '% of chunks never went past it. Ceiling <b>X' + b.ceil + '</b>, reached in ' + b.ceilN + ' chunk(s).</div>' +
+    bars + '</div>';
+
+  var rows = list.slice(0, 200).map(function(x) {
+    var bell = '';
+    for (var L2 = 1; L2 <= x.ceil; L2++) { bell += 'X' + L2 + ':' + x.H[L2] + (L2 < x.ceil ? '  ' : ''); }
+    var hit = x.above === 0
+      ? '<td style="color:var(--green);font-weight:700;">100%</td>'
+      : '<td>' + x.hitPct.toFixed(1) + '%</td>';
+    return '<tr>' +
+      '<td>' + x.pair + '</td>' +
+      '<td style="color:' + (x.col === 'G' ? 'var(--green)' : 'var(--red)') + ';">' + (x.col === 'G' ? 'GREEN' : 'RED') + '</td>' +
+      '<td>C' + x.c + '</td>' +
+      '<td>' + x.r + '</td>' +
+      '<td>' + x.n + '</td>' +
+      '<td>X' + x.peak + '</td>' +
+      '<td>' + x.peakN + '</td>' +
+      hit +
+      '<td>' + x.reachPct.toFixed(0) + '%</td>' +
+      '<td>' + x.upToPct.toFixed(0) + '%</td>' +
+      '<td>X' + x.ceil + '</td>' +
+      '<td>' + x.ceilN + '</td>' +
+      '<td style="font-size:10px;white-space:nowrap;">' + bell + '</td>' +
+      '</tr>';
+  }).join("");
+
+  return ctl + note + summary +
+    '<div class="repeats-section">' +
+    '<div class="split-pane-header"><span>🎯 CEILING FINDER · hour chunks pooled across all days · ' + chunkTxt + '</span><span>' + list.length + '</span></div>' +
+    '<table><thead><tr><th>PAIR</th><th>COLOR</th><th>CYCLE</th><th>ROW</th><th>CHUNKS</th><th>PEAK LVL</th><th>PEAK CHUNKS</th><th>HIT%</th><th>REACH%</th><th>≤PEAK%</th><th>CEILING</th><th>CEIL CHUNKS</th><th>BELL (chunks per top level)</th></tr></thead>' +
+    '<tbody>' + rows + '</tbody></table></div>';
+}
+
 function buildRepeatsSectionHTML() {
   const repMinDaysVal = document.getElementById("repMinDays").value || 2;
   const repMinC1Val   = document.getElementById("repMinC1").value || 2;
@@ -3475,7 +3652,8 @@ function renderTable() {
   document.getElementById("resultCount").textContent = `Showing ${revData.length} REV, ${momData.length} MOM`;
 
   const area = document.getElementById("tableArea");
-    var sessRankHTML = buildSessionRankHTML(filterFn);
+    if (ceilView) { area.innerHTML = buildCeilingHTML(); return; }
+        var sessRankHTML = buildSessionRankHTML(filterFn);
     if (xsView && (window.wsxLastSessCount || 1) > 1) {
       area.innerHTML = sessRankHTML + buildXsHTML();
       return;
