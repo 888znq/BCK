@@ -1188,7 +1188,7 @@ thead th { font-size: 12px; }
 .split-pane-header { text-align: left; }
 body, .layout { height: 100vh; height: 100dvh; }
 .day-summary { display: none !important; }
-#dayFilter, #levelFilter + span + label, #resultCount, #exportTableFormatBtn { display: none !important; }
+#dayFilter, #levelFilter + span + label, #resultCount, #exportCsvBtn, #exportTableFormatBtn { display: none !important; }
 .filter-bar > span { display: none !important; }
 .repeats-section > .split-pane-header { display: none !important; }
 .repeats-section:has(.state-empty) { display: none !important; }
@@ -1717,7 +1717,7 @@ html body #toast { bottom: calc(9vh + 24px) !important; bottom: calc(9dvh + 24px
           <div class="section-label">Signal Filter</div>
           <div class="field">
                   <label>Min probability %</label>
-                                <input type="number" id="minPct" value="0" min="0" max="100"/>
+                                <input type="number" id="minPct" value="10" min="0" max="100"/>
           </div>
         </div>
 
@@ -2503,8 +2503,6 @@ function computeGapMapFromEvents(events) {
   return { modeRun: modeRun, curRun: curRun, modeCount: modeCount, freqMap: freqMap };
 }
 
-var MIN_C1 = 2;
-
 self.onmessage = function(e) {
   var prices = e.data.prices;
   var minC   = e.data.minC;
@@ -2620,8 +2618,8 @@ self.onmessage = function(e) {
           var gapCountVal = (gapCountMap && gapCountMap[sk]) || 0;
           var gapFreqObj = (gapFreqMapAll && gapFreqMapAll[sk]) || {};
           
-          if (c1 >= MIN_C1) {
-                      revs.push({ pair: pair, c: c, r: r, s1: sk, s2: sk+1, c1: c1, c2: c2, pct: pctRev, col: colColor, type: "REV", gap: gapVal, curGap: curGapVal, gapCount: gapCountVal, gapFreq: gapFreqObj });
+          revs.push({ pair: pair, c: c, r: r, s1: sk, s2: sk+1, c1: c1, c2: c2, pct: pctRev, col: colColor, type: "REV", gap: gapVal, curGap: curGapVal, gapCount: gapCountVal, gapFreq: gapFreqObj });
+          if (c1 > 1) {
             moms.push({ pair: pair, c: c, r: r, s1: sk, s2: sk+1, c1: c1, c2: c2, pct: pctMom, col: colColor, type: "MOM", gap: gapVal, curGap: curGapVal, gapCount: gapCountVal, gapFreq: gapFreqObj });
           }
         }
@@ -2735,7 +2733,7 @@ async function runScan() {
     const timeTo   = document.getElementById("timeTo").value   || "05:30";
   const cycleMin = Math.max(1, parseInt(document.getElementById("cycleMin").value) || 120);
     const cycleMax = Math.max(cycleMin, parseInt(document.getElementById("cycleMax").value) || 180);
-  const minPct   = 0; // show everything generated
+  const minPct   = parseInt(document.getElementById("minPct").value) || 100;
 
   if (!dateFrom) { toast("Please select a date", "err"); return; }
   
@@ -2799,7 +2797,7 @@ async function runScan() {
 
   allRevs = []; allMoms = [];
     let totalTicks = 0;
-            const totalPairs = pairsToScan.length;
+    const totalPairs = pairsToScan.length;
   
     // ── For each pair: fetch all days, then scan ──
     for (var pi = 0; pi < totalPairs; pi++) {
@@ -2927,15 +2925,11 @@ async function runScan() {
   document.getElementById("tabBar").style.display     = "flex";
   document.getElementById("filterBar").style.display  = "flex";
   document.getElementById("filterPct").value          = minPct;
-    document.getElementById("levelFilter").value        = "__ALL__";
   document.getElementById("revCount").textContent     = filtRevs.length;
   document.getElementById("momCount").textContent     = filtMoms.length;
 
   renderTable();
-      document.getElementById("filterPct").value = 0;
-        document.getElementById("levelFilter").value = "__ALL__";
-        renderTable();
-        document.getElementById("exportCsvBtn").style.display = "inline-block";
+      document.getElementById("exportCsvBtn").style.display = "inline-block";
       document.getElementById("exportTableFormatBtn").style.display = "inline-block";
       setTimeout(() => document.getElementById("progressWrap").classList.remove("visible"), 2000);
   
@@ -2943,64 +2937,7 @@ async function runScan() {
     resetRunBtn();
 }
 
-var wsBestPerCycle = function(list) {
-  var seen = {};
-    return list.filter(function(x) {
-      var k = x.pair + "|" + x.c;
-      var pk = "P|" + x.pair;
-      if (seen[k]) return false;
-      var cnt = seen[pk] || 0;
-      if (cnt >= 1) return false;
-    seen[k] = true;
-    seen[pk] = cnt + 1;
-    return true;
-  });
-};
-
 async function exportAllSignalsCSV() {
-  var minPctF    = parseInt(document.getElementById("filterPct").value)    || 0;
-  var minStreakF = parseInt(document.getElementById("filterStreak").value) || 1;
-  var minC1F     = parseInt(document.getElementById("filterC1").value)     || 1;
-  var levelsF    = parseLevelFilter(document.getElementById("levelFilter"));
-  var dayValF    = document.getElementById("dayFilter") ? document.getElementById("dayFilter").value : "__ALL__";
-
-  var filterFn = function(x) {
-    return x.pct >= minPctF && x.s1 >= minStreakF && x.c1 >= minC1F &&
-           matchesLevelFilter(x, levelsF) && matchesDayFilter(x, dayValF) &&
-           (!row0Only || x.r === 0);
-  };
-  var sortFn  = function(a, b) { return (b.pct * b.c1) - (a.pct * a.c1); };
-  var revData = wsBestPerCycle((allRevs || []).filter(filterFn).sort(sortFn));
-    var momData = wsBestPerCycle((allMoms || []).filter(filterFn).sort(sortFn));
-  
-    if (revData.length === 0 && momData.length === 0) { toast("No signals to export", "err"); return; }
-  
-    // best-per-cycle and top 100 already applied above via wsBestPerCycle
-    
-      function cells(d) {
-        if (!d) return ["", "", "", "", "", "", ""];
-        var arrow = d.col === "R" ? "↓" : "↑";
-        return [arrow + " " + getPairDisplayName(d.pair), "C" + d.c, "R" + d.r,
-                "X" + d.s1 + "→X" + d.s2, d.c1, d.c2, d.pct + "%"];
-    }
-  
-    var cols = ["PAIR", "CYCLE", "ROW", "STREAK", "C1", "C2", "PROB%"];
-    var lines = [];
-    lines.push(["REVERSAL", revData.length, "", "", "", "", "", "",
-                "MOMENTUM", momData.length, "", "", "", "", ""].join(","));
-    lines.push(cols.concat([""], cols).join(","));
-
-  var n = Math.max(revData.length, momData.length);
-  for (var i = 0; i < n; i++) {
-    lines.push(cells(revData[i]).concat([""], cells(momData[i])).join(","));
-  }
-
-  var filename = "wallspectrum_signals_" + new Date().toISOString().slice(0, 10) + ".csv";
-  await downloadCSV("\uFEFF" + lines.join("\n"), filename);
-  toast("Exported " + revData.length + " REV | " + momData.length + " MOM", "ok");
-}
-
-async function exportAllSignalsCSV_old() {
   var minPctF    = parseInt(document.getElementById("filterPct").value)    || 0;
   var minStreakF = parseInt(document.getElementById("filterStreak").value)  || 1;
   var minC1F     = parseInt(document.getElementById("filterC1").value)      || 1;
@@ -3063,34 +3000,22 @@ async function exportAllSignalsCSV_old() {
   
       if (revData.length === 0 && momData.length === 0) { toast("No signals to export", "err"); return; }
   
-      var headers = ["TYPE","PAIR","CYCLE","ROW","STREAK","C1","C2","PROB%"];
+      var headers = ["TYPE","PAIR","CYCLE","ROW","STREAK","C1","C2","GAP","PROB%"];
   
       function rowsFor(data) {
         return data.map(function(d) {
           var name     = getPairDisplayName(d.pair);
           var arrow    = d.col === "R" ? "DOWN" : "UP";
           var streak   = "X" + d.s1 + "->X" + d.s2;
-          return [d.type, arrow + " " + name, "C" + d.c, "R" + d.r, streak, d.c1, d.c2, d.pct + "%"].join(",");
+          var gapVal   = d.gap || 0;
+          var gapCount = d.gapCount || 0;
+          var gapCell  = (d.type === "REV") ? ("F" + gapVal + "-" + gapCount) : "-";
+          return [d.type, arrow + " " + name, "C" + d.c, "R" + d.r, streak, d.c1, d.c2, gapCell, d.pct + "%"].join(",");
         });
       }
   
-      var bestPerCycleT = function(list) {
-                    var seen = {};
-                    return list.filter(function(x) {
-                      if (row0Only && x.r !== 0) return false;
-                                      var k = x.pair + "|" + x.c;
-                                      var pk = "P|" + x.pair;
-                                      if (seen[k]) return false;
-                                      var cnt = seen[pk] || 0;
-                                      if (cnt >= 1) return false;
-                                seen[k] = true;
-                                seen[pk] = cnt + 1;
-                                return true;
-                              });
-            };
-            var rowsAll = rowsFor(bestPerCycleT(revData)).concat(rowsFor(bestPerCycleT(momData)));
-      if (rowsAll.length === 0) { toast("No signals to export", "err"); return; }
-            var csvAll = [headers.join(",")].concat(rowsAll).join("\n");
+      var rowsAll = rowsFor(revData).concat(rowsFor(momData));
+      var csvAll = [headers.join(",")].concat(rowsAll).join("\n");
       var filenameAll = "wallspectrum_signals_table_format_" + new Date().toISOString().slice(0,10) + ".csv";
       await downloadCSV(csvAll, filenameAll);
       toast("Exported " + rowsAll.length + " signals (table format)", "ok");
@@ -3113,11 +3038,7 @@ async function exportAllSignalsCSV_old() {
     }
     // Fallback for browsers that don't support the File System Access API
     try {
-      var _nm = prompt("Save CSV as:", filename);
-            if (_nm === null) return;
-            filename = (_nm.trim() || filename);
-            if (!/\.csv$/i.test(filename)) filename += ".csv";
-            var blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      var blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
       var url  = URL.createObjectURL(blob);
       var a    = document.createElement("a");
       a.href     = url;
@@ -3517,53 +3438,12 @@ function renderTable() {
   const minC1     = parseInt(document.getElementById("filterC1").value) || 1;
   const levels    = parseLevelFilter(document.getElementById("levelFilter"));
   const dayVal    = document.getElementById("dayFilter") ? document.getElementById("dayFilter").value : "__ALL__";
-  const filterFn  = x => x.pct >= minPct && x.s1 >= minStreak && x.c1 >= minC1 && matchesLevelFilter(x, levels) && matchesDayFilter(x, dayVal) && (!row0Only || x.r === 0);
-  const sortFn    = (a, b) => (b.pct * b.c1) - (a.pct * a.c1);
-  const bestPerCycle = function(list) {
-        var seenCycles = {};
-        return list.filter(function(x) {
-          var k = x.pair + "|" + x.c;
-                  var pk = "P|" + x.pair;
-                  if (seenCycles[k]) return false;
-                          var cnt = seenCycles[pk] || 0;
-                          if (cnt >= 1) return false;
-                seenCycles[k] = true;
-                seenCycles[pk] = cnt + 1;
-                return true;
-              });
-    };
-    const revAll    = bestPerCycle(allRevs.filter(filterFn).sort(sortFn));
-    const momAll    = bestPerCycle(allMoms.filter(filterFn).sort(sortFn));
-    const revData   = revAll;
-        const momData   = momAll;
-    document.getElementById("resultCount").textContent = `Showing best per cycle: ${revData.length} REV, ${momData.length} MOM`;
-    const area = document.getElementById("tableArea");
-    var sessRankHTML = buildSessionRankHTML(filterFn);
-  if (xsView && (window.wsxLastSessCount || 1) > 1) {
-    area.innerHTML = sessRankHTML + buildXsHTML();
-    return;
-  }
-  if (revData.length === 0 && momData.length === 0) {
-    area.innerHTML = sessRankHTML + `<div class="state-empty"><div class="state-icon">○</div><div class="state-title">No signals at current filters</div></div>`;
-    return;
-  }
-  area.innerHTML = sessRankHTML + `<div class="split-table-wrap">
-    ${buildPaneHTML("REVERSAL", revData, "revCount")}
-    ${buildPaneHTML("MOMENTUM", momData, "momCount")}
-  </div>`;
-}
-function renderTableOld() {
-  const minPct    = parseInt(document.getElementById("filterPct").value) || 0;
-  const minStreak = parseInt(document.getElementById("filterStreak").value) || 1;
-  const minC1     = parseInt(document.getElementById("filterC1").value) || 1;
-  const levels    = parseLevelFilter(document.getElementById("levelFilter"));
-  const dayVal    = document.getElementById("dayFilter") ? document.getElementById("dayFilter").value : "__ALL__";
 
   const filterFn = x => x.pct >= minPct && x.s1 >= minStreak && x.c1 >= minC1 && matchesLevelFilter(x, levels) && matchesDayFilter(x, dayVal) && (!row0Only || x.r === 0);
   const sortFn   = (a, b) => (b.pct * b.c1) - (a.pct * a.c1);
 
-  const revData = allRevs.filter(filterFn).sort(sortFn);
-    const momData = allMoms.filter(filterFn).sort(sortFn);
+  const revData = allRevs.filter(filterFn).sort(sortFn).slice(0, 100);
+  const momData = allMoms.filter(filterFn).sort(sortFn).slice(0, 100);
 
   document.getElementById("resultCount").textContent = `Showing ${revData.length} REV, ${momData.length} MOM`;
 
@@ -5217,7 +5097,7 @@ function renderTableOld() {
           var v = b.querySelector("b");
           function show() { v.textContent = (document.getElementById(d.id).value || "0") + (d.id === "minPct" ? "%" : ""); }
           show();
-          b.addEventListener("click", function() { if (d.id === "minPct") return; keypad(d.lbl, d.id, d.min, d.max, show); });
+          b.addEventListener("click", function() { keypad(d.lbl, d.id, d.min, d.max, show); });
         });
     
         var cc = document.createElement("button");
