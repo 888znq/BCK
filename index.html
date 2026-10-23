@@ -2945,12 +2945,17 @@ async function runScan() {
 }
 
 var wsBestPerCycle = function(list) {
-  var seenCycles = {};
-  return list.filter(function(x) {
-    if (seenCycles[x.c]) return false;
-    seenCycles[x.c] = true;
+  var seen = {};
+    return list.filter(function(x) {
+      var k = x.pair + "|" + x.c;
+      var pk = "P|" + x.pair;
+      if (seen[k]) return false;
+      var cnt = seen[pk] || 0;
+      if (cnt >= 100) return false;
+    seen[k] = true;
+    seen[pk] = cnt + 1;
     return true;
-  }).slice(0, 50);
+  });
 };
 
 async function exportAllSignalsCSV() {
@@ -3074,10 +3079,15 @@ async function exportAllSignalsCSV_old() {
               var seen = {};
               return list.filter(function(x) {
                 if (row0Only && x.r !== 0) return false;
-                                if (seen[x.c]) return false;
-                                seen[x.c] = true;
+                                var k = x.pair + "|" + x.c;
+                                var pk = "P|" + x.pair;
+                                if (seen[k]) return false;
+                                var cnt = seen[pk] || 0;
+                                if (cnt >= 100) return false;
+                                seen[k] = true;
+                                seen[pk] = cnt + 1;
                                 return true;
-                              }).slice(0, 50);
+                              });
             };
             var rowsAll = rowsFor(bestPerCycleT(revData)).concat(rowsFor(bestPerCycleT(momData)));
       if (rowsAll.length === 0) { toast("No signals to export", "err"); return; }
@@ -3513,16 +3523,20 @@ function renderTable() {
   const bestPerCycle = function(list) {
       var seenCycles = {};
       return list.filter(function(x) {
-        if (seenCycles[x.c]) return false;
-        seenCycles[x.c] = true;
-        return true;
-      });
+        var k = x.pair + "|" + x.c;
+                var pk = "P|" + x.pair;
+                if (seenCycles[k]) return false;
+                        var cnt = seenCycles[pk] || 0;
+                        if (cnt >= 100) return false;
+                seenCycles[k] = true;
+                seenCycles[pk] = cnt + 1;
+                return true;
+              });
     };
     const revAll    = bestPerCycle(allRevs.filter(filterFn).sort(sortFn));
     const momAll    = bestPerCycle(allMoms.filter(filterFn).sort(sortFn));
-    const TOP_N     = 50;
-        const revData   = revAll.slice(0, TOP_N);
-    const momData   = momAll.slice(0, TOP_N);
+    const revData   = revAll;
+        const momData   = momAll;
     document.getElementById("resultCount").textContent = `Showing best per cycle: ${revData.length} REV, ${momData.length} MOM`;
     const area = document.getElementById("tableArea");
     var sessRankHTML = buildSessionRankHTML(filterFn);
