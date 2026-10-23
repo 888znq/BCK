@@ -2799,8 +2799,7 @@ async function runScan() {
 
   allRevs = []; allMoms = [];
     let totalTicks = 0;
-    pairsToScan.length = Math.min(pairsToScan.length, 1);
-        const totalPairs = pairsToScan.length;
+            const totalPairs = pairsToScan.length;
   
     // ── For each pair: fetch all days, then scan ──
     for (var pi = 0; pi < totalPairs; pi++) {
@@ -2951,7 +2950,7 @@ var wsBestPerCycle = function(list) {
       var pk = "P|" + x.pair;
       if (seen[k]) return false;
       var cnt = seen[pk] || 0;
-      if (cnt >= 100) return false;
+      if (cnt >= 1) return false;
     seen[k] = true;
     seen[pk] = cnt + 1;
     return true;
@@ -3076,14 +3075,14 @@ async function exportAllSignalsCSV_old() {
       }
   
       var bestPerCycleT = function(list) {
-              var seen = {};
-              return list.filter(function(x) {
-                if (row0Only && x.r !== 0) return false;
-                                var k = x.pair + "|" + x.c;
-                                var pk = "P|" + x.pair;
-                                if (seen[k]) return false;
-                                var cnt = seen[pk] || 0;
-                                if (cnt >= 100) return false;
+                    var seen = {};
+                    return list.filter(function(x) {
+                      if (row0Only && x.r !== 0) return false;
+                                      var k = x.pair + "|" + x.c;
+                                      var pk = "P|" + x.pair;
+                                      if (seen[k]) return false;
+                                      var cnt = seen[pk] || 0;
+                                      if (cnt >= 1) return false;
                                 seen[k] = true;
                                 seen[pk] = cnt + 1;
                                 return true;
@@ -3521,13 +3520,13 @@ function renderTable() {
   const filterFn  = x => x.pct >= minPct && x.s1 >= minStreak && x.c1 >= minC1 && matchesLevelFilter(x, levels) && matchesDayFilter(x, dayVal) && (!row0Only || x.r === 0);
   const sortFn    = (a, b) => (b.pct * b.c1) - (a.pct * a.c1);
   const bestPerCycle = function(list) {
-      var seenCycles = {};
-      return list.filter(function(x) {
-        var k = x.pair + "|" + x.c;
-                var pk = "P|" + x.pair;
-                if (seenCycles[k]) return false;
-                        var cnt = seenCycles[pk] || 0;
-                        if (cnt >= 100) return false;
+        var seenCycles = {};
+        return list.filter(function(x) {
+          var k = x.pair + "|" + x.c;
+                  var pk = "P|" + x.pair;
+                  if (seenCycles[k]) return false;
+                          var cnt = seenCycles[pk] || 0;
+                          if (cnt >= 1) return false;
                 seenCycles[k] = true;
                 seenCycles[pk] = cnt + 1;
                 return true;
