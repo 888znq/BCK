@@ -2944,6 +2944,15 @@ async function runScan() {
     resetRunBtn();
 }
 
+var wsBestPerCycle = function(list) {
+  var seenCycles = {};
+  return list.filter(function(x) {
+    if (seenCycles[x.c]) return false;
+    seenCycles[x.c] = true;
+    return true;
+  }).slice(0, 50);
+};
+
 async function exportAllSignalsCSV() {
   var minPctF    = parseInt(document.getElementById("filterPct").value)    || 0;
   var minStreakF = parseInt(document.getElementById("filterStreak").value) || 1;
@@ -2957,24 +2966,25 @@ async function exportAllSignalsCSV() {
            (!row0Only || x.r === 0);
   };
   var sortFn  = function(a, b) { return (b.pct * b.c1) - (a.pct * a.c1); };
-  var revData = (allRevs || []).filter(filterFn).sort(sortFn);
-  var momData = (allMoms || []).filter(filterFn).sort(sortFn);
-
-  if (revData.length === 0 && momData.length === 0) { toast("No signals to export", "err"); return; }
-
-  function cells(d) {
-    if (!d) return ["", "", "", "", "", "", "", ""];
-    var arrow = d.col === "R" ? "↓" : "↑";
-    var gap   = d.type === "REV" ? ("F" + (d.gap || 0) + "-" + (d.gapCount || 0)) : "—";
-    return [arrow + " " + getPairDisplayName(d.pair), "C" + d.c, "R" + d.r,
-            "X" + d.s1 + "→X" + d.s2, d.c1, d.c2, gap, d.pct + "%"];
-  }
-
-  var cols = ["PAIR", "CYCLE", "ROW", "STREAK", "C1", "C2", "GAP", "PROB%"];
-  var lines = [];
-  lines.push(["REVERSAL", revData.length, "", "", "", "", "", "", "",
-              "MOMENTUM", momData.length, "", "", "", "", "", ""].join(","));
-  lines.push(cols.concat([""], cols).join(","));
+  var revData = wsBestPerCycle((allRevs || []).filter(filterFn).sort(sortFn));
+    var momData = wsBestPerCycle((allMoms || []).filter(filterFn).sort(sortFn));
+  
+    if (revData.length === 0 && momData.length === 0) { toast("No signals to export", "err"); return; }
+  
+    // best-per-cycle and top 100 already applied above via wsBestPerCycle
+    
+      function cells(d) {
+        if (!d) return ["", "", "", "", "", "", ""];
+        var arrow = d.col === "R" ? "↓" : "↑";
+        return [arrow + " " + getPairDisplayName(d.pair), "C" + d.c, "R" + d.r,
+                "X" + d.s1 + "→X" + d.s2, d.c1, d.c2, d.pct + "%"];
+    }
+  
+    var cols = ["PAIR", "CYCLE", "ROW", "STREAK", "C1", "C2", "PROB%"];
+    var lines = [];
+    lines.push(["REVERSAL", revData.length, "", "", "", "", "", "",
+                "MOMENTUM", momData.length, "", "", "", "", ""].join(","));
+    lines.push(cols.concat([""], cols).join(","));
 
   var n = Math.max(revData.length, momData.length);
   for (var i = 0; i < n; i++) {
@@ -3049,22 +3059,29 @@ async function exportAllSignalsCSV_old() {
   
       if (revData.length === 0 && momData.length === 0) { toast("No signals to export", "err"); return; }
   
-      var headers = ["TYPE","PAIR","CYCLE","ROW","STREAK","C1","C2","GAP","PROB%"];
+      var headers = ["TYPE","PAIR","CYCLE","ROW","STREAK","C1","C2","PROB%"];
   
       function rowsFor(data) {
         return data.map(function(d) {
           var name     = getPairDisplayName(d.pair);
           var arrow    = d.col === "R" ? "DOWN" : "UP";
           var streak   = "X" + d.s1 + "->X" + d.s2;
-          var gapVal   = d.gap || 0;
-          var gapCount = d.gapCount || 0;
-          var gapCell  = (d.type === "REV") ? ("F" + gapVal + "-" + gapCount) : "-";
-          return [d.type, arrow + " " + name, "C" + d.c, "R" + d.r, streak, d.c1, d.c2, gapCell, d.pct + "%"].join(",");
+          return [d.type, arrow + " " + name, "C" + d.c, "R" + d.r, streak, d.c1, d.c2, d.pct + "%"].join(",");
         });
       }
   
-      var rowsAll = rowsFor(revData).concat(rowsFor(momData));
-      var csvAll = [headers.join(",")].concat(rowsAll).join("\n");
+      var bestPerCycleT = function(list) {
+              var seen = {};
+              return list.filter(function(x) {
+                if (row0Only && x.r !== 0) return false;
+                                if (seen[x.c]) return false;
+                                seen[x.c] = true;
+                                return true;
+                              }).slice(0, 50);
+            };
+            var rowsAll = rowsFor(bestPerCycleT(revData)).concat(rowsFor(bestPerCycleT(momData)));
+      if (rowsAll.length === 0) { toast("No signals to export", "err"); return; }
+            var csvAll = [headers.join(",")].concat(rowsAll).join("\n");
       var filenameAll = "wallspectrum_signals_table_format_" + new Date().toISOString().slice(0,10) + ".csv";
       await downloadCSV(csvAll, filenameAll);
       toast("Exported " + rowsAll.length + " signals (table format)", "ok");
@@ -3493,11 +3510,22 @@ function renderTable() {
   const dayVal    = document.getElementById("dayFilter") ? document.getElementById("dayFilter").value : "__ALL__";
   const filterFn  = x => x.pct >= minPct && x.s1 >= minStreak && x.c1 >= minC1 && matchesLevelFilter(x, levels) && matchesDayFilter(x, dayVal) && (!row0Only || x.r === 0);
   const sortFn    = (a, b) => (b.pct * b.c1) - (a.pct * a.c1);
-  const revData   = allRevs.filter(filterFn).sort(sortFn);
-  const momData   = allMoms.filter(filterFn).sort(sortFn);
-  document.getElementById("resultCount").textContent = `Showing ${revData.length} REV, ${momData.length} MOM`;
-  const area = document.getElementById("tableArea");
-  var sessRankHTML = buildSessionRankHTML(filterFn);
+  const bestPerCycle = function(list) {
+      var seenCycles = {};
+      return list.filter(function(x) {
+        if (seenCycles[x.c]) return false;
+        seenCycles[x.c] = true;
+        return true;
+      });
+    };
+    const revAll    = bestPerCycle(allRevs.filter(filterFn).sort(sortFn));
+    const momAll    = bestPerCycle(allMoms.filter(filterFn).sort(sortFn));
+    const TOP_N     = 50;
+        const revData   = revAll.slice(0, TOP_N);
+    const momData   = momAll.slice(0, TOP_N);
+    document.getElementById("resultCount").textContent = `Showing best per cycle: ${revData.length} REV, ${momData.length} MOM`;
+    const area = document.getElementById("tableArea");
+    var sessRankHTML = buildSessionRankHTML(filterFn);
   if (xsView && (window.wsxLastSessCount || 1) > 1) {
     area.innerHTML = sessRankHTML + buildXsHTML();
     return;
