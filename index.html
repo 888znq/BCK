@@ -1188,7 +1188,7 @@ thead th { font-size: 12px; }
 .split-pane-header { text-align: left; }
 body, .layout { height: 100vh; height: 100dvh; }
 .day-summary { display: none !important; }
-#dayFilter, #levelFilter + span + label, #resultCount, #exportCsvBtn, #exportTableFormatBtn { display: none !important; }
+#dayFilter, #levelFilter + span + label, #resultCount, #exportTableFormatBtn { display: none !important; }
 .filter-bar > span { display: none !important; }
 .repeats-section > .split-pane-header { display: none !important; }
 .repeats-section:has(.state-empty) { display: none !important; }
@@ -2733,7 +2733,7 @@ async function runScan() {
     const timeTo   = document.getElementById("timeTo").value   || "05:30";
   const cycleMin = Math.max(1, parseInt(document.getElementById("cycleMin").value) || 120);
     const cycleMax = Math.max(cycleMin, parseInt(document.getElementById("cycleMax").value) || 180);
-  const minPct   = parseInt(document.getElementById("minPct").value) || 100;
+  const minPct   = 0; // show everything generated
 
   if (!dateFrom) { toast("Please select a date", "err"); return; }
   
@@ -2797,7 +2797,8 @@ async function runScan() {
 
   allRevs = []; allMoms = [];
     let totalTicks = 0;
-    const totalPairs = pairsToScan.length;
+    pairsToScan.length = Math.min(pairsToScan.length, 1);
+        const totalPairs = pairsToScan.length;
   
     // ── For each pair: fetch all days, then scan ──
     for (var pi = 0; pi < totalPairs; pi++) {
@@ -2925,11 +2926,15 @@ async function runScan() {
   document.getElementById("tabBar").style.display     = "flex";
   document.getElementById("filterBar").style.display  = "flex";
   document.getElementById("filterPct").value          = minPct;
+    document.getElementById("levelFilter").value        = "__ALL__";
   document.getElementById("revCount").textContent     = filtRevs.length;
   document.getElementById("momCount").textContent     = filtMoms.length;
 
   renderTable();
-      document.getElementById("exportCsvBtn").style.display = "inline-block";
+      document.getElementById("filterPct").value = 0;
+        document.getElementById("levelFilter").value = "__ALL__";
+        renderTable();
+        document.getElementById("exportCsvBtn").style.display = "inline-block";
       document.getElementById("exportTableFormatBtn").style.display = "inline-block";
       setTimeout(() => document.getElementById("progressWrap").classList.remove("visible"), 2000);
   
@@ -3038,7 +3043,11 @@ async function exportAllSignalsCSV() {
     }
     // Fallback for browsers that don't support the File System Access API
     try {
-      var blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      var _nm = prompt("Save CSV as:", filename);
+            if (_nm === null) return;
+            filename = (_nm.trim() || filename);
+            if (!/\.csv$/i.test(filename)) filename += ".csv";
+            var blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
       var url  = URL.createObjectURL(blob);
       var a    = document.createElement("a");
       a.href     = url;
@@ -3438,12 +3447,38 @@ function renderTable() {
   const minC1     = parseInt(document.getElementById("filterC1").value) || 1;
   const levels    = parseLevelFilter(document.getElementById("levelFilter"));
   const dayVal    = document.getElementById("dayFilter") ? document.getElementById("dayFilter").value : "__ALL__";
+  const filterFn  = x => x.pct >= minPct && x.s1 >= minStreak && x.c1 >= minC1 && matchesLevelFilter(x, levels) && matchesDayFilter(x, dayVal) && (!row0Only || x.r === 0);
+  const sortFn    = (a, b) => (b.pct * b.c1) - (a.pct * a.c1);
+  const revData   = allRevs.filter(filterFn).sort(sortFn);
+  const momData   = allMoms.filter(filterFn).sort(sortFn);
+  document.getElementById("resultCount").textContent = `Showing ${revData.length} REV, ${momData.length} MOM`;
+  const area = document.getElementById("tableArea");
+  var sessRankHTML = buildSessionRankHTML(filterFn);
+  if (xsView && (window.wsxLastSessCount || 1) > 1) {
+    area.innerHTML = sessRankHTML + buildXsHTML();
+    return;
+  }
+  if (revData.length === 0 && momData.length === 0) {
+    area.innerHTML = sessRankHTML + `<div class="state-empty"><div class="state-icon">○</div><div class="state-title">No signals at current filters</div></div>`;
+    return;
+  }
+  area.innerHTML = sessRankHTML + `<div class="split-table-wrap">
+    ${buildPaneHTML("REVERSAL", revData, "revCount")}
+    ${buildPaneHTML("MOMENTUM", momData, "momCount")}
+  </div>`;
+}
+function renderTableOld() {
+  const minPct    = parseInt(document.getElementById("filterPct").value) || 0;
+  const minStreak = parseInt(document.getElementById("filterStreak").value) || 1;
+  const minC1     = parseInt(document.getElementById("filterC1").value) || 1;
+  const levels    = parseLevelFilter(document.getElementById("levelFilter"));
+  const dayVal    = document.getElementById("dayFilter") ? document.getElementById("dayFilter").value : "__ALL__";
 
   const filterFn = x => x.pct >= minPct && x.s1 >= minStreak && x.c1 >= minC1 && matchesLevelFilter(x, levels) && matchesDayFilter(x, dayVal) && (!row0Only || x.r === 0);
   const sortFn   = (a, b) => (b.pct * b.c1) - (a.pct * a.c1);
 
-  const revData = allRevs.filter(filterFn).sort(sortFn).slice(0, 100);
-  const momData = allMoms.filter(filterFn).sort(sortFn).slice(0, 100);
+  const revData = allRevs.filter(filterFn).sort(sortFn);
+    const momData = allMoms.filter(filterFn).sort(sortFn);
 
   document.getElementById("resultCount").textContent = `Showing ${revData.length} REV, ${momData.length} MOM`;
 
