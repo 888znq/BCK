@@ -1717,7 +1717,7 @@ html body #toast { bottom: calc(9vh + 24px) !important; bottom: calc(9dvh + 24px
           <div class="section-label">Signal Filter</div>
           <div class="field">
                   <label>Min probability %</label>
-                                <input type="number" id="minPct" value="10" min="0" max="100"/>
+                                <input type="number" id="minPct" value="0" min="0" max="100"/>
           </div>
         </div>
 
@@ -2503,6 +2503,8 @@ function computeGapMapFromEvents(events) {
   return { modeRun: modeRun, curRun: curRun, modeCount: modeCount, freqMap: freqMap };
 }
 
+var MIN_C1 = 2;
+
 self.onmessage = function(e) {
   var prices = e.data.prices;
   var minC   = e.data.minC;
@@ -2618,8 +2620,8 @@ self.onmessage = function(e) {
           var gapCountVal = (gapCountMap && gapCountMap[sk]) || 0;
           var gapFreqObj = (gapFreqMapAll && gapFreqMapAll[sk]) || {};
           
-          revs.push({ pair: pair, c: c, r: r, s1: sk, s2: sk+1, c1: c1, c2: c2, pct: pctRev, col: colColor, type: "REV", gap: gapVal, curGap: curGapVal, gapCount: gapCountVal, gapFreq: gapFreqObj });
-          if (c1 > 1) {
+          if (c1 >= MIN_C1) {
+                      revs.push({ pair: pair, c: c, r: r, s1: sk, s2: sk+1, c1: c1, c2: c2, pct: pctRev, col: colColor, type: "REV", gap: gapVal, curGap: curGapVal, gapCount: gapCountVal, gapFreq: gapFreqObj });
             moms.push({ pair: pair, c: c, r: r, s1: sk, s2: sk+1, c1: c1, c2: c2, pct: pctMom, col: colColor, type: "MOM", gap: gapVal, curGap: curGapVal, gapCount: gapCountVal, gapFreq: gapFreqObj });
           }
         }
@@ -2943,6 +2945,48 @@ async function runScan() {
 }
 
 async function exportAllSignalsCSV() {
+  var minPctF    = parseInt(document.getElementById("filterPct").value)    || 0;
+  var minStreakF = parseInt(document.getElementById("filterStreak").value) || 1;
+  var minC1F     = parseInt(document.getElementById("filterC1").value)     || 1;
+  var levelsF    = parseLevelFilter(document.getElementById("levelFilter"));
+  var dayValF    = document.getElementById("dayFilter") ? document.getElementById("dayFilter").value : "__ALL__";
+
+  var filterFn = function(x) {
+    return x.pct >= minPctF && x.s1 >= minStreakF && x.c1 >= minC1F &&
+           matchesLevelFilter(x, levelsF) && matchesDayFilter(x, dayValF) &&
+           (!row0Only || x.r === 0);
+  };
+  var sortFn  = function(a, b) { return (b.pct * b.c1) - (a.pct * a.c1); };
+  var revData = (allRevs || []).filter(filterFn).sort(sortFn);
+  var momData = (allMoms || []).filter(filterFn).sort(sortFn);
+
+  if (revData.length === 0 && momData.length === 0) { toast("No signals to export", "err"); return; }
+
+  function cells(d) {
+    if (!d) return ["", "", "", "", "", "", "", ""];
+    var arrow = d.col === "R" ? "↓" : "↑";
+    var gap   = d.type === "REV" ? ("F" + (d.gap || 0) + "-" + (d.gapCount || 0)) : "—";
+    return [arrow + " " + getPairDisplayName(d.pair), "C" + d.c, "R" + d.r,
+            "X" + d.s1 + "→X" + d.s2, d.c1, d.c2, gap, d.pct + "%"];
+  }
+
+  var cols = ["PAIR", "CYCLE", "ROW", "STREAK", "C1", "C2", "GAP", "PROB%"];
+  var lines = [];
+  lines.push(["REVERSAL", revData.length, "", "", "", "", "", "", "",
+              "MOMENTUM", momData.length, "", "", "", "", "", ""].join(","));
+  lines.push(cols.concat([""], cols).join(","));
+
+  var n = Math.max(revData.length, momData.length);
+  for (var i = 0; i < n; i++) {
+    lines.push(cells(revData[i]).concat([""], cells(momData[i])).join(","));
+  }
+
+  var filename = "wallspectrum_signals_" + new Date().toISOString().slice(0, 10) + ".csv";
+  await downloadCSV("\uFEFF" + lines.join("\n"), filename);
+  toast("Exported " + revData.length + " REV | " + momData.length + " MOM", "ok");
+}
+
+async function exportAllSignalsCSV_old() {
   var minPctF    = parseInt(document.getElementById("filterPct").value)    || 0;
   var minStreakF = parseInt(document.getElementById("filterStreak").value)  || 1;
   var minC1F     = parseInt(document.getElementById("filterC1").value)      || 1;
@@ -5132,7 +5176,7 @@ function renderTableOld() {
           var v = b.querySelector("b");
           function show() { v.textContent = (document.getElementById(d.id).value || "0") + (d.id === "minPct" ? "%" : ""); }
           show();
-          b.addEventListener("click", function() { keypad(d.lbl, d.id, d.min, d.max, show); });
+          b.addEventListener("click", function() { if (d.id === "minPct") return; keypad(d.lbl, d.id, d.min, d.max, show); });
         });
     
         var cc = document.createElement("button");
