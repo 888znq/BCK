@@ -1813,6 +1813,8 @@ html body #toast { bottom: calc(9vh + 24px) !important; bottom: calc(9dvh + 24px
                     <input type="number" id="filterC1" placeholder="1" min="1" style="display:none;"/>
                     <div class="result-count" id="resultCount">—</div>
                                         <button class="export-btn" id="row0Btn" onclick="toggleRow0()" style="margin-left: 12px;">ROW 0 ONLY</button>
+                                        <button class="export-btn" id="lvlsBtn" onclick="toggleLvls()" title="Best % row of every level at once" style="margin-left: 8px; background: var(--green); color: #000432;">LVLS</button>
+                                        <button class="export-btn" id="ordBtn" onclick="toggleOrd()" title="With LVLS: list levels in order X1, X2, X3..." style="margin-left: 8px; background: var(--green); color: #000432;">ORD</button>
                                                                                 
                                                                                 <button class="export-btn" id="xsBtn" onclick="toggleXs()" style="display:none; margin-left: 8px;">BY SESSION</button>
                                                                                 <button class="export-btn" id="xsBtn" onclick="toggleXs()" style="display:none; margin-left: 8px;">BY SESSION</button>
@@ -2221,6 +2223,102 @@ function matchesDayFilter(d, dayVal) {
 
 var xsView = false;
 var xsView = false;
+var lvlsOn = true;
+var ordOn = true;
+var LVLS_PER_LEVEL = 1;
+
+function lvlsScore(x) {
+  var n = x.c1 || 0;
+  if (n <= 0) return 0;
+  var p = Math.max(0, Math.min(1, (x.pct || 0) / 100));
+  var z = 1.645, z2 = z * z;
+  var dd = 1 + z2 / n;
+  var mm = p + z2 / (2 * n);
+  var ss = z * Math.sqrt((p * (1 - p) + z2 / (4 * n)) / n);
+  return Math.max(0, (mm - ss) / dd) * 100;
+}
+
+function lvlsEta(x) {
+  var c = x.c || 60;
+  var nowUtc = Math.floor(Date.now() / 1000);
+  return (((x.r - (nowUtc % c)) % c) + c) % c;
+}
+
+function lvlsBuild(list, dayVal, minStreak, minC1) {
+  var best = {};
+  var pool = [];
+  for (var i = 0; i < list.length; i++) {
+    var x = list[i];
+    if (!matchesDayFilter(x, dayVal)) continue;
+    if (row0Only && x.r !== 0) continue;
+    if (x.s1 < minStreak || x.c1 < minC1) continue;
+    pool.push(x);
+    if (best[x.s1] === undefined || x.pct > best[x.s1]) best[x.s1] = x.pct;
+  }
+  var byLvl = {};
+  for (var j = 0; j < pool.length; j++) {
+    var y = pool[j];
+    if (y.pct === best[y.s1]) {
+      if (!byLvl[y.s1]) byLvl[y.s1] = [];
+      byLvl[y.s1].push(y);
+    }
+  }
+  var out = [];
+  Object.keys(byLvl).forEach(function(k) {
+    var arr = byLvl[k].map(function(z) { return { z: z, e: lvlsEta(z) }; }).sort(function(a, b) {
+      return a.e !== b.e ? a.e - b.e : lvlsScore(b.z) - lvlsScore(a.z);
+    }).map(function(o) { return o.z; });
+    for (var n = 0; n < arr.length && n < LVLS_PER_LEVEL; n++) out.push(arr[n]);
+  });
+  if (ordOn) {
+    out.sort(function(a, b) { return a.s1 - b.s1; });
+  } else {
+    out.sort(function(a, b) {
+      if (b.pct !== a.pct) return b.pct - a.pct;
+      return lvlsScore(b) - lvlsScore(a);
+    });
+  }
+  return out;
+}
+
+function lvlsPaint() {
+  var l = document.getElementById("lvlsBtn");
+  if (l) {
+    l.style.background = lvlsOn ? "var(--green)" : "transparent";
+    l.style.color = lvlsOn ? "#000432" : "var(--cyan)";
+  }
+  var o = document.getElementById("ordBtn");
+  if (o) {
+    o.style.background = ordOn ? "var(--green)" : "transparent";
+    o.style.color = ordOn ? "#000432" : "var(--cyan)";
+  }
+}
+
+function lvlsLock() {
+  var lv = document.getElementById("levelFilter");
+  var fp = document.getElementById("filterPct");
+  if (lvlsOn && lv && lv.value !== "__ALL__") lv.value = "__ALL__";
+  [lv, fp].forEach(function(el) {
+    if (!el) return;
+    el.disabled = !!lvlsOn;
+    el.style.opacity = lvlsOn ? "0.45" : "";
+    el.style.pointerEvents = lvlsOn ? "none" : "";
+  });
+}
+
+function toggleLvls() {
+  lvlsOn = !lvlsOn;
+  lvlsPaint();
+  lvlsLock();
+  renderTable();
+}
+
+function toggleOrd() {
+  ordOn = !ordOn;
+  lvlsPaint();
+  renderTable();
+}
+
 var row0Only = false;
 function toggleRow0() {
   row0Only = !row0Only;
@@ -3442,8 +3540,10 @@ function renderTable() {
   const filterFn = x => x.pct >= minPct && x.s1 >= minStreak && x.c1 >= minC1 && matchesLevelFilter(x, levels) && matchesDayFilter(x, dayVal) && (!row0Only || x.r === 0);
   const sortFn   = (a, b) => (b.pct * b.c1) - (a.pct * a.c1);
 
-  const revData = allRevs.filter(filterFn).sort(sortFn).slice(0, 100);
-  const momData = allMoms.filter(filterFn).sort(sortFn).slice(0, 100);
+  lvlsPaint();
+    lvlsLock();
+    var revData = lvlsOn ? lvlsBuild(allRevs, dayVal, minStreak, minC1) : allRevs.filter(filterFn).sort(sortFn).slice(0, 100);
+    var momData = lvlsOn ? lvlsBuild(allMoms, dayVal, minStreak, minC1) : allMoms.filter(filterFn).sort(sortFn).slice(0, 100);
 
   document.getElementById("resultCount").textContent = `Showing ${revData.length} REV, ${momData.length} MOM`;
 
