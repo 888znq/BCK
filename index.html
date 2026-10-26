@@ -2239,7 +2239,13 @@ var xsView = false;
 var xsView = false;
 var lvlsOn = true;
 var ordOn = true;
-var LVLS_PER_LEVEL = 1;
+var lvlsExp = {};
+var lvlsCnt = {};
+
+function toggleLvlExp(k) {
+  lvlsExp[k] = !lvlsExp[k];
+  renderTable();
+}
 
 function lvlsScore(x) {
   var n = x.c1 || 0;
@@ -2259,7 +2265,7 @@ function lvlsEta(x) {
 }
 
 function lvlsBuild(list, dayVal, minStreak, minC1) {
-  var best = {};
+  var bestPair = {};
   var pool = [];
   for (var i = 0; i < list.length; i++) {
     var x = list[i];
@@ -2267,31 +2273,58 @@ function lvlsBuild(list, dayVal, minStreak, minC1) {
     if (row0Only && x.r !== 0) continue;
     if (x.s1 < minStreak || x.c1 < minC1) continue;
     pool.push(x);
-    if (best[x.s1] === undefined || x.pct > best[x.s1]) best[x.s1] = x.pct;
+    var pk = x.s1 + "|" + x.pair;
+    if (bestPair[pk] === undefined || x.pct > bestPair[pk]) bestPair[pk] = x.pct;
   }
-  var byLvl = {};
+  var byPairLvl = {};
   for (var j = 0; j < pool.length; j++) {
     var y = pool[j];
-    if (y.pct === best[y.s1]) {
-      if (!byLvl[y.s1]) byLvl[y.s1] = [];
-      byLvl[y.s1].push(y);
+    var pk2 = y.s1 + "|" + y.pair;
+    if (y.pct === bestPair[pk2]) {
+      if (!byPairLvl[pk2]) byPairLvl[pk2] = [];
+      byPairLvl[pk2].push(y);
     }
   }
-  var out = [];
-  Object.keys(byLvl).forEach(function(k) {
-    var arr = byLvl[k].map(function(z) { return { z: z, e: lvlsEta(z) }; }).sort(function(a, b) {
-      return a.e !== b.e ? a.e - b.e : lvlsScore(b.z) - lvlsScore(a.z);
-    }).map(function(o) { return o.z; });
-    for (var n = 0; n < arr.length && n < LVLS_PER_LEVEL; n++) out.push(arr[n]);
-  });
-  if (ordOn) {
-    out.sort(function(a, b) { return a.s1 - b.s1; });
-  } else {
-    out.sort(function(a, b) {
-      if (b.pct !== a.pct) return b.pct - a.pct;
-      return lvlsScore(b) - lvlsScore(a);
+  var byLvl = {};
+    Object.keys(byPairLvl).forEach(function(pk3) {
+      var arr = byPairLvl[pk3].map(function(z) {
+        return { z: z, e: lvlsEta(z), sc: lvlsScore(z) };
+      }).sort(function(a, b) {
+        if ((b.z.c1 || 0) !== (a.z.c1 || 0)) return (b.z.c1 || 0) - (a.z.c1 || 0);
+        return a.e - b.e;
+      });
+      var win = arr[0];
+      var s1 = win.z.s1;
+      if (!byLvl[s1]) byLvl[s1] = [];
+      byLvl[s1].push(win);
     });
-  }
+    var lvlKeys = Object.keys(byLvl);
+    lvlKeys.forEach(function(lk) {
+      byLvl[lk].sort(function(a, b) {
+        if (b.z.pct !== a.z.pct) return b.z.pct - a.z.pct;
+        if ((b.z.c1 || 0) !== (a.z.c1 || 0)) return (b.z.c1 || 0) - (a.z.c1 || 0);
+        return a.e - b.e;
+      });
+    });
+    if (ordOn) {
+      lvlKeys.sort(function(a, b) { return (+a) - (+b); });
+    } else {
+      lvlKeys.sort(function(a, b) {
+        var A = byLvl[a][0], B = byLvl[b][0];
+        if (B.z.pct !== A.z.pct) return B.z.pct - A.z.pct;
+        if ((B.z.c1 || 0) !== (A.z.c1 || 0)) return (B.z.c1 || 0) - (A.z.c1 || 0);
+        return A.e - B.e;
+      });
+    }
+  var out = [];
+  lvlKeys.forEach(function(k) {
+    var grp = byLvl[k];
+    var tp = grp[0].z.type || "REV";
+    var expKey = tp + "|" + k;
+    lvlsCnt[expKey] = grp.length;
+    var lim = lvlsExp[expKey] ? grp.length : 1;
+    for (var n = 0; n < lim; n++) out.push(grp[n].z);
+  });
   return out;
 }
 
@@ -3189,36 +3222,53 @@ function getPairDisplayName(pair) {
   return pair.replace("frx","").replace("cry","");
 }
 
+function buildSingleRowHTML(d) {
+  var name = getPairDisplayName(d.pair);
+  var arrow = d.col === "R" ? "↓" : "↑";
+  var arrowCls = d.col === "R" ? "cell-arrow-r" : "cell-arrow-g";
+  var rowCls = d.col === "R" ? "row-red" : "row-green";
+  var pctCls = d.pct >= 80 ? "pct-high" : d.pct >= 60 ? "pct-med" : "pct-low";
+  var gapVal = d.gap || 0;
+  var gapCount = d.gapCount || 0;
+  var gapCell = (d.type === "REV") ? ("F" + gapVal + "-" + gapCount) : "—";
+  var gapStyle = (d.type === "REV" && gapVal >= 3) ? "color:var(--amber);" : "";
+  return '<tr class="' + rowCls + '">' +
+    '<td class="cell-pair"><span class="' + arrowCls + '">' + arrow + '</span> ' + name + '</td>' +
+    '<td class="cell-dim">C' + d.c + '</td>' +
+    '<td class="cell-dim">R' + d.r + '</td>' +
+    '<td class="cell-streak">X' + d.s1 + '→X' + d.s2 + '</td>' +
+    '<td class="cell-dim">' + d.c1 + '</td>' +
+    '<td class="cell-dim">' + d.c2 + '</td>' +
+    '<td class="cell-dim" style="' + gapStyle + '">' + gapCell + '</td>' +
+    '<td><span class="cell-pct ' + pctCls + '">' + d.pct + '%</span></td>' +
+    '</tr>';
+}
+
 function buildRowsHTML(data) {
-  return data.map(d => {
-        const name   = getPairDisplayName(d.pair);
-        const arrow  = d.col === "R" ? "↓" : "↑";
-      const arrowCls = d.col === "R" ? "cell-arrow-r" : "cell-arrow-g";
-      const rowCls   = d.col === "R" ? "row-red" : "row-green";
-      const pctCls   = d.pct >= 80 ? "pct-high" : d.pct >= 60 ? "pct-med" : "pct-low";
-      const barCls   = d.pct >= 80 ? "bar-g" : d.pct >= 60 ? "bar-a" : "bar-r";
-      const barW     = Math.min(100, d.pct);
-      const badgeCls = d.type === "REV" ? "badge-rev" : "badge-mom";
-            const typeLbl  = d.type;
-            const gapVal   = d.gap || 0;
-            const gapCount = d.gapCount || 0;
-            const gapCell  = (d.type === "REV") ? `F${gapVal}-${gapCount}` : "—";
-            const gapStyle = (d.type === "REV" && gapVal >= 3) ? "color:var(--amber);" : "";
-            const dateCell = d.date || "—";
-  
-      return `<tr class="${rowCls}">
-              <td class="cell-pair"><span class="${arrowCls}">${arrow}</span> ${name}</td>
-            <td class="cell-dim">C${d.c}</td>
-            <td class="cell-dim">R${d.r}</td>
-            <td class="cell-streak">X${d.s1}→X${d.s2}</td>
-            <td class="cell-dim">${d.c1}</td>
-                  <td class="cell-dim">${d.c2}</td>
-                  <td class="cell-dim" style="${gapStyle}">${gapCell}</td>
-                  <td>
-                    <span class="cell-pct ${pctCls}">${d.pct}%</span>
-                  </td>
-                </tr>`;
-  }).join("");
+  if (!lvlsOn || !data || data.length === 0) {
+    return (data || []).map(buildSingleRowHTML).join("");
+  }
+  var html = "";
+  var i = 0;
+  while (i < data.length) {
+    var k = (data[i].type || "REV") + "|" + data[i].s1;
+    var grp = [];
+    while (i < data.length && ((data[i].type || "REV") + "|" + data[i].s1) === k) {
+      grp.push(data[i]);
+      i++;
+    }
+    var isOpen = !!lvlsExp[k];
+    var total = lvlsCnt[k] || grp.length;
+    html += '<tr class="lvl-hdr" onclick="toggleLvlExp(\'' + k + '\')" style="cursor:pointer;background:var(--panel);border-bottom:1px solid var(--border2);">' +
+      '<td colspan="8" style="width:100% !important;padding:5px 8px !important;color:var(--green) !important;font-weight:700;font-size:12px;">' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;width:100%;">' +
+      '<span>X' + grp[0].s1 + '→X' + grp[0].s2 + '</span>' +
+      '<span style="border:1px solid var(--border2);border-radius:3px;padding:1px 8px;font-size:10px;color:var(--text);">' +
+      (isOpen ? 'COLLAPSE ▲ (' + total + ')' : 'EXPAND ▼ (' + total + ')') +
+      '</span></div></td></tr>';
+    html += grp.map(buildSingleRowHTML).join("");
+  }
+  return html;
 }
 
 function buildPaneHTML(label, data, countId) {
