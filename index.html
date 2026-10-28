@@ -691,37 +691,35 @@ const lvlsEta = x => {
   return (((x.r - now % c) % c) + c) % c;
 };
 
+var LVL_MAX = 10;
 function lvlsBuild(list) {
-  const bestPct = {}, pool = [];
+  const byLvl = {};
   for (const x of list) {
     if (row0Only && x.r !== 0) continue;
-    pool.push(x);
-    const k = x.s1 + "|" + x.pair;
-    if (bestPct[k] === undefined || x.pct > bestPct[k]) bestPct[k] = x.pct;
-  }
-  const byPair = {};
-  for (const y of pool) {
-    const k = y.s1 + "|" + y.pair;
-    if (y.pct === bestPct[k]) (byPair[k] ||= []).push(y);
-  }
-  const byLvl = {};
-  for (const k in byPair) {
-    const win = byPair[k]
-      .map(z => ({ z, e: lvlsEta(z) }))
-      .sort((a, b) => (b.z.c1 || 0) - (a.z.c1 || 0) || a.e - b.e)[0];
-    (byLvl[win.z.s1] ||= []).push(win);
+    (byLvl[x.s1] ||= []).push({ z: x, e: lvlsEta(x) });
   }
   const keys = Object.keys(byLvl);
-  const cmp = (a, b) => b.z.pct - a.z.pct || (b.z.c1 || 0) - (a.z.c1 || 0) || a.e - b.e;
-  keys.forEach(k => byLvl[k].sort(cmp));
+    const cmp0 = (a, b) => b.z.pct - a.z.pct || (b.z.c1 || 0) - (a.z.c1 || 0) || a.e - b.e;
+    const sc = o => o.z.pct * Math.sqrt(o.z.c1 || 0);
+      const cmp1 = (a, b) => sc(b) - sc(a) || (b.z.c1 || 0) - (a.z.c1 || 0) || a.e - b.e;
+    const pset = {};
+    keys.forEach(k => byLvl[k].forEach(o => { pset[o.z.pair] = 1; }));
+    const cmp = Object.keys(pset).length > 1 ? cmp1 : cmp0;
+    keys.forEach(k => {
+      const cnt = {};
+      byLvl[k].sort(cmp0);
+      byLvl[k] = byLvl[k].filter(o => (cnt[o.z.pair] = (cnt[o.z.pair] || 0) + 1) <= LVL_MAX);
+      byLvl[k].sort(cmp);
+    });
   if (ordOn) keys.sort((a, b) => a - b);
   else keys.sort((a, b) => cmp(byLvl[a][0], byLvl[b][0]));
 
   const out = [];
   for (const k of keys) {
     const grp = byLvl[k], key = (grp[0].z.type || "REV") + "|" + k;
-    lvlsCnt[key] = grp.length;
-    for (let i = 0, lim = lvlsExp[key] ? grp.length : 1; i < lim; i++) out.push(grp[i].z);
+    const shown = grp.length;
+        lvlsCnt[key] = shown;
+    for (let i = 0, lim = lvlsExp[key] ? shown : 1; i < lim; i++) out.push(grp[i].z);
   }
   return out;
 }
@@ -748,12 +746,12 @@ function buildRows(data) {
     const k = (data[i].type || "REV") + "|" + data[i].s1, grp = [];
     while (i < data.length && (data[i].type || "REV") + "|" + data[i].s1 === k) grp.push(data[i++]);
     const total = lvlsCnt[k] || grp.length;
-    html += `<tr class="lvl-hdr" onclick="toggleLvlExp('${k}')"><td colspan="7"><div><span>X${grp[0].s1}→X${grp[0].s2}</span>` +
-      `<span class="lvl-tog">${lvlsExp[k] ? "COLLAPSE ▲" : "EXPAND ▼"} (${total})</span></div></td></tr>` +
-      grp.map(buildRow).join("");
-  }
-  return html;
-}
+        html += `<tr class="lvl-hdr" onclick="toggleLvlExp('${k}')"><td colspan="7"><div style="justify-content:flex-start;gap:10px"><span>X${grp[0].s1}→X${grp[0].s2}</span>` +
+          `<span class="lvl-tog" style="margin:0">${lvlsExp[k] ? "COLLAPSE ▲" : "EXPAND ▼"} (${total})</span></div></td></tr>` +
+          grp.map(buildRow).join("");
+      }
+      return html;
+    }
 
 function buildPane(label, data) {
   const body = data.length
