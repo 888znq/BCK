@@ -282,6 +282,7 @@ tbody tr { border-bottom: 1px solid var(--border); }
       <button type="button" class="export-btn on" id="lvlsBtn" onclick="toggleLvls()" title="Best % row of every level at once">LVLS</button>
       <button type="button" class="export-btn on" id="ordBtn" onclick="toggleOrd()" title="With LVLS: list levels in order X1, X2, X3...">ORD</button>
       <button type="button" class="export-btn" id="xsBtn" onclick="toggleXs()" style="display:none">BY SESSION</button>
+            <button type="button" class="export-btn" id="coreBtn" onclick="coreBestPopup()" title="Cycle 60 X1→X2: best row for REV/MOM, RED/GREEN">BEST ROW</button>
     </div>
     <div class="table-area" id="tableArea"></div>
   </div>
@@ -731,6 +732,47 @@ function toggleLvls() { lvlsOn = !lvlsOn; renderTable(); }
 function toggleOrd() { ordOn = !ordOn; renderTable(); }
 function toggleRow0() { row0Only = !row0Only; renderTable(); }
 function toggleXs() { xsView = !xsView; $("xsBtn").classList.toggle("on", xsView); renderTable(); }
+
+function coreBestPopup() {
+  const revs = allRevs || [], moms = allMoms || [];
+  const cats = [
+    ["REVERSAL", "G", revs, "↑ GREEN · BUY"],
+    ["REVERSAL", "R", revs, "↓ RED · SELL"],
+    ["MOMENTUM", "G", moms, "↑ GREEN · BUY"],
+    ["MOMENTUM", "R", moms, "↓ RED · SELL"]
+  ];
+  const winOf = g => g.sumC ? g.sumW / g.sumC : g.sumP / g.n;
+  const best = (src, col) => {
+    const m = {};
+    let total = 0;
+    for (const d of src) {
+      if (+d.c !== 60 || +d.s1 !== 1 || (d.col === "R") !== (col === "R")) continue;
+      const a = m[d.r] ||= { r: d.r, n: 0, sumW: 0, sumC: 0, sumP: 0 };
+      const w = d.c1 || 0;
+      a.n++; total++;
+      a.sumW += d.pct * w; a.sumC += w; a.sumP += d.pct;
+    }
+    const list = Object.values(m).sort((x, y) => winOf(y) - winOf(x) || y.n - x.n);
+    return { top: list[0], rows: list.length, total };
+  };
+  const res = cats.map(c => best(c[2], c[1]));
+  if (!res.some(x => x.total > 0)) { toast("No C60 X1→X2 signals - run a scan first", "err"); return; }
+  let h = `<div class="pop-box" style="max-height:85vh;overflow:auto;min-width:min(92vw,380px)"><div class="pop-title">BEST ROW · CYCLE 60 · X1→X2</div>`;
+  cats.forEach((c, i) => {
+    const r = res[i], clr = c[1] === "R" ? "#ef4444" : "#22c55e";
+    h += `<div style="margin:10px 0;padding:8px 10px;border:1px solid ${clr};border-radius:8px">` +
+      `<div style="font-size:12px;font-weight:700;color:${clr}">${c[0]} · ${c[3]}</div>`;
+    if (r.top) {
+      h += `<div style="font-size:20px;font-weight:800;margin-top:4px">ROW ${r.top.r}</div>` +
+        `<div style="font-size:12px;opacity:.75">${winOf(r.top).toFixed(1)}% win · ${r.top.n} signals · ${r.rows} rows compared</div>`;
+    } else {
+      h += `<div style="font-size:12px;opacity:.6;margin-top:4px">No signals</div>`;
+    }
+    h += `</div>`;
+  });
+  h += `<div style="text-align:center;margin-top:8px"><button type="button" class="export-btn" data-x="1">CLOSE</button></div></div>`;
+  showPop(h, ev => { if (ev.target.closest("[data-x]")) closePop(); });
+}
 
 // ── rendering ──
 const SIG_COLS = "<colgroup>" + [27, 13, 11, 16, 9, 9, 15].map(w => `<col style="width:${w}%">`).join("") + "</colgroup>";
