@@ -691,8 +691,37 @@ const lvlsEta = x => {
   return (((x.r - now % c) % c) + c) % c;
 };
 
-var LVL_MAX = 10;
 function lvlsBuild(list) {
+  const byLvl = {};
+  for (const x of list) {
+    if (row0Only && x.r !== 0) continue;
+    const g = (byLvl[x.s1] ||= {});
+    (g[x.pair] ||= []).push({ z: x, e: lvlsEta(x) });
+  }
+  const cmp = (a, b) => b.z.pct - a.z.pct || (b.z.c1 || 0) - (a.z.c1 || 0) || a.e - b.e;
+  const keys = Object.keys(byLvl), info = {};
+  for (const k of keys) {
+    const pg = byLvl[k], pairs = Object.keys(pg);
+    pairs.forEach(p => pg[p].sort(cmp));
+    pairs.sort((a, b) => cmp(pg[a][0], pg[b][0]));
+    info[k] = { pg, pairs };
+  }
+  const topOf = k => info[k].pg[info[k].pairs[0]][0];
+  if (ordOn) keys.sort((a, b) => a - b);
+  else keys.sort((a, b) => cmp(topOf(a), topOf(b)));
+  const out = [];
+  for (const k of keys) {
+    const pg = info[k].pg, pairs = info[k].pairs, key = (topOf(k).z.type || "REV") + "|" + k;
+    out.push(Object.assign({}, topOf(k).z, { _top: key }));
+    for (const p of pairs) {
+      const pk = key + "|" + p, arr = pg[p];
+      lvlsCnt[pk] = arr.length;
+      for (let i = 0, lim = lvlsExp[pk] ? arr.length : 1; i < lim; i++) out.push(Object.assign({}, arr[i].z, { _pk: pk }));
+    }
+  }
+  return out;
+}
+function lvlsBuildOld(list) {
   const byLvl = {};
   for (const x of list) {
     if (row0Only && x.r !== 0) continue;
@@ -740,6 +769,24 @@ function buildRow(d) {
 }
 
 function buildRows(data) {
+  if (!lvlsOn) return data.map(buildRow).join("");
+  let html = "", i = 0;
+  while (i < data.length) {
+    const d = data[i];
+    if (d._top) {
+      html += `<tr class="lvl-hdr"><td colspan="7"><div style="justify-content:flex-start;gap:10px"><span>X${d.s1}→X${d.s2}</span></div></td></tr>` + buildRow(d);
+      i++;
+      continue;
+    }
+    const pk = d._pk, run = [];
+    while (i < data.length && data[i]._pk === pk) run.push(data[i++]);
+    html += `<tr class="lvl-hdr" onclick="toggleLvlExp('${pk}')"><td colspan="7"><div style="justify-content:flex-start;gap:10px"><span style="padding-left:14px">${pairName(run[0].pair)}</span>` +
+      `<span class="lvl-tog" style="margin:0">${lvlsExp[pk] ? "COLLAPSE ▲" : "EXPAND ▼"} (${lvlsCnt[pk] || run.length})</span></div></td></tr>` +
+      run.map(buildRow).join("");
+  }
+  return html;
+}
+function buildRowsOld(data) {
   if (!lvlsOn) return data.map(buildRow).join("");
   let html = "";
   for (let i = 0; i < data.length;) {
