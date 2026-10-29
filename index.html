@@ -699,7 +699,9 @@ function lvlsBuild(list) {
     (g[x.pair] ||= []).push({ z: x, e: lvlsEta(x) });
   }
   const cmp = (a, b) => b.z.pct - a.z.pct || (b.z.c1 || 0) - (a.z.c1 || 0) || a.e - b.e;
-  const keys = Object.keys(byLvl), info = {};
+  const allKeys = Object.keys(byLvl), info = {};
+    allKeys.forEach(k => { lvlAll[k] = 1; });
+    const keys = allKeys.filter(k => lvlSel == null || +k === lvlSel);
   for (const k of keys) {
     const pg = byLvl[k], pairs = Object.keys(pg);
     pairs.forEach(p => pg[p].sort(cmp));
@@ -712,8 +714,10 @@ function lvlsBuild(list) {
   const out = [];
   for (const k of keys) {
     const pg = info[k].pg, pairs = info[k].pairs, key = (topOf(k).z.type || "REV") + "|" + k;
-    out.push(Object.assign({}, topOf(k).z, { _top: key }));
-    for (const p of pairs) {
+        var hid = !!lvlsHide[key];
+        out.push(Object.assign({}, topOf(k).z, { _top: key, _hid: hid }));
+        if (hid) continue;
+        for (const p of pairs) {
       const pk = key + "|" + p, arr = pg[p];
       lvlsCnt[pk] = arr.length;
       for (let i = 0, lim = lvlsExp[pk] ? arr.length : 1; i < lim; i++) out.push(Object.assign({}, arr[i].z, { _pk: pk }));
@@ -758,6 +762,27 @@ function toggleLvls() { lvlsOn = !lvlsOn; renderTable(); }
 function toggleOrd() { ordOn = !ordOn; renderTable(); }
 function toggleRow0() { row0Only = !row0Only; renderTable(); }
 function toggleXs() { xsView = !xsView; $("xsBtn").classList.toggle("on", xsView); renderTable(); }
+var lvlsHide = {};
+var lvlsAllHide = false;
+var lvlsPanel = {};
+function toggleAllLvls() { lvlsHide = {}; renderTable(); }
+function toggleLvlPanel(l) { lvlsPanel[l] = !lvlsPanel[l]; renderTable(); }
+var lvlSel = null;
+var lvlAll = {};
+function stepLvlSel(dir) {
+  var opts = [null].concat(Object.keys(lvlAll).map(Number).sort(function (a, b) { return a - b; }));
+  var i = opts.indexOf(lvlSel);
+  if (i < 0) i = 0;
+  lvlSel = opts[(i + dir + opts.length) % opts.length];
+  renderTable();
+}
+function toggleLvlHide(k) { lvlsHide[k] = !lvlsHide[k]; renderTable(); }
+function stepLvl(dir) {
+  var sel = $("levelFilter"), n = sel.options.length;
+  sel.selectedIndex = (sel.selectedIndex + dir + n) % n;
+  sel.dispatchEvent(new Event("change", { bubbles: true }));
+  renderTable();
+}
 
 // ── rendering ──
 const SIG_COLS = "<colgroup>" + [27, 13, 11, 16, 9, 9, 15].map(w => `<col style="width:${w}%">`).join("") + "</colgroup>";
@@ -769,20 +794,19 @@ function buildRow(d) {
 }
 
 function buildRows(data) {
-  if (!lvlsOn) return data.map(buildRow).join("");
-  let html = "", i = 0;
+  if (!lvlsOn) return data.filter(d => lvlSel == null || d.s1 === lvlSel).map(buildRow).join("");
+    let html = "", i = 0;
   while (i < data.length) {
     const d = data[i];
     if (d._top) {
-      html += `<tr class="lvl-hdr"><td colspan="7"><div style="justify-content:flex-start;gap:10px"><span>X${d.s1}→X${d.s2}</span></div></td></tr>` + buildRow(d);
-      i++;
-      continue;
-    }
+          if (!d._hid) html += `<tr class="lvl-hdr"><td colspan="7"><div style="justify-content:flex-start;gap:10px"><span>X${d.s1}→X${d.s2}</span></div></td></tr>`;
+          i++;
+          continue;
+        }
     const pk = d._pk, run = [];
     while (i < data.length && data[i]._pk === pk) run.push(data[i++]);
-    html += `<tr class="lvl-hdr" onclick="toggleLvlExp('${pk}')"><td colspan="7"><div style="justify-content:flex-start;gap:10px"><span style="padding-left:14px">${pairName(run[0].pair)}</span>` +
-      `<span class="lvl-tog" style="margin:0">${lvlsExp[pk] ? "COLLAPSE ▲" : "EXPAND ▼"} (${lvlsCnt[pk] || run.length})</span></div></td></tr>` +
-      run.map(buildRow).join("");
+    html += buildRow(run[0]).replace("<tr ", `<tr onclick="toggleLvlExp('${pk}')" style="cursor:pointer" title="Click to ${lvlsExp[pk] ? "collapse" : "expand"} (${lvlsCnt[pk] || run.length})" `) +
+          run.slice(1).map(buildRow).join("");
   }
   return html;
 }
@@ -804,7 +828,27 @@ function buildPane(label, data) {
   const body = data.length
     ? `<table>${SIG_COLS}<thead><tr><th>PAIR</th><th>CYCLE</th><th>ROW</th><th>STREAK</th><th>C1</th><th>C2</th><th>PROB%</th></tr></thead><tbody>${buildRows(data)}</tbody></table>`
     : '<div class="state-empty"><span>○</span><span>No signals</span></div>';
-  return `<div class="split-pane"><div class="pane-head"><span>${label}</span><span>${data.length}</span></div><div class="pane-body">${body}</div></div>`;
+  const btnCss = "background:none;border:1px solid #2a3a6a;color:inherit;cursor:pointer;padding:0 10px;font:inherit;border-radius:3px";
+    const lvlTxt = lvlSel == null ? "ALL LEVELS" : "X" + lvlSel + "→X" + (lvlSel + 1);
+    return `<div class="split-pane"><div class="pane-head"><span>${label}</span>` +
+      `<span style="display:flex;gap:8px;align-items:center">` +
+      `<button type="button" onclick="stepLvlSel(-1)" title="Previous level" style="${btnCss}">◀</button>` +
+      `<span>${lvlTxt}</span>` +
+      `<button type="button" onclick="stepLvlSel(1)" title="Next level" style="${btnCss}">▶</button>` +
+      `</span><span>${data.length}</span></div><div class="pane-body">${body}</div></div>`;
+}
+function buildPaneOld(label, data) {
+  const body = data.length
+    ? `<table>${SIG_COLS}<thead><tr><th>PAIR</th><th>CYCLE</th><th>ROW</th><th>STREAK</th><th>C1</th><th>C2</th><th>PROB%</th></tr></thead><tbody>${buildRows(data)}</tbody></table>`
+    : '<div class="state-empty"><span>○</span><span>No signals</span></div>';
+  const lvlTxt = $("levelFilter").selectedOptions[0].textContent;
+  const btnCss = "background:none;border:1px solid #2a3a6a;color:inherit;cursor:pointer;padding:0 8px;font:inherit;border-radius:3px";
+  return `<div class="split-pane"><div class="pane-head"><span>${label}</span>` +
+    `<span style="display:flex;gap:8px;align-items:center">` +
+    `<button type="button" onclick="stepLvl(-1)" title="Previous level" style="${btnCss}">◀</button>` +
+    `<span>${lvlTxt}</span>` +
+    `<button type="button" onclick="stepLvl(1)" title="Next level" style="${btnCss}">▶</button>` +
+    `</span><span>${data.length}</span></div><div class="pane-body">${body}</div></div>`;
 }
 
 function buildSessionRankHTML(filterFn) {
@@ -1139,3 +1183,4 @@ renderBar();
 </script>
 </body>
 </html>
+​​​
