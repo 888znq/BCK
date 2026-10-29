@@ -767,7 +767,7 @@ var lvlsAllHide = false;
 var lvlsPanel = {};
 function toggleAllLvls() { lvlsHide = {}; renderTable(); }
 function toggleLvlPanel(l) { lvlsPanel[l] = !lvlsPanel[l]; renderTable(); }
-var lvlSel = null;
+var lvlSel = 1;
 var lvlAll = {};
 function stepLvlSel(dir) {
   var opts = [null].concat(Object.keys(lvlAll).map(Number).sort(function (a, b) { return a - b; }));
