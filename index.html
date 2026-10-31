@@ -165,10 +165,8 @@ tbody tr { border-bottom: 1px solid var(--border); }
 .bar b { max-width: 100%; font-size: clamp(10px, min(2.4vw, 2.6vh), 22px); font-weight: 500; line-height: 1; }
 .b-pair { grid-area: 1/1/3/2; padding-left: 14px !important; background: #FFD700; }
 .b-pair b { font-size: clamp(10px, min(2.2vw, 2.8vh), 20px); white-space: normal; word-break: break-all; text-align: center; }
-.b-day { grid-area: 1/2/3/3; background: #FF9F43; }
-.b-mon { grid-area: 1/3/3/4; background: #54A0FF; }
-.b-mon b { font-size: clamp(7px, 2.6vw, 14px); white-space: nowrap; overflow: hidden; }
-.b-yr { grid-area: 1/4/3/5; background: #A29BFE; }
+.b-week { grid-area: 1/2/3/5; background: #54A0FF; }
+.b-week b { font-size: clamp(9px, 2.2vw, 20px); white-space: nowrap; line-height: 1.35; text-align: center; overflow: hidden; }
 .b-fh { grid-area: 1/5; background: #FF9FF3; border-bottom: 1px solid rgba(0,4,50,.3) !important; }
 .b-fm { grid-area: 1/6; background: #48DBFB; border-bottom: 1px solid rgba(0,4,50,.3) !important; }
 .b-th { grid-area: 2/5; background: #FF9FF3; }
@@ -329,13 +327,13 @@ function pairName(p) {
 }
 
 // ── state ──
-const cfg = { date: new Date().toISOString().slice(0, 10), from: "05:30", to: "05:30", cmin: 120, cmax: 180, minPct: 10, sess: 0 };
+const cfg = { date: new Date().toISOString().slice(0, 10), week: weekMonday(new Date().toISOString().slice(0, 10)), weeks: 1, from: "10:30", to: "22:30", cmin: 132, cmax: 132, minPct: 10, sess: 12 };
 let selPairs = new Set(["frxEURUSD"]);
 let allPairsMode = false;
 let allRevs = [], allMoms = [];
 let scanRunning = false, cancelFlag = false, cacheReady = false;
 let lvlsOn = true, ordOn = true, row0Only = false, xsView = false;
-let last = { sessCount: 1, sessMin: 0, startIST: "05:30" };
+let last = { sessCount: 1, perDay: 1, days: [], sessMin: 0, startIST: "10:30" };
 const lvlsExp = {}, lvlsCnt = {};
 const tickCache = {};
 
@@ -479,10 +477,10 @@ function workerMain() {
     for (let c = minC; c <= maxC; c++) {
       const rowColor = new Int8Array(c), rowStreak = new Int16Array(c), rowCol = new Int32Array(c).fill(-2);
       const maxLen = [new Int16Array(c), new Int16Array(c)];            // [green, red]
-      const hist = [new Array(c).fill(null), new Array(c).fill(null)];
-      const record = (row, color, s) => {
+      const hist = [new Array(c).fill(null), new Array(c).fill(null)];       var histO = [new Array(c).fill(null), new Array(c).fill(null)];
+            const record = (row, color, s, open) => {
         const k = color === 1 ? 0 : 1;
-        const h = hist[k][row] ||= {};
+        const h = (open ? histO : hist)[k][row] ||= {};
         h[s] = (h[s] || 0) + 1;
         if (s > maxLen[k][row]) maxLen[k][row] = s;
       };
@@ -493,24 +491,25 @@ function workerMain() {
         const cont = rowCol[row] === col - 1;
         let newC, newS;
         if (prevP === -1) newC = newS = p === -1 ? 0 : 1;
-        else if (p === -1) newC = newS = 0;
+        else if (p === -1) { if (rowStreak[row] > 0 && rowColor[row] !== 0) record(row, rowColor[row], rowStreak[row], 1); newC = newS = 0; }
         else if (p > prevP) { newC = 1; newS = cont && rowColor[row] === 1 && rowStreak[row] > 0 ? rowStreak[row] + 1 : 1; }
         else if (p < prevP) { newC = 2; newS = cont && rowColor[row] === 2 && rowStreak[row] > 0 ? rowStreak[row] + 1 : 1; }
-        else { newC = rowColor[row]; newS = 0; }
+        else { if (rowStreak[row] > 0 && rowColor[row] !== 0) record(row, rowColor[row], rowStreak[row], 1); newC = newS = 0; }
 
-        if (newS === 1 && rowStreak[row] > 0 && rowColor[row] !== 0 && cont) record(row, rowColor[row], rowStreak[row]);
+        if (prevP === -1) newC = newS = 0;
+                if (newS === 1 && rowStreak[row] > 0 && rowColor[row] !== 0 && cont) record(row, rowColor[row], rowStreak[row], 0);
         rowColor[row] = newC; rowStreak[row] = newS; rowCol[row] = col;
       }
-      for (let r = 0; r < c; r++) if (rowStreak[r] >= 1 && rowColor[r] !== 0) record(r, rowColor[r], rowStreak[r]);
+      for (let r = 0; r < c; r++) if (rowStreak[r] >= 1 && rowColor[r] !== 0) record(r, rowColor[r], rowStreak[r], 1);
 
       for (let r = 0; r < c; r++) {
         for (let k = 0; k < 2; k++) {
-          const raw = hist[k][r], maxS = maxLen[k][r];
-          if (!raw || !maxS) continue;
-          const col = k ? "R" : "G", cum = cumulative(raw, maxS);
-          for (const key in cum) {
-            const s = +key, c1 = cum[s], c2 = cum[s + 1] || 0;
-            if (s < 1) continue;
+          const raw = hist[k][r] || {}, rawO = histO[k][r] || {}, maxS = maxLen[k][r];
+          if (!maxS) continue;
+          const col = k ? "R" : "G", cum = cumulative(raw, maxS), cumO = cumulative(rawO, maxS);
+          for (let key = 1; key <= maxS; key++) {
+            const s = key, c1 = (cum[s] || 0) + (cumO[s + 1] || 0), c2 = (cum[s + 1] || 0) + (cumO[s + 1] || 0);
+            if (s < 1 || !c1) continue;
             const base = { pair, c, r, s1: s, s2: s + 1, c1, c2, col };
             revs.push({ ...base, pct: 100 - Math.round(c2 / c1 * 100), type: "REV" });
             if (c1 > 1) moms.push({ ...base, pct: Math.round(c2 / c1 * 100), type: "MOM" });
@@ -623,7 +622,8 @@ async function runScan() {
   if (sessMin && (winSec % (sessMin * 60) !== 0 || sessMin * 60 >= winSec)) sessMin = cfg.sess = 0;
   if (sessMin && sessMin * 60 <= cycleMax) { toast(`Session ${sessMin}m must be longer than cycle max C${cycleMax}`, "err"); return; }
 
-  last = { sessCount: sessMin ? Math.round(winSec / (sessMin * 60)) : 1, sessMin, startIST: cfg.from };
+  const days = rangeDays(), perDay = sessMin ? Math.round(winSec / (sessMin * 60)) : 1;
+    last = { sessCount: perDay * days.length, perDay, days, sessMin, startIST: cfg.from };
   xsView = last.sessCount > 1;
   $("xsBtn").style.display = xsView ? "inline-block" : "none";
   $("xsBtn").classList.toggle("on", xsView);
@@ -637,29 +637,35 @@ async function runScan() {
   allRevs = []; allMoms = [];
 
   try {
-    const dayEpoch = Math.floor(new Date(cfg.date + "T00:00:00Z").getTime() / 1000);
-    const startTsUtc = dayEpoch + secFrom;
-    const n = pairs.length;
-
-    for (let pi = 0; pi < n && !cancelFlag; pi++) {
-      const pair = pairs[pi], tag = `[${pi + 1}/${n}] ${pair}`;
-      const fetchBase = pi / n * 60, scanBase = 60 + pi / n * 28, scanSlice = 28 / n;
-      const key = `${pair}|${cfg.date}|${secFrom}-${secTo}`;
-
-      setProgress(fetchBase, `${tag}  syncing day`, `${pair}  ${cfg.from}–${cfg.to} IST`);
-      const prices = await loadTicksForDay(pair, dayEpoch, secFrom, secTo, tickCache[key], msg => setLog(`${tag}  ${cfg.date}  ${msg}`));
-      if (cancelFlag || !prices) continue;
-      tickCache[key] = prices;
-      idbSet(key, prices);
-
-      setProgress(scanBase, `${tag}  scanning (${cfg.date})…`, `Cycles C${cycleMin}–C${cycleMax}`);
-      const [revs, moms] = await workerScanSessions(prices, cycleMin, cycleMax, pair, startTsUtc, winSec, sessMin, f =>
-        setProgress(scanBase + f * scanSlice,
-          `${tag}  ${cfg.date}  scanning… ${Math.round(f * 100)}%`,
-          `C${cycleMin}–C${cycleMax}  [${navigator.hardwareConcurrency || 4} workers]`));
-      allRevs = allRevs.concat(revs);
-      allMoms = allMoms.concat(moms);
-    }
+      const n = pairs.length, dn = days.length, units = n * dn;
+  
+      for (let pi = 0; pi < n && !cancelFlag; pi++) {
+        for (let di = 0; di < dn && !cancelFlag; di++) {
+          const pair = pairs[pi], date = days[di], ui = pi * dn + di;
+          const dayEpoch = Math.floor(new Date(date + "T00:00:00Z").getTime() / 1000);
+          const startTsUtc = dayEpoch + secFrom;
+          const tag = `[${pi + 1}/${n}] ${pair}  D${di + 1}/${dn}`;
+          const fetchBase = ui / units * 60, scanBase = 60 + ui / units * 28, scanSlice = 28 / units;
+          const key = `${pair}|${date}|${secFrom}-${secTo}`;
+  
+          setProgress(fetchBase, `${tag}  syncing day`, `${pair}  ${date}  ${cfg.from}–${cfg.to} IST`);
+          const prices = await loadTicksForDay(pair, dayEpoch, secFrom, secTo, tickCache[key], msg => setLog(`${tag}  ${date}  ${msg}`));
+          if (cancelFlag || !prices) continue;
+          if (!prices.length) { setLog(`${tag}  ${date}  future day, skipped`); continue; }
+                  if (!prices.some(v => v !== -1)) { setLog(`${tag}  ${date}  no ticks (market closed), skipped`); continue; }
+                  tickCache[key] = prices;
+          idbSet(key, prices);
+  
+          setProgress(scanBase, `${tag}  scanning (${date})…`, `Cycles C${cycleMin}–C${cycleMax}`);
+          const [revs, moms] = await workerScanSessions(prices, cycleMin, cycleMax, pair, startTsUtc, winSec, sessMin, f =>
+            setProgress(scanBase + f * scanSlice,
+              `${tag}  ${date}  scanning… ${Math.round(f * 100)}%`,
+              `C${cycleMin}–C${cycleMax}  [${navigator.hardwareConcurrency || 4} workers]`));
+          for (const list of [revs, moms]) for (const it of list) { it.sess = (it.sess || 1) + di * perDay; it.day = date; }
+          for (const x of revs) allRevs.push(x);
+                  for (const x of moms) allMoms.push(x);
+        }
+      }
 
     if (cancelFlag) { toast("Scan cancelled", "err"); return; }
 
@@ -867,18 +873,19 @@ function buildSessionRankHTML(filterFn) {
   if (!list.length) return "";
 
   const sessTime = s => {
-    if (!last.startIST || !last.sessMin) return "";
-    const [h, m] = last.startIST.split(":").map(Number);
-    const t0 = h * 60 + m + (s - 1) * last.sessMin;
-    return hm(t0) + "-" + hm(t0 + last.sessMin);
-  };
-  const cards = list.map((g, idx) => {
+      if (!last.startIST || !last.sessMin) return "";
+      const per = last.perDay || cnt, di = Math.floor((s - 1) / per), si = (s - 1) % per;
+      const [h, m] = last.startIST.split(":").map(Number);
+      const t0 = h * 60 + m + si * last.sessMin;
+      return (last.days && last.days[di] ? dayLbl(last.days[di]) + " " : "") + hm(t0) + "-" + hm(t0 + last.sessMin);
+    };
+  const cards = list.slice(0, 60).map((g, idx) => {
     const tl = sessTime(g.s);
-    return `<div class="rank-card${idx < 3 ? " top" : ""}"><div class="rk-lbl">${idx === 0 ? "🏆 " : "#" + (idx + 1) + " "}S${g.s}</div>` +
+    return `<div class="rank-card${idx < 3 ? " top" : ""}"><div class="rk-lbl">${idx === 0 ? "🏆 " : "#" + (idx + 1) + " "}${sessTag(g.s)}</div>` +
       (tl ? `<div class="rk-time">${tl} IST</div>` : "") +
       `<div class="rk-val">${g.win.toFixed(1)}%</div><div class="rk-sub">${g.n} signals · avg ${g.avg.toFixed(1)}%</div></div>`;
   }).join("");
-  return `<div class="rank-wrap"><div class="pane-head"><span>🏆 BEST SESSION OF THE DAY · S1–S${cnt} ranked by C1-weighted win% · ${cnt} sessions</span><span>${list.length}</span></div>` +
+  return `<div class="rank-wrap"><div class="pane-head"><span>🏆 BEST SESSION OF THE RANGE · ${cnt} sessions ranked by C1-weighted win% · top 60 shown</span><span>${list.length}</span></div>` +
     `<div class="rank-cards">${cards}</div></div>`;
 }
 
@@ -907,7 +914,7 @@ function computeCrossSession() {
 function buildXsPane(label, list, total) {
   const rows = list.slice(0, 150).map(g => {
     const red = g.col === "R", cls = red ? "row-red" : "row-green";
-    const det = g.hits.map(h => `S${h.sess || 1}: ${h.c1}/${h.c2}`).join(" · ");
+    const det = g.hits.slice(0, 40).map(h => `${sessTag(h.sess || 1)}: ${h.c1}/${h.c2}`).join(" · ") + (g.hits.length > 40 ? ` · +${g.hits.length - 40} more` : "");
     return `<tr class="${cls} xs-m"><td class="cell-pair">${red ? "↓" : "↑"} ${pairName(g.pair)}</td><td>C${g.c}</td><td>R${g.r}</td>` +
       `<td>X${g.s1}→X${g.s2}</td><td class="xs-hits">${g.n}/${total}</td><td>${g.avg}%</td></tr>` +
       `<tr class="${cls} xs-d"><td colspan="6">${det}</td></tr>`;
@@ -982,13 +989,13 @@ async function exportXsCSV() {
   const x = computeCrossSession(), total = last.sessCount, rows = [];
   for (const [type, list] of [["REV", x.rev], ["MOM", x.mom]]) {
     for (const g of list) {
-      const det = g.hits.map(h => `S${h.sess || 1}:${h.c1}/${h.c2}`).join("|");
+      const det = g.hits.map(h => `${sessTag(h.sess || 1).replace(/ /g, "_")}:${h.c1}/${h.c2}`).join("|");
       rows.push([type, pairName(g.pair), g.col === "R" ? "BEARISH" : "BULLISH", g.c, g.r, g.s1, g.s2, g.n, total, g.avg, det].join(","));
     }
   }
   if (!rows.length) { toast("No session repeats to export", "err"); return; }
   const headers = "TYPE,PAIR,DIRECTION,CYCLE,ROW,STREAK_FROM,STREAK_TO,HITS,DATASETS,AVG_PROB_%,DETAIL_SESSION:C1/C2";
-  await downloadCSV([headers, ...rows].join("\n"), `wallspectrum_session_repeats_${new Date().toISOString().slice(0, 10)}.csv`);
+  await downloadCSV([headers, ...rows].join("\n"), `wallspectrum_session_repeats_week_${(last.days && last.days[0]) || new Date().toISOString().slice(0, 10)}.csv`);
   toast(`Exported ${rows.length} session repeat(s) to CSV`, "ok");
 }
 
@@ -1113,6 +1120,69 @@ function sessionPopup() {
 }
 
 const dateParts = () => { const [y, m, d] = cfg.date.split("-").map(Number); return { y, m, d }; };
+const DOW3 = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+function weekMonday(ds) {
+  const t = new Date(ds + "T00:00:00Z");
+  t.setUTCDate(t.getUTCDate() - (t.getUTCDay() + 6) % 7);
+  return t.toISOString().slice(0, 10);
+}
+function weekDays(mon) {
+  return Array.from({ length: 5 }, (_, i) => {
+    const t = new Date(mon + "T00:00:00Z");
+    t.setUTCDate(t.getUTCDate() + i);
+    return t.toISOString().slice(0, 10);
+  });
+}
+function dayLbl(ds) { return pad2(+ds.slice(8, 10)) + " " + MONTHS[+ds.slice(5, 7) - 1].slice(0, 3); }
+function rangeStart() {
+  const t = new Date(cfg.week + "T00:00:00Z");
+  t.setUTCDate(t.getUTCDate() - 7 * ((cfg.weeks || 1) - 1));
+  return t.toISOString().slice(0, 10);
+}
+function rangeDays() {
+  const s = rangeStart(), out = [];
+  for (let w = 0; w < (cfg.weeks || 1); w++) {
+    const t = new Date(s + "T00:00:00Z");
+    t.setUTCDate(t.getUTCDate() + 7 * w);
+    out.push(...weekDays(t.toISOString().slice(0, 10)));
+  }
+  return out;
+}
+function weekText() {
+  const a = weekDays(rangeStart())[0], b = weekDays(cfg.week)[4];
+  return dayLbl(a) + " – " + dayLbl(b) + "<br>" + b.slice(0, 4) + " · " + (cfg.weeks || 1) * 5 + "D";
+}
+function sessTag(s) {
+  const per = last.perDay || 1, di = Math.floor((s - 1) / per), si = (s - 1) % per, dd = last.days && last.days[di];
+  return (dd ? DOW3[new Date(dd + "T00:00:00Z").getUTCDay()] + " " + dayLbl(dd) + " " : "") + "S" + (si + 1);
+}
+function weekPopup() {
+  const handler = ev => {
+    const b = ev.target.closest(".pop-btn");
+    if (!b) return;
+    if (b.dataset.n) { cfg.weeks = +b.dataset.n; draw(); return; }
+    cfg.week = b.dataset.w;
+    closePop();
+  };
+  const draw = () => {
+    const keep = $("pop").querySelector(".pop-box")?.scrollTop || 0;
+    const t = new Date(weekMonday(new Date().toISOString().slice(0, 10)) + "T00:00:00Z");
+    let h = '<div class="pop-box"><div class="pop-title">RANGE LENGTH - MON-FRI ONLY</div><div class="pop-grid pp">';
+    for (const [n, lbl] of [[1, "1 WEEK"], [2, "2 WEEKS"], [4, "1 MONTH"], [8, "2 MONTHS"], [13, "3 MONTHS"], [26, "6 MONTHS"], [39, "9 MONTHS"], [52, "1 YEAR"]]) {
+      h += `<button type="button" data-n="${n}" class="pop-btn${n === cfg.weeks ? " on" : ""}">${lbl}</button>`;
+    }
+    h += '</div><div class="pop-title" style="margin-top:12px">LAST WEEK OF THE RANGE</div><div class="pop-grid pss">';
+    for (let i = 0; i < 80; i++) {
+      const w = t.toISOString().slice(0, 10), d = weekDays(w);
+      h += `<button type="button" data-w="${w}" class="pop-btn${w === cfg.week ? " on" : ""}">${dayLbl(d[0])} – ${dayLbl(d[4])}<br><span class="pop-sub">${d[4].slice(0, 4)}</span></button>`;
+      t.setUTCDate(t.getUTCDate() - 7);
+    }
+    showPop(h + "</div></div>", handler);
+    const bx = $("pop").querySelector(".pop-box");
+    if (bx) bx.scrollTop = keep;
+  };
+  draw();
+}
 const timeParts = k => { const [h, n] = cfg[k].split(":").map(Number); return { h: h || 0, n: n || 0 }; };
 const setTime = (k, h, n) => { cfg[k] = pad2(h) + ":" + pad2(n); };
 const setDate = (y, m, d) => {
@@ -1127,18 +1197,7 @@ const timePopup = (key, label, hour) => {
 
 const ACTIONS = {
   pair: pairPopup,
-  day() {
-    const { y, m, d } = dateParts();
-    const dim = new Date(Date.UTC(y, m, 0)).getUTCDate();
-    const dow = (new Date(Date.UTC(y, m - 1, 1)).getUTCDay() + 6) % 7;
-    valuePopup("FROM - DAY", dim, 1, d, "pd", v => setDate(y, m, v), dow);
-  },
-  month() { const { y, m, d } = dateParts(); valuePopup("FROM - MONTH", 12, 1, m, "pmo", v => setDate(y, v, d)); },
-  year() {
-    const { y, m, d } = dateParts(), now = new Date().getFullYear();
-    const y0 = Math.min(now - 10, y), y1 = Math.max(now, y);
-    valuePopup("FROM - YEAR", y1 - y0 + 1, y0, y, "py", v => setDate(v, m, d));
-  },
+  week: weekPopup,
   fh: () => timePopup("from", "FROM", true),
   fm: () => timePopup("from", "FROM", false),
   th: () => timePopup("to", "TO", true),
@@ -1156,7 +1215,7 @@ function renderBar() {
   if (cfg.sess && (cfg.sess >= N || N % cfg.sess !== 0)) cfg.sess = 0;
   const cell = (cls, act, txt) => `<button type="button" class="b-${cls}" data-act="${act}"><b>${txt}</b></button>`;
   $("bar").innerHTML =
-    cell("pair", "pair", pairText()) + cell("day", "day", pad2(d.d)) + cell("mon", "month", MONTHS[d.m - 1] || pad2(d.m)) + cell("yr", "year", d.y) +
+    cell("pair", "pair", pairText()) + cell("week", "week", weekText()) +
     cell("fh", "fh", pad2(f.h)) + cell("fm", "fm", pad2(f.n)) + cell("th", "th", pad2(t.h)) + cell("tm", "tm", pad2(t.n)) +
     cell("sess", "sess", fmtSess(cfg.sess || N)) + cell("cmin", "cmin", cfg.cmin) + cell("cmax", "cmax", cfg.cmax) +
     cell("prob", "prob", cfg.minPct + "%") + cell("cache", "cache", "&#9003;") + cell("run", "run", "&#9654;");
