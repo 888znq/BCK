@@ -246,6 +246,23 @@ tbody tr { border-bottom: 1px solid var(--border); }
 }
 .pop-display.small { padding: 6px; font-size: 12px; }
 
+/* row view */
+.row-view { cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px; }
+.sg-card { margin-bottom: 14px; }
+.sg-head { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 6px; font-family: var(--mono); font-size: 12px; color: var(--text-mid); }
+.sg-head b { color: var(--text); font-weight: 500; }
+.sg-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(38px, 1fr)); gap: 4px; }
+.sg { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 40px; border: 1px solid var(--border2); border-radius: 5px; font-family: var(--mono); line-height: 1.15; }
+.sg i { font-style: normal; font-size: 9px; opacity: .6; }
+.sg b { font-size: 12px; font-weight: 500; }
+.sg.g { color: var(--sig-green); background: rgba(46,213,115,.14); border-color: var(--sig-green); }
+.sg.r { color: var(--sig-red); background: rgba(230,57,70,.14); border-color: var(--sig-red); }
+.sg.x { color: #FECA57; background: rgba(254,202,87,.12); border-color: #FECA57; }
+.sg.n { color: var(--text-dim); }
+.sg.hit { box-shadow: inset 0 0 0 2px currentColor; }
+.sg-leg { margin-top: 6px; font-family: var(--mono); font-size: 11px; color: var(--text-dim); }
+.sg-none { padding: 10px; font-family: var(--mono); font-size: 12px; color: var(--text-dim); }
+
 /* toast */
 #toast {
   position: fixed; right: 24px; bottom: calc(9vh + 24px); bottom: calc(9dvh + 24px); z-index: 999;
@@ -560,7 +577,7 @@ async function workerScanSessions(prices, cMin, cMax, pair, startTs, winSec, ses
   let merged = null;
   for (let si = 0; si < n; si++) {
     if (cancelFlag) break;
-    const a = si * sessSec, b = si === n - 1 ? prices.length : (si + 1) * sessSec;
+    const a = si * sessSec, b = (si + 1) * sessSec;
     const slice = prices.slice(a, b);
     if (slice.length <= cMax) continue;
     const r = await workerScan(slice, cMin, cMax, pair, 0, f => onFrac && onFrac((si + f) / n));
@@ -623,7 +640,7 @@ async function runScan() {
   if (sessMin && sessMin * 60 <= cycleMax) { toast(`Session ${sessMin}m must be longer than cycle max C${cycleMax}`, "err"); return; }
 
   const days = rangeDays(), perDay = sessMin ? Math.round(winSec / (sessMin * 60)) : 1;
-    last = { sessCount: perDay * days.length, perDay, days, sessMin, startIST: cfg.from };
+    last = { sessCount: perDay * days.length, perDay, days, sessMin, startIST: cfg.from, secFrom, secTo };
   xsView = last.sessCount > 1;
   $("xsBtn").style.display = xsView ? "inline-block" : "none";
   $("xsBtn").classList.toggle("on", xsView);
@@ -796,7 +813,7 @@ const SIG_COLS = "<colgroup>" + [27, 13, 11, 16, 9, 9, 15].map(w => `<col style=
 function buildRow(d) {
   const red = d.col === "R";
   return `<tr class="${red ? "row-red" : "row-green"}"><td class="cell-pair">${red ? "↓" : "↑"} ${pairName(d.pair)}</td>` +
-    `<td>C${d.c}</td><td>R${d.r}</td><td>X${d.s1}→X${d.s2}</td><td>${d.c1}</td><td>${d.c2}</td><td>${d.pct}%</td></tr>`;
+    `<td>C${d.c}</td><td ${vw(d)}>R${d.r}</td><td ${vw(d)}>X${d.s1}→X${d.s2}</td><td>${d.c1}</td><td>${d.c2}</td><td>${d.pct}%</td></tr>`;
 }
 
 function buildRows(data) {
@@ -915,7 +932,7 @@ function buildXsPane(label, list, total) {
   const rows = list.slice(0, 150).map(g => {
     const red = g.col === "R", cls = red ? "row-red" : "row-green";
     const det = g.hits.slice(0, 40).map(h => `${sessTag(h.sess || 1)}: ${h.c1}/${h.c2}`).join(" · ") + (g.hits.length > 40 ? ` · +${g.hits.length - 40} more` : "");
-    return `<tr class="${cls} xs-m"><td class="cell-pair">${red ? "↓" : "↑"} ${pairName(g.pair)}</td><td>C${g.c}</td><td>R${g.r}</td>` +
+    return `<tr class="${cls} xs-m" style="cursor:pointer" title="Click to see the boxes of every session" onclick="showRow(${rowRef.push(g.hits) - 1})"><td class="cell-pair">${red ? "↓" : "↑"} ${pairName(g.pair)}</td><td>C${g.c}</td><td>R${g.r}</td>` +
       `<td>X${g.s1}→X${g.s2}</td><td class="xs-hits">${g.n}/${total}</td><td>${g.avg}%</td></tr>` +
       `<tr class="${cls} xs-d"><td colspan="6">${det}</td></tr>`;
   }).join("");
@@ -934,7 +951,8 @@ function buildXsHTML() {
 }
 
 function renderTable() {
-  $("lvlsBtn").classList.toggle("on", lvlsOn);
+  rowRef.length = 0;
+    $("lvlsBtn").classList.toggle("on", lvlsOn);
   $("ordBtn").classList.toggle("on", ordOn);
   $("row0Btn").classList.toggle("on", row0Only);
   if (lvlsOn) $("levelFilter").value = "__ALL__";
@@ -957,6 +975,53 @@ function renderTable() {
 
 $("filterPct").addEventListener("input", renderTable);
 $("levelFilter").addEventListener("change", renderTable);
+
+// ── row view (1 box = 1 cycle) ──
+var rowRef = [];
+const vw = d => `class="row-view" title="Show the boxes of this row" onclick="event.stopPropagation();showRow(${rowRef.push(d) - 1})"`;
+
+function rowCells(d) {
+  const all = tickCache[d.pair + "|" + d.day + "|" + last.secFrom + "-" + last.secTo];
+  if (!all) return null;
+  const c = d.c, ss = last.sessMin ? last.sessMin * 60 : 0;
+  const si = ss ? ((d.sess || 1) - 1) % (last.perDay || 1) : 0;
+  const px = ss ? all.slice(si * ss, (si + 1) * ss) : all;
+  const t0 = ss ? 0 : Math.floor(new Date(d.day + "T00:00:00Z").getTime() / 1000) + last.secFrom;
+  const out = [];
+  let color = 0, streak = 0;
+  for (let i = 0; i < px.length; i++) {
+    if ((t0 + i) % c !== d.r) continue;
+    const p = px[i], q = i >= c ? px[i - c] : -1;
+    if (i < c) { out.push({ t: "N" }); color = streak = 0; continue; }
+    if (p === -1 || q === -1 || p === q) { out.push({ t: "x" }); color = streak = 0; continue; }
+    const nc = p > q ? 1 : 2;
+    streak = nc === color && streak > 0 ? streak + 1 : 1;
+    color = nc;
+    out.push({ t: nc === 1 ? "G" : "R", s: streak });
+  }
+  return out;
+}
+
+function stripHTML(d) {
+  const cells = rowCells(d);
+  const head = `<div class="sg-head"><span><b>${pairName(d.pair)}</b> C${d.c} R${d.r} · ${sessTag(d.sess || 1)}</span><span>${d.type || "REV"} X${d.s1}→X${d.s2} · ${d.c1}/${d.c2} · ${d.pct}%</span></div>`;
+  if (!cells) return `<div class="sg-card">${head}<div class="sg-none">Ticks are not in the cache any more, scan again to see the boxes</div></div>`;
+  const body = cells.map((x, i) => {
+    const hit = x.t === d.col && x.s === d.s1 ? " hit" : "";
+    const lbl = x.t === "G" ? "↑X" + x.s : x.t === "R" ? "↓X" + x.s : x.t;
+    return `<div class="sg ${x.t.toLowerCase()}${hit}"><i>${i + 1}</i><b>${lbl}</b></div>`;
+  }).join("");
+  return `<div class="sg-card">${head}<div class="sg-grid">${body}</div></div>`;
+}
+
+function showRow(i) {
+  const v = rowRef[i];
+  if (!v) return;
+  const all = Array.isArray(v) ? v : [v], list = all.slice(0, 24);
+  showPop(`<div class="pop-box"><div class="pop-title">ROW VIEW · 1 BOX = 1 CYCLE</div>` + list.map(stripHTML).join("") +
+    (all.length > list.length ? `<div class="sg-leg">+${all.length - list.length} more sessions not shown</div>` : "") +
+    `<div class="sg-leg">N first cycle (neutral) · x flat or missing price · ↑ green · ↓ red · inner frame = the X${list[0].s1} ${list[0].col === "R" ? "red" : "green"} of this signal · tap outside to close</div></div>`, () => {});
+}
 
 // ── CSV export (session repeats) ──
 async function downloadCSV(csv, filename) {
