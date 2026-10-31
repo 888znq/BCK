@@ -891,7 +891,7 @@ function computeCrossSession() {
         const s = g.hits[0];
         return { pair: s.pair, col: s.col, c: s.c, r: s.r, s1: s.s1, s2: s.s2, n: g.hits.length, avg: Math.round(g.sum / g.hits.length), hits: g.hits };
       })
-      .sort((a, b) => b.n - a.n || b.avg - a.avg);
+      .sort((a, b) => b.avg - a.avg || b.n - a.n);
   };
   return { rev: build(allRevs), mom: build(allMoms) };
 }
