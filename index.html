@@ -39,7 +39,7 @@ body::before {
 
 /* filter bar */
 .filter-bar {
-  display: none; align-items: center; flex-wrap: nowrap; overflow-x: auto; gap: 4px;
+  display: none; align-items: center; flex-wrap: wrap; gap: 4px;
   padding: 12px 26px 6px; background: var(--surface); border-bottom: 1px solid var(--border);
 }
 .filter-bar.show { display: flex; }
@@ -58,9 +58,7 @@ body::before {
   font-family: var(--mono); font-size: 12px; letter-spacing: .08em;
   white-space: nowrap; cursor: pointer; transition: all .15s;
 }
-.filter-bar .export-btn { flex: none; padding: 9px 14px; font-size: 13px; }
-#lvlTog { display: flex; gap: 6px; flex: none; }
-.filter-bar select#sessSel { flex: none; padding: 9px 10px; font-size: 13px; max-width: 240px; }
+.filter-bar .export-btn { flex: 1 1 auto; padding: 7px 8px; font-size: 11px; }
 .export-btn:hover { background: rgba(46,213,115,.1); box-shadow: 0 0 10px rgba(46,213,115,.3); }
 .export-btn.on { background: var(--green); color: #000432; }
 
@@ -154,8 +152,8 @@ tbody tr { border-bottom: 1px solid var(--border); }
 #settingsOverlay.scanning .bar { display: none; }
 .bar {
   flex: 1; min-width: 0; min-height: 0; display: grid; overflow: hidden;
-  grid-template-columns: 1.3fr 2.2fr 1.4fr 1.1fr .9fr 1.3fr;
-    grid-template-rows: 1fr 1fr; background: var(--bg); border-radius: 0 0 30px 30px;
+  grid-template-columns: 1.4fr .9fr 2.4fr 1.4fr .9fr .9fr 1.3fr 1.2fr 1.2fr 1.3fr 1.5fr;
+  grid-template-rows: 1fr 1fr; background: var(--bg); border-radius: 0 0 30px 30px;
 }
 .bar button {
   position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -167,19 +165,26 @@ tbody tr { border-bottom: 1px solid var(--border); }
 .bar b { max-width: 100%; font-size: clamp(10px, min(2.4vw, 2.6vh), 22px); font-weight: 500; line-height: 1; }
 .b-pair { grid-area: 1/1/3/2; padding-left: 14px !important; background: #FFD700; }
 .b-pair b { font-size: clamp(10px, min(2.2vw, 2.8vh), 20px); white-space: normal; word-break: break-all; text-align: center; }
-.b-week { grid-area: 1/2/3/3; background: #54A0FF; }
-.b-week b { font-size: clamp(9px, 2.2vw, 20px); white-space: nowrap; line-height: 1.35; text-align: center; overflow: hidden; }
-.b-sess { grid-area: 1/3/3/4; background: #1DD1A1; }
-.b-sess b { font-size: clamp(9px, 1.8vw, 18px); white-space: nowrap; line-height: 1.2; text-align: center; }
-.b-cmin { grid-area: 1/4; background: #FF6B81; border-bottom: 1px solid rgba(0,4,50,.3) !important; }
-.b-cmax { grid-area: 2/4; background: #2ED573; }
-.b-cmin::before, .b-cmax::before {
-  position: absolute; top: 3px; left: 4px; font-size: 8px; letter-spacing: .06em; opacity: .7;
+.b-day { grid-area: 1/2/3/3; background: #FF9F43; }
+.b-mon { grid-area: 1/3/3/4; background: #54A0FF; }
+.b-mon b { font-size: clamp(7px, 2.6vw, 14px); white-space: nowrap; overflow: hidden; }
+.b-yr { grid-area: 1/4/3/5; background: #A29BFE; }
+.b-fh { grid-area: 1/5; background: #FF9FF3; border-bottom: 1px solid rgba(0,4,50,.3) !important; }
+.b-fm { grid-area: 1/6; background: #48DBFB; border-bottom: 1px solid rgba(0,4,50,.3) !important; }
+.b-th { grid-area: 2/5; background: #FF9FF3; }
+.b-tm { grid-area: 2/6; background: #48DBFB; }
+.b-fh::before, .b-th::before {
+  position: absolute; top: 1px; left: 3px; font-size: 7px; letter-spacing: .06em; opacity: .7;
 }
-.b-cmin::before { content: "CYC MIN"; }
-.b-cmax::before { content: "CYC MAX"; }
-.b-cache { grid-area: 1/5/3/6; background: #FF9F43; }
-.b-run { grid-area: 1/6/3/7; padding-right: 14px !important; background: #CCF5DF; border-right: 0 !important; }
+.b-fh::before { content: "START"; }
+.b-th::before { content: "END"; }
+.b-sess { grid-area: 1/7/3/8; background: #1DD1A1; }
+.b-sess b { font-size: clamp(9px, 1.8vw, 18px); white-space: nowrap; line-height: 1.2; text-align: center; }
+.b-cmin { grid-area: 1/8; background: #FF6B81; border-bottom: 1px solid rgba(0,4,50,.3) !important; }
+.b-cmax { grid-area: 2/8; background: #2ED573; }
+.b-prob { grid-area: 1/9/3/10; background: #FECA57; }
+.b-cache { grid-area: 1/10/3/11; background: #FF9F43; }
+.b-run { grid-area: 1/11/3/12; padding-right: 14px !important; background: #CCF5DF; border-right: 0 !important; }
 
 /* scan view */
 #scanPage { display: none; flex-direction: column; width: 100%; height: 100%; padding: 14px 12px; }
@@ -243,23 +248,6 @@ tbody tr { border-bottom: 1px solid var(--border); }
 }
 .pop-display.small { padding: 6px; font-size: 12px; }
 
-/* row view */
-.row-view { cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px; }
-.sg-card { margin-bottom: 14px; }
-.sg-head { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 6px; font-family: var(--mono); font-size: 12px; color: var(--text-mid); }
-.sg-head b { color: var(--text); font-weight: 500; }
-.sg-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(38px, 1fr)); gap: 4px; }
-.sg { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 40px; border: 1px solid var(--border2); border-radius: 5px; font-family: var(--mono); line-height: 1.15; }
-.sg i { font-style: normal; font-size: 9px; opacity: .6; }
-.sg b { font-size: 12px; font-weight: 500; }
-.sg.g { color: var(--sig-green); background: rgba(46,213,115,.14); border-color: var(--sig-green); }
-.sg.r { color: var(--sig-red); background: rgba(230,57,70,.14); border-color: var(--sig-red); }
-.sg.x { color: #FECA57; background: rgba(254,202,87,.12); border-color: #FECA57; }
-.sg.n { color: var(--text-dim); }
-.sg.hit { box-shadow: inset 0 0 0 2px currentColor; }
-.sg-leg { margin-top: 6px; font-family: var(--mono); font-size: 11px; color: var(--text-dim); }
-.sg-none { padding: 10px; font-family: var(--mono); font-size: 12px; color: var(--text-dim); }
-
 /* toast */
 #toast {
   position: fixed; right: 24px; bottom: calc(9vh + 24px); bottom: calc(9dvh + 24px); z-index: 999;
@@ -277,9 +265,23 @@ tbody tr { border-bottom: 1px solid var(--border); }
 <div class="layout">
   <div class="main">
     <div class="filter-bar" id="filterBar">
-      <input type="hidden" id="filterPct" value="0">
-            <select id="sessSel" style="display:none" onchange="setSessSel(this.value)"></select>
-                  <div id="lvlTog"></div>
+      <input type="number" id="filterPct" placeholder="100" min="0" max="100">
+      <select id="levelFilter">
+        <option value="__ALL__" selected>ALL LEVELS</option>
+        <option value="1-2">X1→X2</option>
+        <option value="2-3">X2→X3</option>
+        <option value="3-4">X3→X4</option>
+        <option value="4-5">X4→X5</option>
+        <option value="5-6">X5→X6</option>
+        <option value="6-7">X6→X7</option>
+        <option value="7-8">X7→X8</option>
+        <option value="8-9">X8→X9</option>
+        <option value="9-10">X9→X10</option>
+      </select>
+      <button type="button" class="export-btn" id="row0Btn" onclick="toggleRow0()">ROW 0 ONLY</button>
+      <button type="button" class="export-btn on" id="lvlsBtn" onclick="toggleLvls()" title="Best % row of every level at once">LVLS</button>
+      <button type="button" class="export-btn on" id="ordBtn" onclick="toggleOrd()" title="With LVLS: list levels in order X1, X2, X3...">ORD</button>
+      <button type="button" class="export-btn" id="xsBtn" onclick="toggleXs()" style="display:none">BY SESSION</button>
     </div>
     <div class="table-area" id="tableArea"></div>
   </div>
@@ -312,7 +314,9 @@ const MONTHS = ["JANUARY","FEBRUARY","MARCH","APRIL","MAY","JUNE","JULY","AUGUST
 const PAIR_GROUPS = [
   ["METALS", ["frxXAGUSD", "frxXAUUSD", "frxXPTUSD"]],
   ["FOREX", ["frxAUDCAD", "frxAUDCHF", "frxAUDJPY", "frxAUDUSD", "frxEURAUD", "frxEURCAD", "frxEURCHF", "frxEURGBP", "frxEURJPY", "frxEURUSD", "frxGBPAUD", "frxGBPCAD", "frxGBPCHF", "frxGBPJPY", "frxGBPUSD", "frxUSDCAD", "frxUSDCHF", "frxUSDJPY"]],
-  ];
+  ["CRYPTO", ["cryBTCUSD", "cryETHUSD"]],
+  ["VOLATILITY (1s)", ["1HZ10V", "1HZ15V", "1HZ25V", "1HZ30V", "1HZ50V", "1HZ75V", "1HZ90V", "1HZ100V"]]
+];
 const ALL_PAIRS = PAIR_GROUPS.flatMap(g => g[1]);
 
 function pairLabel(v) {
@@ -325,13 +329,13 @@ function pairName(p) {
 }
 
 // ── state ──
-const cfg = { date: new Date().toISOString().slice(0, 10), week: weekMonday(new Date().toISOString().slice(0, 10)), weeks: 1, from: "10:30", to: "22:30", cmin: 132, cmax: 132, minPct: 10, sess: 12 };
+const cfg = { date: new Date().toISOString().slice(0, 10), from: "05:30", to: "05:30", cmin: 120, cmax: 180, minPct: 10, sess: 0 };
 let selPairs = new Set(["frxEURUSD"]);
 let allPairsMode = false;
 let allRevs = [], allMoms = [];
 let scanRunning = false, cancelFlag = false, cacheReady = false;
-let lvlsOn = false, ordOn = true, row0Only = false, xsView = false;
-let last = { sessCount: 1, perDay: 1, days: [], sessMin: 0, startIST: "10:30" };
+let lvlsOn = true, ordOn = true, row0Only = false, xsView = false;
+let last = { sessCount: 1, sessMin: 0, startIST: "05:30" };
 const lvlsExp = {}, lvlsCnt = {};
 const tickCache = {};
 
@@ -475,10 +479,10 @@ function workerMain() {
     for (let c = minC; c <= maxC; c++) {
       const rowColor = new Int8Array(c), rowStreak = new Int16Array(c), rowCol = new Int32Array(c).fill(-2);
       const maxLen = [new Int16Array(c), new Int16Array(c)];            // [green, red]
-      const hist = [new Array(c).fill(null), new Array(c).fill(null)];       var histO = [new Array(c).fill(null), new Array(c).fill(null)];
-            const record = (row, color, s, open) => {
+      const hist = [new Array(c).fill(null), new Array(c).fill(null)];
+      const record = (row, color, s) => {
         const k = color === 1 ? 0 : 1;
-        const h = (open ? histO : hist)[k][row] ||= {};
+        const h = hist[k][row] ||= {};
         h[s] = (h[s] || 0) + 1;
         if (s > maxLen[k][row]) maxLen[k][row] = s;
       };
@@ -489,25 +493,24 @@ function workerMain() {
         const cont = rowCol[row] === col - 1;
         let newC, newS;
         if (prevP === -1) newC = newS = p === -1 ? 0 : 1;
-        else if (p === -1) { if (rowStreak[row] > 0 && rowColor[row] !== 0) record(row, rowColor[row], rowStreak[row], 1); newC = newS = 0; }
+        else if (p === -1) newC = newS = 0;
         else if (p > prevP) { newC = 1; newS = cont && rowColor[row] === 1 && rowStreak[row] > 0 ? rowStreak[row] + 1 : 1; }
         else if (p < prevP) { newC = 2; newS = cont && rowColor[row] === 2 && rowStreak[row] > 0 ? rowStreak[row] + 1 : 1; }
-        else { if (rowStreak[row] > 0 && rowColor[row] !== 0) record(row, rowColor[row], rowStreak[row], 1); newC = newS = 0; }
+        else { newC = rowColor[row]; newS = 0; }
 
-        if (prevP === -1) newC = newS = 0;
-                if (newS === 1 && rowStreak[row] > 0 && rowColor[row] !== 0 && cont) record(row, rowColor[row], rowStreak[row], 0);
+        if (newS === 1 && rowStreak[row] > 0 && rowColor[row] !== 0 && cont) record(row, rowColor[row], rowStreak[row]);
         rowColor[row] = newC; rowStreak[row] = newS; rowCol[row] = col;
       }
-      for (let r = 0; r < c; r++) if (rowStreak[r] >= 1 && rowColor[r] !== 0) record(r, rowColor[r], rowStreak[r], 1);
+      for (let r = 0; r < c; r++) if (rowStreak[r] >= 1 && rowColor[r] !== 0) record(r, rowColor[r], rowStreak[r]);
 
       for (let r = 0; r < c; r++) {
         for (let k = 0; k < 2; k++) {
-          const raw = hist[k][r] || {}, rawO = histO[k][r] || {}, maxS = maxLen[k][r];
-          if (!maxS) continue;
-          const col = k ? "R" : "G", cum = cumulative(raw, maxS), cumO = cumulative(rawO, maxS);
-          for (let key = 1; key <= maxS; key++) {
-            const s = key, c1 = (cum[s] || 0) + (cumO[s + 1] || 0), c2 = (cum[s + 1] || 0) + (cumO[s + 1] || 0);
-            if (s < 1 || !c1) continue;
+          const raw = hist[k][r], maxS = maxLen[k][r];
+          if (!raw || !maxS) continue;
+          const col = k ? "R" : "G", cum = cumulative(raw, maxS);
+          for (const key in cum) {
+            const s = +key, c1 = cum[s], c2 = cum[s + 1] || 0;
+            if (s < 1) continue;
             const base = { pair, c, r, s1: s, s2: s + 1, c1, c2, col };
             revs.push({ ...base, pct: 100 - Math.round(c2 / c1 * 100), type: "REV" });
             if (c1 > 1) moms.push({ ...base, pct: Math.round(c2 / c1 * 100), type: "MOM" });
@@ -558,7 +561,7 @@ async function workerScanSessions(prices, cMin, cMax, pair, startTs, winSec, ses
   let merged = null;
   for (let si = 0; si < n; si++) {
     if (cancelFlag) break;
-    const a = si * sessSec, b = (si + 1) * sessSec;
+    const a = si * sessSec, b = si === n - 1 ? prices.length : (si + 1) * sessSec;
     const slice = prices.slice(a, b);
     if (slice.length <= cMax) continue;
     const r = await workerScan(slice, cMin, cMax, pair, 0, f => onFrac && onFrac((si + f) / n));
@@ -598,10 +601,10 @@ function startScan() {
 async function runScan() {
   if (scanRunning) { cancelFlag = true; return; }
 
-  const pairs = allPairsMode ? ALL_PAIRS : (selPairs.size ? ALL_PAIRS.filter(p => selPairs.has(p)) : ["frxEURUSD"]);
+  const pairs = allPairsMode ? ALL_PAIRS : (selPairs.size ? ALL_PAIRS.filter(p => selPairs.has(p)) : ["cryBTCUSD"]);
   const cycleMin = Math.max(1, cfg.cmin || 120);
   const cycleMax = Math.max(cycleMin, cfg.cmax || 180);
-  const minPct = 0;
+  const minPct = cfg.minPct || 100;
 
   // inputs are IST (UTC+5:30); convert to seconds from UTC midnight
   const [fH, fM] = cfg.from.split(":").map(Number), [tH, tM] = cfg.to.split(":").map(Number);
@@ -620,9 +623,10 @@ async function runScan() {
   if (sessMin && (winSec % (sessMin * 60) !== 0 || sessMin * 60 >= winSec)) sessMin = cfg.sess = 0;
   if (sessMin && sessMin * 60 <= cycleMax) { toast(`Session ${sessMin}m must be longer than cycle max C${cycleMax}`, "err"); return; }
 
-  const days = rangeDays(), perDay = sessMin ? Math.round(winSec / (sessMin * 60)) : 1;
-    last = { sessCount: perDay * days.length, perDay, days, sessMin, startIST: cfg.from, secFrom, secTo };
-  xsView = last.sessCount > 1; sessSel = 0; lvlSel = 1; lvlAll = {}; lvlsOn = false; ordOn = true; row0Only = false;
+  last = { sessCount: sessMin ? Math.round(winSec / (sessMin * 60)) : 1, sessMin, startIST: cfg.from };
+  xsView = last.sessCount > 1;
+  $("xsBtn").style.display = xsView ? "inline-block" : "none";
+  $("xsBtn").classList.toggle("on", xsView);
 
   scanRunning = true;
   cancelFlag = false;
@@ -633,35 +637,29 @@ async function runScan() {
   allRevs = []; allMoms = [];
 
   try {
-      const n = pairs.length, dn = days.length, units = n * dn;
-  
-      for (let pi = 0; pi < n && !cancelFlag; pi++) {
-        for (let di = 0; di < dn && !cancelFlag; di++) {
-          const pair = pairs[pi], date = days[di], ui = pi * dn + di;
-          const dayEpoch = Math.floor(new Date(date + "T00:00:00Z").getTime() / 1000);
-          const startTsUtc = dayEpoch + secFrom;
-          const tag = `[${pi + 1}/${n}] ${pair}  D${di + 1}/${dn}`;
-          const fetchBase = ui / units * 60, scanBase = 60 + ui / units * 28, scanSlice = 28 / units;
-          const key = `${pair}|${date}|${secFrom}-${secTo}`;
-  
-          setProgress(fetchBase, `${tag}  syncing day`, `${pair}  ${date}  ${cfg.from}–${cfg.to} IST`);
-          const prices = await loadTicksForDay(pair, dayEpoch, secFrom, secTo, tickCache[key], msg => setLog(`${tag}  ${date}  ${msg}`));
-          if (cancelFlag || !prices) continue;
-          if (!prices.length) { setLog(`${tag}  ${date}  future day, skipped`); continue; }
-                  if (!prices.some(v => v !== -1)) { setLog(`${tag}  ${date}  no ticks (market closed), skipped`); continue; }
-                  tickCache[key] = prices;
-          idbSet(key, prices);
-  
-          setProgress(scanBase, `${tag}  scanning (${date})…`, `Cycles C${cycleMin}–C${cycleMax}`);
-          const [revs, moms] = await workerScanSessions(prices, cycleMin, cycleMax, pair, startTsUtc, winSec, sessMin, f =>
-            setProgress(scanBase + f * scanSlice,
-              `${tag}  ${date}  scanning… ${Math.round(f * 100)}%`,
-              `C${cycleMin}–C${cycleMax}  [${navigator.hardwareConcurrency || 4} workers]`));
-          for (const list of [revs, moms]) for (const it of list) { it.sess = (it.sess || 1) + di * perDay; it.day = date; }
-          for (const x of revs) allRevs.push(x);
-                  for (const x of moms) allMoms.push(x);
-        }
-      }
+    const dayEpoch = Math.floor(new Date(cfg.date + "T00:00:00Z").getTime() / 1000);
+    const startTsUtc = dayEpoch + secFrom;
+    const n = pairs.length;
+
+    for (let pi = 0; pi < n && !cancelFlag; pi++) {
+      const pair = pairs[pi], tag = `[${pi + 1}/${n}] ${pair}`;
+      const fetchBase = pi / n * 60, scanBase = 60 + pi / n * 28, scanSlice = 28 / n;
+      const key = `${pair}|${cfg.date}|${secFrom}-${secTo}`;
+
+      setProgress(fetchBase, `${tag}  syncing day`, `${pair}  ${cfg.from}–${cfg.to} IST`);
+      const prices = await loadTicksForDay(pair, dayEpoch, secFrom, secTo, tickCache[key], msg => setLog(`${tag}  ${cfg.date}  ${msg}`));
+      if (cancelFlag || !prices) continue;
+      tickCache[key] = prices;
+      idbSet(key, prices);
+
+      setProgress(scanBase, `${tag}  scanning (${cfg.date})…`, `Cycles C${cycleMin}–C${cycleMax}`);
+      const [revs, moms] = await workerScanSessions(prices, cycleMin, cycleMax, pair, startTsUtc, winSec, sessMin, f =>
+        setProgress(scanBase + f * scanSlice,
+          `${tag}  ${cfg.date}  scanning… ${Math.round(f * 100)}%`,
+          `C${cycleMin}–C${cycleMax}  [${navigator.hardwareConcurrency || 4} workers]`));
+      allRevs = allRevs.concat(revs);
+      allMoms = allMoms.concat(moms);
+    }
 
     if (cancelFlag) { toast("Scan cancelled", "err"); return; }
 
@@ -681,7 +679,10 @@ async function runScan() {
 
 // ── filters / level view ──
 function levelFilter() {
-  return lvlSel == null ? null : { s1: lvlSel, s2: lvlSel + 1 };
+  const v = $("levelFilter").value;
+  if (v === "__ALL__") return null;
+  const [s1, s2] = v.split("-").map(Number);
+  return isNaN(s1) || isNaN(s2) ? null : { s1, s2 };
 }
 const matchesLevel = (d, lv) => !lv || (d.s1 === lv.s1 && d.s2 === lv.s2);
 
@@ -789,7 +790,7 @@ const SIG_COLS = "<colgroup>" + [27, 13, 11, 16, 9, 9, 15].map(w => `<col style=
 function buildRow(d) {
   const red = d.col === "R";
   return `<tr class="${red ? "row-red" : "row-green"}"><td class="cell-pair">${red ? "↓" : "↑"} ${pairName(d.pair)}</td>` +
-    `<td>C${d.c}</td><td ${vw(d)}>R${d.r}</td><td ${vw(d)}>X${d.s1}→X${d.s2}</td><td>${d.c1}</td><td>${d.c2}</td><td>${d.pct}%</td></tr>`;
+    `<td>C${d.c}</td><td>R${d.r}</td><td>X${d.s1}→X${d.s2}</td><td>${d.c1}</td><td>${d.c2}</td><td>${d.pct}%</td></tr>`;
 }
 
 function buildRows(data) {
@@ -827,8 +828,14 @@ function buildPane(label, data) {
   const body = data.length
     ? `<table>${SIG_COLS}<thead><tr><th>PAIR</th><th>CYCLE</th><th>ROW</th><th>STREAK</th><th>C1</th><th>C2</th><th>PROB%</th></tr></thead><tbody>${buildRows(data)}</tbody></table>`
     : '<div class="state-empty"><span>○</span><span>No signals</span></div>';
-  const lvlTxt = lvlSel == null ? "ALL LEVELS" : "X" + lvlSel + "→X" + (lvlSel + 1);
-    return `<div class="split-pane"><div class="pane-head"><span>${label}</span><span>${lvlTxt}</span><span>${data.length}</span></div><div class="pane-body">${body}</div></div>`;
+  const btnCss = "background:none;border:1px solid #2a3a6a;color:inherit;cursor:pointer;padding:0 10px;font:inherit;border-radius:3px";
+    const lvlTxt = lvlSel == null ? "ALL LEVELS" : "X" + lvlSel + "→X" + (lvlSel + 1);
+    return `<div class="split-pane"><div class="pane-head"><span>${label}</span>` +
+      `<span style="display:flex;gap:8px;align-items:center">` +
+      `<button type="button" onclick="stepLvlSel(-1)" title="Previous level" style="${btnCss}">◀</button>` +
+      `<span>${lvlTxt}</span>` +
+      `<button type="button" onclick="stepLvlSel(1)" title="Next level" style="${btnCss}">▶</button>` +
+      `</span><span>${data.length}</span></div><div class="pane-body">${body}</div></div>`;
 }
 function buildPaneOld(label, data) {
   const body = data.length
@@ -860,19 +867,18 @@ function buildSessionRankHTML(filterFn) {
   if (!list.length) return "";
 
   const sessTime = s => {
-      if (!last.startIST || !last.sessMin) return "";
-      const per = last.perDay || cnt, di = Math.floor((s - 1) / per), si = (s - 1) % per;
-      const [h, m] = last.startIST.split(":").map(Number);
-      const t0 = h * 60 + m + si * last.sessMin;
-      return (last.days && last.days[di] ? dayLbl(last.days[di]) + " " : "") + hm(t0) + "-" + hm(t0 + last.sessMin);
-    };
-  const cards = list.slice(0, 60).map((g, idx) => {
+    if (!last.startIST || !last.sessMin) return "";
+    const [h, m] = last.startIST.split(":").map(Number);
+    const t0 = h * 60 + m + (s - 1) * last.sessMin;
+    return hm(t0) + "-" + hm(t0 + last.sessMin);
+  };
+  const cards = list.map((g, idx) => {
     const tl = sessTime(g.s);
-    return `<div class="rank-card${idx < 3 ? " top" : ""}"><div class="rk-lbl">${idx === 0 ? "🏆 " : "#" + (idx + 1) + " "}${sessTag(g.s)}</div>` +
+    return `<div class="rank-card${idx < 3 ? " top" : ""}"><div class="rk-lbl">${idx === 0 ? "🏆 " : "#" + (idx + 1) + " "}S${g.s}</div>` +
       (tl ? `<div class="rk-time">${tl} IST</div>` : "") +
       `<div class="rk-val">${g.win.toFixed(1)}%</div><div class="rk-sub">${g.n} signals · avg ${g.avg.toFixed(1)}%</div></div>`;
   }).join("");
-  return `<div class="rank-wrap"><div class="pane-head"><span>🏆 BEST SESSION OF THE RANGE · ${cnt} sessions ranked by C1-weighted win% · top 60 shown</span><span>${list.length}</span></div>` +
+  return `<div class="rank-wrap"><div class="pane-head"><span>🏆 BEST SESSION OF THE DAY · S1–S${cnt} ranked by C1-weighted win% · ${cnt} sessions</span><span>${list.length}</span></div>` +
     `<div class="rank-cards">${cards}</div></div>`;
 }
 
@@ -893,7 +899,7 @@ function computeCrossSession() {
         const s = g.hits[0];
         return { pair: s.pair, col: s.col, c: s.c, r: s.r, s1: s.s1, s2: s.s2, n: g.hits.length, avg: Math.round(g.sum / g.hits.length), hits: g.hits };
       })
-      .sort((a, b) => b.avg - a.avg || b.n - a.n);
+      .sort((a, b) => b.n - a.n || b.avg - a.avg);
   };
   return { rev: build(allRevs), mom: build(allMoms) };
 }
@@ -901,8 +907,8 @@ function computeCrossSession() {
 function buildXsPane(label, list, total) {
   const rows = list.slice(0, 150).map(g => {
     const red = g.col === "R", cls = red ? "row-red" : "row-green";
-    const det = g.hits.slice(0, 40).map(h => `${sessTag(h.sess || 1)}: ${h.c1}/${h.c2}`).join(" · ") + (g.hits.length > 40 ? ` · +${g.hits.length - 40} more` : "");
-    return `<tr class="${cls} xs-m" style="cursor:pointer" title="Click to see the boxes of every session" onclick="showRow(${rowRef.push(g.hits) - 1})"><td class="cell-pair">${red ? "↓" : "↑"} ${pairName(g.pair)}</td><td>C${g.c}</td><td>R${g.r}</td>` +
+    const det = g.hits.map(h => `S${h.sess || 1}: ${h.c1}/${h.c2}`).join(" · ");
+    return `<tr class="${cls} xs-m"><td class="cell-pair">${red ? "↓" : "↑"} ${pairName(g.pair)}</td><td>C${g.c}</td><td>R${g.r}</td>` +
       `<td>X${g.s1}→X${g.s2}</td><td class="xs-hits">${g.n}/${total}</td><td>${g.avg}%</td></tr>` +
       `<tr class="${cls} xs-d"><td colspan="6">${det}</td></tr>`;
   }).join("");
@@ -921,78 +927,29 @@ function buildXsHTML() {
 }
 
 function renderTable() {
-  rowRef.length = 0;
+  $("lvlsBtn").classList.toggle("on", lvlsOn);
+  $("ordBtn").classList.toggle("on", ordOn);
+  $("row0Btn").classList.toggle("on", row0Only);
+  if (lvlsOn) $("levelFilter").value = "__ALL__";
+  $("levelFilter").disabled = $("filterPct").disabled = lvlsOn;
 
-  const filterFn = () => true;
+  const minPct = parseInt($("filterPct").value) || 0, lv = levelFilter();
+  const filterFn = x => x.pct >= minPct && matchesLevel(x, lv) && (!row0Only || x.r === 0);
   const sortFn = (a, b) => b.pct * b.c1 - a.pct * a.c1;
-  const lv = levelFilter();
-    if (!Object.keys(lvlAll).length) {
-      for (const x of allRevs) lvlAll[x.s1] = 1;
-      for (const x of allMoms) lvlAll[x.s1] = 1;
-    }
-    // flat lists are built below, only when the session view is not used
+  const rev = lvlsOn ? lvlsBuild(allRevs) : allRevs.filter(filterFn).sort(sortFn).slice(0, 100);
+  const mom = lvlsOn ? lvlsBuild(allMoms) : allMoms.filter(filterFn).sort(sortFn).slice(0, 100);
 
-  renderLvlTog();
-    renderSessSel();
-      const area = $("tableArea"), rank = sessSel ? "" : buildSessionRankHTML(filterFn);
-  if (xsView && last.sessCount > 1 && !sessSel) { area.innerHTML = rank + buildXsHTML(); return; }
-    const rev = allRevs.filter(x => matchesLevel(x, lv) && (!sessSel || x.sess === sessSel)).sort(sortFn);
-    const mom = allMoms.filter(x => matchesLevel(x, lv) && (!sessSel || x.sess === sessSel)).sort(sortFn);
+  const area = $("tableArea"), rank = buildSessionRankHTML(filterFn);
+  if (xsView && last.sessCount > 1) { area.innerHTML = rank + buildXsHTML(); return; }
   if (!rev.length && !mom.length) {
-    area.innerHTML = rank + '<div class="state-empty"><div style="font-size:36px">○</div><div>No signals for this level</div><div>Pick another level above</div></div>';
+    area.innerHTML = rank + '<div class="state-empty"><div style="font-size:36px">○</div><div>No signals at current filters</div><div>Try lowering Min % or adjusting filters</div></div>';
     return;
   }
   area.innerHTML = rank + `<div class="split-table-wrap">${buildPane("REVERSAL", rev)}${buildPane("MOMENTUM", mom)}</div>`;
 }
 
-// level toggle is built by renderLvlTog()
-
-// ── row view (1 box = 1 cycle) ──
-var rowRef = [];
-const vw = d => `class="row-view" title="Show the boxes of this row" onclick="event.stopPropagation();showRow(${rowRef.push(d) - 1})"`;
-
-function rowCells(d) {
-  const all = tickCache[d.pair + "|" + d.day + "|" + last.secFrom + "-" + last.secTo];
-  if (!all) return null;
-  const c = d.c, ss = last.sessMin ? last.sessMin * 60 : 0;
-  const si = ss ? ((d.sess || 1) - 1) % (last.perDay || 1) : 0;
-  const px = ss ? all.slice(si * ss, (si + 1) * ss) : all;
-  const t0 = ss ? 0 : Math.floor(new Date(d.day + "T00:00:00Z").getTime() / 1000) + last.secFrom;
-  const out = [];
-  let color = 0, streak = 0;
-  for (let i = 0; i < px.length; i++) {
-    if ((t0 + i) % c !== d.r) continue;
-    const p = px[i], q = i >= c ? px[i - c] : -1;
-    if (i < c) { out.push({ t: "N" }); color = streak = 0; continue; }
-    if (p === -1 || q === -1 || p === q) { out.push({ t: "x" }); color = streak = 0; continue; }
-    const nc = p > q ? 1 : 2;
-    streak = nc === color && streak > 0 ? streak + 1 : 1;
-    color = nc;
-    out.push({ t: nc === 1 ? "G" : "R", s: streak });
-  }
-  return out;
-}
-
-function stripHTML(d) {
-  const cells = rowCells(d);
-  const head = `<div class="sg-head"><span><b>${pairName(d.pair)}</b> C${d.c} R${d.r} · ${sessTag(d.sess || 1)}</span><span>${d.type || "REV"} X${d.s1}→X${d.s2} · ${d.c1}/${d.c2} · ${d.pct}%</span></div>`;
-  if (!cells) return `<div class="sg-card">${head}<div class="sg-none">Ticks are not in the cache any more, scan again to see the boxes</div></div>`;
-  const body = cells.map((x, i) => {
-    const hit = x.t === d.col && x.s === d.s1 ? " hit" : "";
-    const lbl = x.t === "G" ? "↑X" + x.s : x.t === "R" ? "↓X" + x.s : x.t;
-    return `<div class="sg ${x.t.toLowerCase()}${hit}"><i>${i + 1}</i><b>${lbl}</b></div>`;
-  }).join("");
-  return `<div class="sg-card">${head}<div class="sg-grid">${body}</div></div>`;
-}
-
-function showRow(i) {
-  const v = rowRef[i];
-  if (!v) return;
-  const all = Array.isArray(v) ? v : [v], list = all.slice(0, 24);
-  showPop(`<div class="pop-box"><div class="pop-title">ROW VIEW · 1 BOX = 1 CYCLE</div>` + list.map(stripHTML).join("") +
-    (all.length > list.length ? `<div class="sg-leg">+${all.length - list.length} more sessions not shown</div>` : "") +
-    `<div class="sg-leg">N first cycle (neutral) · x flat or missing price · ↑ green · ↓ red · inner frame = the X${list[0].s1} ${list[0].col === "R" ? "red" : "green"} of this signal · tap outside to close</div></div>`, () => {});
-}
+$("filterPct").addEventListener("input", renderTable);
+$("levelFilter").addEventListener("change", renderTable);
 
 // ── CSV export (session repeats) ──
 async function downloadCSV(csv, filename) {
@@ -1025,13 +982,13 @@ async function exportXsCSV() {
   const x = computeCrossSession(), total = last.sessCount, rows = [];
   for (const [type, list] of [["REV", x.rev], ["MOM", x.mom]]) {
     for (const g of list) {
-      const det = g.hits.map(h => `${sessTag(h.sess || 1).replace(/ /g, "_")}:${h.c1}/${h.c2}`).join("|");
+      const det = g.hits.map(h => `S${h.sess || 1}:${h.c1}/${h.c2}`).join("|");
       rows.push([type, pairName(g.pair), g.col === "R" ? "BEARISH" : "BULLISH", g.c, g.r, g.s1, g.s2, g.n, total, g.avg, det].join(","));
     }
   }
   if (!rows.length) { toast("No session repeats to export", "err"); return; }
   const headers = "TYPE,PAIR,DIRECTION,CYCLE,ROW,STREAK_FROM,STREAK_TO,HITS,DATASETS,AVG_PROB_%,DETAIL_SESSION:C1/C2";
-  await downloadCSV([headers, ...rows].join("\n"), `wallspectrum_session_repeats_week_${(last.days && last.days[0]) || new Date().toISOString().slice(0, 10)}.csv`);
+  await downloadCSV([headers, ...rows].join("\n"), `wallspectrum_session_repeats_${new Date().toISOString().slice(0, 10)}.csv`);
   toast(`Exported ${rows.length} session repeat(s) to CSV`, "ok");
 }
 
@@ -1156,94 +1113,6 @@ function sessionPopup() {
 }
 
 const dateParts = () => { const [y, m, d] = cfg.date.split("-").map(Number); return { y, m, d }; };
-const DOW3 = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
-function weekMonday(ds) {
-  const t = new Date(ds + "T00:00:00Z");
-  t.setUTCDate(t.getUTCDate() - (t.getUTCDay() + 6) % 7);
-  return t.toISOString().slice(0, 10);
-}
-function weekDays(mon) {
-  return Array.from({ length: 5 }, (_, i) => {
-    const t = new Date(mon + "T00:00:00Z");
-    t.setUTCDate(t.getUTCDate() + i);
-    return t.toISOString().slice(0, 10);
-  });
-}
-function dayLbl(ds) { return pad2(+ds.slice(8, 10)) + " " + MONTHS[+ds.slice(5, 7) - 1].slice(0, 3); }
-function rangeStart() {
-  const t = new Date(cfg.week + "T00:00:00Z");
-  t.setUTCDate(t.getUTCDate() - 7 * ((cfg.weeks || 1) - 1));
-  return t.toISOString().slice(0, 10);
-}
-function rangeDays() {
-  if (cfg.day) return [cfg.day];
-  const s = rangeStart(), out = [];
-  for (let w = 0; w < (cfg.weeks || 1); w++) {
-    const t = new Date(s + "T00:00:00Z");
-    t.setUTCDate(t.getUTCDate() + 7 * w);
-    out.push(...weekDays(t.toISOString().slice(0, 10)));
-  }
-  return out;
-}
-function weekText() {
-  if (cfg.day) return dayLbl(cfg.day) + " – " + dayLbl(cfg.day) + "<br>" + cfg.day.slice(0, 4) + " · 1D";
-  const a = weekDays(rangeStart())[0], b = weekDays(cfg.week)[4];
-  return dayLbl(a) + " – " + dayLbl(b) + "<br>" + b.slice(0, 4) + " · " + (cfg.weeks || 1) * 5 + "D";
-}
-function sessTag(s) {
-  const per = last.perDay || 1, di = Math.floor((s - 1) / per), si = (s - 1) % per, dd = last.days && last.days[di];
-  return (dd ? DOW3[new Date(dd + "T00:00:00Z").getUTCDay()] + " " + dayLbl(dd) + " " : "") + "S" + (si + 1);
-}
-function dayPickList() {
-  const td = new Date().toISOString().slice(0, 10), t = new Date(weekMonday(td) + "T00:00:00Z");
-  let h = '</div><div class="pop-title" style="margin-top:12px">PICK THE DAY</div><div class="pop-grid pp">';
-  for (let i = 0; i < 80; i++) {
-    const wd = weekDays(t.toISOString().slice(0, 10));
-    for (let j = 4; j >= 0; j--) {
-      const d = wd[j];
-      if (d > td) continue;
-      h += `<button type="button" data-d="${d}" class="pop-btn${d === cfg.day ? " on" : ""}">${DOW3[new Date(d + "T00:00:00Z").getUTCDay()]} ${dayLbl(d)}<br><span class="pop-sub">${d.slice(0, 4)}</span></button>`;
-    }
-    t.setUTCDate(t.getUTCDate() - 7);
-  }
-  return h;
-}
-function weekPopup() {
-  const handler = ev => {
-    const b = ev.target.closest(".pop-btn");
-    if (!b) return;
-    if (b.dataset.n) {
-          const n = +b.dataset.n;
-          if (n === 0) {
-            const wd = weekDays(cfg.week), td = new Date().toISOString().slice(0, 10);
-            cfg.day = cfg.day || wd.filter(x => x <= td).pop() || wd[0];
-          } else { cfg.day = ""; cfg.weeks = n; }
-          draw();
-          return;
-        }
-        if (b.dataset.d) { cfg.day = b.dataset.d; cfg.week = weekMonday(cfg.day); closePop(); return; }
-    cfg.week = b.dataset.w;
-    closePop();
-  };
-  const draw = () => {
-    const keep = $("pop").querySelector(".pop-box")?.scrollTop || 0;
-    const t = new Date(weekMonday(new Date().toISOString().slice(0, 10)) + "T00:00:00Z");
-    let h = '<div class="pop-box"><div class="pop-title">RANGE LENGTH - MON-FRI ONLY</div><div class="pop-grid pp">';
-    for (const [n, lbl] of [[0, "1 DAY"], [1, "1 WEEK"], [2, "2 WEEKS"], [4, "1 MONTH"], [8, "2 MONTHS"], [13, "3 MONTHS"], [26, "6 MONTHS"], [39, "9 MONTHS"], [52, "1 YEAR"]]) {
-      h += `<button type="button" data-n="${n}" class="pop-btn${(n === 0 ? !!cfg.day : !cfg.day && n === cfg.weeks) ? " on" : ""}">${lbl}</button>`;
-    }
-    h += cfg.day ? dayPickList() : '</div><div class="pop-title" style="margin-top:12px">LAST WEEK OF THE RANGE</div><div class="pop-grid pss">';
-    for (let i = 0; i < (cfg.day ? 0 : 80); i++) {
-          const w = t.toISOString().slice(0, 10), d = weekDays(w);
-      h += `<button type="button" data-w="${w}" class="pop-btn${w === cfg.week ? " on" : ""}">${dayLbl(d[0])} – ${dayLbl(d[4])}<br><span class="pop-sub">${d[4].slice(0, 4)}</span></button>`;
-      t.setUTCDate(t.getUTCDate() - 7);
-    }
-    showPop(h + "</div></div>", handler);
-    const bx = $("pop").querySelector(".pop-box");
-    if (bx) bx.scrollTop = keep;
-  };
-  draw();
-}
 const timeParts = k => { const [h, n] = cfg[k].split(":").map(Number); return { h: h || 0, n: n || 0 }; };
 const setTime = (k, h, n) => { cfg[k] = pad2(h) + ":" + pad2(n); };
 const setDate = (y, m, d) => {
@@ -1258,112 +1127,39 @@ const timePopup = (key, label, hour) => {
 
 const ACTIONS = {
   pair: pairPopup,
+  day() {
+    const { y, m, d } = dateParts();
+    const dim = new Date(Date.UTC(y, m, 0)).getUTCDate();
+    const dow = (new Date(Date.UTC(y, m - 1, 1)).getUTCDay() + 6) % 7;
+    valuePopup("FROM - DAY", dim, 1, d, "pd", v => setDate(y, m, v), dow);
+  },
+  month() { const { y, m, d } = dateParts(); valuePopup("FROM - MONTH", 12, 1, m, "pmo", v => setDate(y, v, d)); },
+  year() {
+    const { y, m, d } = dateParts(), now = new Date().getFullYear();
+    const y0 = Math.min(now - 10, y), y1 = Math.max(now, y);
+    valuePopup("FROM - YEAR", y1 - y0 + 1, y0, y, "py", v => setDate(v, m, d));
+  },
+  fh: () => timePopup("from", "FROM", true),
+  fm: () => timePopup("from", "FROM", false),
+  th: () => timePopup("to", "TO", true),
+  tm: () => timePopup("to", "TO", false),
   sess: sessionPopup,
-  week: rangePopup,
-  cmin: () => keypad("CYC MIN", "cmin", 1, 900),
-  cmax: () => keypad("CYC MAX", "cmax", 1, 900),
+  cmin: () => keypad("CYC MIN", "cmin", 1, 500),
+  cmax: () => keypad("CYC MAX", "cmax", 1, 500),
+  prob: () => keypad("MIN PROB %", "minPct", 0, 100),
   cache: clearPersistedCache,
   run: startScan
 };
 
-var calView = null;
-function setLvlSel(v) { lvlSel = v; renderTable(); }
-var sessSel = 0;
-function setSessSel(v) { sessSel = +v; renderTable(); }
-function renderSessSel() {
-  const el = $("sessSel");
-  const on = last.days.length === 1 && last.sessCount > 1 && last.sessMin > 0;
-  el.style.display = on ? "" : "none";
-  if (!on) { sessSel = 0; return; }
-  const hh = last.startIST.split(":").map(Number), t0 = hh[0] * 60 + hh[1];
-  let o = `<option value="0">ALL ${last.sessCount} SESSIONS</option>`;
-  for (let i = 0; i < last.sessCount; i++) {
-    o += `<option value="${i + 1}"${sessSel === i + 1 ? " selected" : ""}>S${i + 1} · ${hm(t0 + i * last.sessMin)}-${hm(t0 + (i + 1) * last.sessMin)}</option>`;
-  }
-  el.innerHTML = o;
-}
-function renderLvlTog() {
-  const ks = Object.keys(lvlAll).map(Number).sort((a, b) => a - b);
-  const btn = (v, t) => `<button type="button" class="export-btn${lvlSel === v ? " on" : ""}" onclick="setLvlSel(${v})">${t}</button>`;
-  $("lvlTog").innerHTML = btn(null, "ALL") + ks.map(k => btn(k, "X" + k + "→X" + (k + 1))).join("");
-}
-function rangePopup() {
-  const td = new Date().toISOString().slice(0, 10);
-  const base = cfg.day || cfg.week;
-  calView = { y: +base.slice(0, 4), m: +base.slice(5, 7) };
-  const handler = ev => {
-    const b = ev.target.closest(".pop-btn");
-    if (!b) return;
-    if (b.dataset.m) {
-      if (b.dataset.m === "day") {
-        const wd = weekDays(cfg.week);
-        cfg.day = cfg.day || wd.filter(x => x <= td).pop() || wd[0];
-        calView = { y: +cfg.day.slice(0, 4), m: +cfg.day.slice(5, 7) };
-      } else {
-        cfg.day = "";
-      }
-      cfg.weeks = 1;
-      draw();
-      return;
-    }
-    if (b.dataset.c) {
-      calView.m += +b.dataset.c;
-      if (calView.m < 1) { calView.m = 12; calView.y--; }
-      if (calView.m > 12) { calView.m = 1; calView.y++; }
-      draw();
-      return;
-    }
-    if (b.dataset.d) {
-      if (b.dataset.ok !== "1") return;
-      cfg.day = b.dataset.d; cfg.week = weekMonday(cfg.day); cfg.weeks = 1;
-      closePop();
-      return;
-    }
-    if (b.dataset.w) { cfg.day = ""; cfg.week = b.dataset.w; cfg.weeks = 1; closePop(); }
-  };
-  const draw = () => {
-    const keep = $("pop").querySelector(".pop-box")?.scrollTop || 0;
-    const dayMode = !!cfg.day;
-    let h = '<div class="pop-box"><div class="pop-title">RANGE - MON-FRI ONLY</div><div class="pop-grid pss">' +
-      `<button type="button" data-m="day" class="pop-btn${dayMode ? " on" : ""}">1 DAY</button>` +
-      `<button type="button" data-m="week" class="pop-btn${dayMode ? "" : " on"}">1 WEEK</button></div>`;
-    if (dayMode) {
-      const y = calView.y, m = calView.m;
-      const dim = new Date(Date.UTC(y, m, 0)).getUTCDate();
-      const lead = (new Date(Date.UTC(y, m - 1, 1)).getUTCDay() + 6) % 7;
-      h += `<div class="pop-grid pk" style="margin-top:10px"><button type="button" data-c="-1" class="pop-btn">&#9664;</button><div class="pop-title" style="margin:0;line-height:48px">${MONTHS[m - 1]} ${y}</div><button type="button" data-c="1" class="pop-btn">&#9654;</button></div>` +
-        '<div class="pop-grid pd" style="margin-top:6px">' +
-        [..."MTWTFSS"].map((d, i) => `<span class="pop-dow${i >= 5 ? " we" : ""}">${d}</span>`).join("") +
-        "<span></span>".repeat(lead);
-      for (let q = 1; q <= dim; q++) {
-        const ds = y + "-" + pad2(m) + "-" + pad2(q), off = (lead + q - 1) % 7 >= 5 || ds > td;
-        h += `<button type="button" data-d="${ds}" data-ok="${off ? 0 : 1}" class="pop-btn${ds === cfg.day ? " on" : ""}${off ? " dim" : ""}">${q}</button>`;
-      }
-      h += "</div>";
-    } else {
-      const t = new Date(weekMonday(td) + "T00:00:00Z");
-      h += '<div class="pop-grid pss" style="margin-top:10px">';
-      for (let i = 0; i < 80; i++) {
-        const w = t.toISOString().slice(0, 10), d = weekDays(w);
-        h += `<button type="button" data-w="${w}" class="pop-btn${w === cfg.week ? " on" : ""}">${dayLbl(d[0])} – ${dayLbl(d[4])}<br><span class="pop-sub">${d[4].slice(0, 4)}</span></button>`;
-        t.setUTCDate(t.getUTCDate() - 7);
-      }
-      h += "</div>";
-    }
-    showPop(h + "</div>", handler);
-    const bx = $("pop").querySelector(".pop-box");
-    if (bx) bx.scrollTop = keep;
-  };
-  draw();
-}
 function renderBar() {
-  const N = winMinutes(), s = cfg.sess || N;
+  const d = dateParts(), f = timeParts("from"), t = timeParts("to"), N = winMinutes();
   if (cfg.sess && (cfg.sess >= N || N % cfg.sess !== 0)) cfg.sess = 0;
   const cell = (cls, act, txt) => `<button type="button" class="b-${cls}" data-act="${act}"><b>${txt}</b></button>`;
   $("bar").innerHTML =
-    cell("pair", "pair", pairText()) + cell("week", "week", weekText()) +
-        cell("sess", "sess", fmtSess(cfg.sess || N) + "<br>&times;" + (N / (cfg.sess || N))) + cell("cmin", "cmin", cfg.cmin) + cell("cmax", "cmax", cfg.cmax) +
-    cell("cache", "cache", "&#9003;") + cell("run", "run", "&#9654;");
+    cell("pair", "pair", pairText()) + cell("day", "day", pad2(d.d)) + cell("mon", "month", MONTHS[d.m - 1] || pad2(d.m)) + cell("yr", "year", d.y) +
+    cell("fh", "fh", pad2(f.h)) + cell("fm", "fm", pad2(f.n)) + cell("th", "th", pad2(t.h)) + cell("tm", "tm", pad2(t.n)) +
+    cell("sess", "sess", fmtSess(cfg.sess || N)) + cell("cmin", "cmin", cfg.cmin) + cell("cmax", "cmax", cfg.cmax) +
+    cell("prob", "prob", cfg.minPct + "%") + cell("cache", "cache", "&#9003;") + cell("run", "run", "&#9654;");
 }
 
 $("bar").addEventListener("click", e => {
