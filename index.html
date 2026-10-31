@@ -60,6 +60,7 @@ body::before {
 }
 .filter-bar .export-btn { flex: none; padding: 9px 14px; font-size: 13px; }
 #lvlTog { display: flex; gap: 6px; flex: none; }
+.filter-bar select#sessSel { flex: none; padding: 9px 10px; font-size: 13px; max-width: 240px; }
 .export-btn:hover { background: rgba(46,213,115,.1); box-shadow: 0 0 10px rgba(46,213,115,.3); }
 .export-btn.on { background: var(--green); color: #000432; }
 
@@ -277,7 +278,8 @@ tbody tr { border-bottom: 1px solid var(--border); }
   <div class="main">
     <div class="filter-bar" id="filterBar">
       <input type="hidden" id="filterPct" value="0">
-            <div id="lvlTog"></div>
+            <select id="sessSel" style="display:none" onchange="setSessSel(this.value)"></select>
+                  <div id="lvlTog"></div>
     </div>
     <div class="table-area" id="tableArea"></div>
   </div>
@@ -620,7 +622,7 @@ async function runScan() {
 
   const days = rangeDays(), perDay = sessMin ? Math.round(winSec / (sessMin * 60)) : 1;
     last = { sessCount: perDay * days.length, perDay, days, sessMin, startIST: cfg.from, secFrom, secTo };
-  xsView = last.sessCount > 1; lvlSel = 1; lvlAll = {}; lvlsOn = false; ordOn = true; row0Only = false;
+  xsView = last.sessCount > 1; sessSel = 0; lvlSel = 1; lvlAll = {}; lvlsOn = false; ordOn = true; row0Only = false;
 
   scanRunning = true;
   cancelFlag = false;
@@ -931,10 +933,11 @@ function renderTable() {
     // flat lists are built below, only when the session view is not used
 
   renderLvlTog();
-    const area = $("tableArea"), rank = buildSessionRankHTML(filterFn);
-  if (xsView && last.sessCount > 1) { area.innerHTML = rank + buildXsHTML(); return; }
-    const rev = allRevs.filter(x => matchesLevel(x, lv)).sort(sortFn);
-    const mom = allMoms.filter(x => matchesLevel(x, lv)).sort(sortFn);
+    renderSessSel();
+      const area = $("tableArea"), rank = sessSel ? "" : buildSessionRankHTML(filterFn);
+  if (xsView && last.sessCount > 1 && !sessSel) { area.innerHTML = rank + buildXsHTML(); return; }
+    const rev = allRevs.filter(x => matchesLevel(x, lv) && (!sessSel || x.sess === sessSel)).sort(sortFn);
+    const mom = allMoms.filter(x => matchesLevel(x, lv) && (!sessSel || x.sess === sessSel)).sort(sortFn);
   if (!rev.length && !mom.length) {
     area.innerHTML = rank + '<div class="state-empty"><div style="font-size:36px">○</div><div>No signals for this level</div><div>Pick another level above</div></div>';
     return;
@@ -1265,6 +1268,20 @@ const ACTIONS = {
 
 var calView = null;
 function setLvlSel(v) { lvlSel = v; renderTable(); }
+var sessSel = 0;
+function setSessSel(v) { sessSel = +v; renderTable(); }
+function renderSessSel() {
+  const el = $("sessSel");
+  const on = last.days.length === 1 && last.sessCount > 1 && last.sessMin > 0;
+  el.style.display = on ? "" : "none";
+  if (!on) { sessSel = 0; return; }
+  const hh = last.startIST.split(":").map(Number), t0 = hh[0] * 60 + hh[1];
+  let o = `<option value="0">ALL ${last.sessCount} SESSIONS</option>`;
+  for (let i = 0; i < last.sessCount; i++) {
+    o += `<option value="${i + 1}"${sessSel === i + 1 ? " selected" : ""}>S${i + 1} · ${hm(t0 + i * last.sessMin)}-${hm(t0 + (i + 1) * last.sessMin)}</option>`;
+  }
+  el.innerHTML = o;
+}
 function renderLvlTog() {
   const ks = Object.keys(lvlAll).map(Number).sort((a, b) => a - b);
   const btn = (v, t) => `<button type="button" class="export-btn${lvlSel === v ? " on" : ""}" onclick="setLvlSel(${v})">${t}</button>`;
