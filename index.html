@@ -720,7 +720,7 @@ function lvlsBuild(list) {
         for (const p of pairs) {
       const pk = key + "|" + p, arr = pg[p];
       lvlsCnt[pk] = arr.length;
-      for (let i = 0, lim = lvlsExp[pk] ? arr.length : 1; i < lim; i++) out.push(Object.assign({}, arr[i].z, { _pk: pk }));
+      for (let i = 0, lim = lvlsExp[pk] ? arr.length : Math.min(20, arr.length); i < lim; i++) out.push(Object.assign({}, arr[i].z, { _pk: pk }));
     }
   }
   return out;
