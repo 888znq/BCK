@@ -329,8 +329,8 @@ function pairName(p) {
 }
 
 // ── state ──
-const cfg = { date: new Date().toISOString().slice(0, 10), from: "05:30", to: "05:30", cmin: 120, cmax: 180, minPct: 10, sess: 0 };
-let selPairs = new Set(["frxEURUSD"]);
+const cfg = { date: new Date().toISOString().slice(0, 10), from: "05:30", to: "05:30", cmin: 60, cmax: 60, minPct: 10, sess: 0 };
+let selPairs = new Set(["cryBTCUSD"]);
 let allPairsMode = false;
 let allRevs = [], allMoms = [];
 let scanRunning = false, cancelFlag = false, cacheReady = false;
