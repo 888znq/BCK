@@ -705,6 +705,16 @@ function lvlsBuild(list) {
   for (const k of keys) {
     const pg = byLvl[k], pairs = Object.keys(pg);
     pairs.forEach(p => pg[p].sort(cmp));
+        pairs.forEach(p => {
+              const seen = {};
+              pg[p] = pg[p].filter(o => {
+                const rk = o.z.s1 + "|" + o.z.s2 + "|" + o.z.col + "|" + o.z.pct + "|" + o.z.c1 + "|" + o.z.c2;
+                if (seen[rk]) return false;
+                seen[rk] = 1;
+                return true;
+              });
+              if (pg[p].length > 20) pg[p].length = 20;
+            });
     pairs.sort((a, b) => cmp(pg[a][0], pg[b][0]));
     info[k] = { pg, pairs };
   }
@@ -717,11 +727,11 @@ function lvlsBuild(list) {
         var hid = !!lvlsHide[key];
         out.push(Object.assign({}, topOf(k).z, { _top: key, _hid: hid }));
         if (hid) continue;
-        for (const p of pairs) {
-      const pk = key + "|" + p, arr = pg[p];
-      lvlsCnt[pk] = arr.length;
-      for (let i = 0, lim = lvlsExp[pk] ? arr.length : Math.min(20, arr.length); i < lim; i++) out.push(Object.assign({}, arr[i].z, { _pk: pk }));
-    }
+        const allRows = [];
+                for (const p of pairs) pg[p].forEach(o => allRows.push(o));
+                allRows.sort(cmp);
+                lvlsCnt[key] = allRows.length;
+                for (let i = 0, lim = Math.min(pairs.length > 1 ? 25 : 20, allRows.length); i < lim; i++) out.push(Object.assign({}, allRows[i].z, { _pk: key }));
   }
   return out;
 }
