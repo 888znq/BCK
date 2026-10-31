@@ -1205,6 +1205,7 @@ function rangeStart() {
   return t.toISOString().slice(0, 10);
 }
 function rangeDays() {
+  if (cfg.day) return [cfg.day];
   const s = rangeStart(), out = [];
   for (let w = 0; w < (cfg.weeks || 1); w++) {
     const t = new Date(s + "T00:00:00Z");
@@ -1214,6 +1215,7 @@ function rangeDays() {
   return out;
 }
 function weekText() {
+  if (cfg.day) return dayLbl(cfg.day) + " – " + dayLbl(cfg.day) + "<br>" + cfg.day.slice(0, 4) + " · 1D";
   const a = weekDays(rangeStart())[0], b = weekDays(cfg.week)[4];
   return dayLbl(a) + " – " + dayLbl(b) + "<br>" + b.slice(0, 4) + " · " + (cfg.weeks || 1) * 5 + "D";
 }
@@ -1221,11 +1223,34 @@ function sessTag(s) {
   const per = last.perDay || 1, di = Math.floor((s - 1) / per), si = (s - 1) % per, dd = last.days && last.days[di];
   return (dd ? DOW3[new Date(dd + "T00:00:00Z").getUTCDay()] + " " + dayLbl(dd) + " " : "") + "S" + (si + 1);
 }
+function dayPickList() {
+  const td = new Date().toISOString().slice(0, 10), t = new Date(weekMonday(td) + "T00:00:00Z");
+  let h = '</div><div class="pop-title" style="margin-top:12px">PICK THE DAY</div><div class="pop-grid pp">';
+  for (let i = 0; i < 80; i++) {
+    const wd = weekDays(t.toISOString().slice(0, 10));
+    for (let j = 4; j >= 0; j--) {
+      const d = wd[j];
+      if (d > td) continue;
+      h += `<button type="button" data-d="${d}" class="pop-btn${d === cfg.day ? " on" : ""}">${DOW3[new Date(d + "T00:00:00Z").getUTCDay()]} ${dayLbl(d)}<br><span class="pop-sub">${d.slice(0, 4)}</span></button>`;
+    }
+    t.setUTCDate(t.getUTCDate() - 7);
+  }
+  return h;
+}
 function weekPopup() {
   const handler = ev => {
     const b = ev.target.closest(".pop-btn");
     if (!b) return;
-    if (b.dataset.n) { cfg.weeks = +b.dataset.n; draw(); return; }
+    if (b.dataset.n) {
+          const n = +b.dataset.n;
+          if (n === 0) {
+            const wd = weekDays(cfg.week), td = new Date().toISOString().slice(0, 10);
+            cfg.day = cfg.day || wd.filter(x => x <= td).pop() || wd[0];
+          } else { cfg.day = ""; cfg.weeks = n; }
+          draw();
+          return;
+        }
+        if (b.dataset.d) { cfg.day = b.dataset.d; cfg.week = weekMonday(cfg.day); closePop(); return; }
     cfg.week = b.dataset.w;
     closePop();
   };
@@ -1233,12 +1258,12 @@ function weekPopup() {
     const keep = $("pop").querySelector(".pop-box")?.scrollTop || 0;
     const t = new Date(weekMonday(new Date().toISOString().slice(0, 10)) + "T00:00:00Z");
     let h = '<div class="pop-box"><div class="pop-title">RANGE LENGTH - MON-FRI ONLY</div><div class="pop-grid pp">';
-    for (const [n, lbl] of [[1, "1 WEEK"], [2, "2 WEEKS"], [4, "1 MONTH"], [8, "2 MONTHS"], [13, "3 MONTHS"], [26, "6 MONTHS"], [39, "9 MONTHS"], [52, "1 YEAR"]]) {
-      h += `<button type="button" data-n="${n}" class="pop-btn${n === cfg.weeks ? " on" : ""}">${lbl}</button>`;
+    for (const [n, lbl] of [[0, "1 DAY"], [1, "1 WEEK"], [2, "2 WEEKS"], [4, "1 MONTH"], [8, "2 MONTHS"], [13, "3 MONTHS"], [26, "6 MONTHS"], [39, "9 MONTHS"], [52, "1 YEAR"]]) {
+      h += `<button type="button" data-n="${n}" class="pop-btn${(n === 0 ? !!cfg.day : !cfg.day && n === cfg.weeks) ? " on" : ""}">${lbl}</button>`;
     }
-    h += '</div><div class="pop-title" style="margin-top:12px">LAST WEEK OF THE RANGE</div><div class="pop-grid pss">';
-    for (let i = 0; i < 80; i++) {
-      const w = t.toISOString().slice(0, 10), d = weekDays(w);
+    h += cfg.day ? dayPickList() : '</div><div class="pop-title" style="margin-top:12px">LAST WEEK OF THE RANGE</div><div class="pop-grid pss">';
+    for (let i = 0; i < (cfg.day ? 0 : 80); i++) {
+          const w = t.toISOString().slice(0, 10), d = weekDays(w);
       h += `<button type="button" data-w="${w}" class="pop-btn${w === cfg.week ? " on" : ""}">${dayLbl(d[0])} – ${dayLbl(d[4])}<br><span class="pop-sub">${d[4].slice(0, 4)}</span></button>`;
       t.setUTCDate(t.getUTCDate() - 7);
     }
