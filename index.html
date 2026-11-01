@@ -153,7 +153,7 @@ tbody tr { border-bottom: 1px solid var(--border); }
 #settingsOverlay.scanning .bar { display: none; }
 .bar {
   flex: 1; min-width: 0; min-height: 0; display: grid; overflow: hidden;
-  grid-template-columns: 1.4fr 5fr 1.2fr 1.4fr;
+  grid-template-columns: 1.4fr 3.4fr 1.2fr 1.9fr 1.2fr 1.2fr 1.4fr;
   grid-template-rows: 1fr 1fr; background: var(--bg); border-radius: 0 0 30px 30px;
 }
 .bar button {
@@ -180,15 +180,18 @@ tbody tr { border-bottom: 1px solid var(--border); }
 }
 .b-fh::before { content: "START"; }
 .b-th::before { content: "END"; }
-.b-sess { grid-area: 1/7/3/8; background: #1DD1A1; }
+.b-sess { grid-area: 1/3/3/4; background: #1DD1A1; }
+.b-slice { grid-area: 1/4/3/5; background: #54A0FF; }
+.b-slice b { font-size: clamp(9px, 1.8vw, 18px); white-space: nowrap; line-height: 1.2; text-align: center; }
 .b-sess b { font-size: clamp(9px, 1.8vw, 18px); white-space: nowrap; line-height: 1.2; text-align: center; }
-.b-cmin { grid-area: 1/3; background: #FF6B81; border-bottom: 1px solid rgba(0,4,50,.3) !important; }
-.b-cmax { grid-area: 2/3; background: #2ED573; }
+.b-cmin { grid-area: 1/5; background: #FF6B81; border-bottom: 1px solid rgba(0,4,50,.3) !important; }
+.b-cmax { grid-area: 2/5; background: #2ED573; }
 .b-prob { grid-area: 1/9/3/10; background: #FECA57; }
-.b-cache { grid-area: 1/10/3/11; background: #FF9F43; }
+.b-cache { grid-area: 1/6/3/7; background: #FF9F43; }
+.b-cache b { font-size: clamp(9px, 1.8vw, 18px); line-height: 1.2; text-align: center; }
 .b-sim { grid-area: 1/11/3/12; background: #FFEAA7; }
 .b-sim b { font-size: clamp(9px, 1.8vw, 18px); }
-.b-run { grid-area: 1/4/3/5; padding-right: 14px !important; background: #CCF5DF; border-right: 0 !important; }
+.b-run { grid-area: 1/7/3/8; padding-right: 14px !important; background: #CCF5DF; border-right: 0 !important; }
 
 /* scan view */
 #scanPage { display: none; flex-direction: column; width: 100%; height: 100%; padding: 14px 12px; }
@@ -973,8 +976,17 @@ function buildSessionRankHTML(filterFn) {
       (tl ? `<div class="rk-time">${tl} IST</div>` : "") +
       `<div class="rk-val">${g.win.toFixed(1)}%</div><div class="rk-sub">${g.n} signals · avg ${g.avg.toFixed(1)}%</div></div>`;
   }).join("");
-  return `<div class="rank-wrap"><div class="pane-head"><span>🏆 BEST SESSION OF THE DAY · S1–S${cnt} ranked by C1-weighted win% · ${cnt} sessions</span><span>${list.length}</span></div>` +
-    `<div class="rank-cards">${cards}</div></div>`;
+  var chip = function (v, t) {
+      return `<button type="button" class="export-btn${sessSel === v ? " on" : ""}" style="padding:4px 8px;font-size:11px" onclick="setSessSel(${v})">${t}</button>`;
+    };
+    var sel = chip(null, "ALL SLICES");
+    for (var si = 1; si <= cnt; si++) {
+      var stl = sessTime(si);
+      sel += chip(si, stl || ("S" + si));
+    }
+    return `<div class="rank-wrap"><div class="pane-head"><span>🏆 BEST SESSION OF THE DAY · S1–S${cnt} ranked by C1-weighted win% · ${cnt} sessions</span><span>${list.length}</span></div>` +
+      `<div style="display:flex;flex-wrap:wrap;gap:6px;padding:6px 2px">${sel}</div>` +
+      `<div class="rank-cards">${cards}</div></div>`;
 }
 
 function computeCrossSession() {
@@ -1023,6 +1035,57 @@ function buildXsHTML() {
 
 var skipTop100 = false;
 var TOP_LIMIT = 100;
+var sessSel = null;
+function setSessSel(v) { sessSel = v; renderTable(); }
+
+function sizePopup() {
+  var N = winMinutes(), cur = cfg.sess || N, opts = [];
+  for (var q = 60; q < N; q += 60) if (N % q === 0) opts.push(q);
+  opts.push(N);
+  var h = '<div class="pop-box"><div class="pop-title">SESSION SIZE</div><div class="pop-grid pp">';
+  opts.forEach(function (d) {
+      var ok = d * 60 > cfg.cmax;
+      if (!ok) return;
+    h += '<button type="button" data-d="' + d + '" data-ok="' + (ok ? 1 : 0) + '" class="pop-btn' + (d === cur ? " on" : "") + (ok ? "" : " dim") + '">' + (d === N ? "FULL " : "") + fmtSess(d) + '</button>';
+  });
+  showPop(h + "</div></div>", function (ev) {
+    var b = ev.target.closest(".pop-btn");
+    if (!b || b.dataset.ok !== "1") return;
+    var d = +b.dataset.d;
+    cfg.sess = d === N ? 0 : d;
+    sessSel = null;
+    closePop();
+  });
+}
+
+function sliceLbl(i) {
+  var N = winMinutes(), d = cfg.sess || N, p = cfg.from.split(":").map(Number), st = p[0] * 60 + p[1];
+  return hm(st + i * d) + "-" + hm(st + (i + 1) * d);
+}
+
+function sliceBtnText() {
+  return cfg.sess && sessSel ? sliceLbl(sessSel - 1) : "ALL SLICES";
+}
+
+function slicePopup() {
+  var N = winMinutes(), cnt = cfg.sess ? Math.round(N / cfg.sess) : 1;
+  if (cnt < 2) { toast("Pick a session size first", "err"); return; }
+  var h = '<div class="pop-box"><div class="pop-title">SLICE - ' + fmtSess(cfg.sess) + ' x' + cnt + '</div><div class="pop-grid pss">';
+  h += '<button type="button" data-i="0" class="pop-btn' + (sessSel == null ? " on" : "") + '">ALL SLICES</button>';
+  for (var i = 0; i < cnt; i++) {
+    h += '<button type="button" data-i="' + (i + 1) + '" class="pop-btn' + (sessSel === i + 1 ? " on" : "") + '">' + sliceLbl(i) + '</button>';
+  }
+  showPop(h + "</div></div>", function (ev) {
+    var b = ev.target.closest(".pop-btn");
+    if (!b) return;
+    sessSel = +b.dataset.i || null;
+    closePop();
+    if (allRevs.length || allMoms.length) {
+      if (last.sessMin !== cfg.sess) toast("Scan again with this session size", "err");
+      else renderTable();
+    }
+  });
+}
 function row0Btn() {
   return `<button type="button" onclick="toggleRow0()" title="Row 0 only" style="background:` + (row0Only ? "var(--green)" : "none") + `;border:1px solid #2a3a6a;color:` + (row0Only ? "#000432" : "inherit") + `;cursor:pointer;padding:0 8px;font:inherit;border-radius:3px;margin-right:6px">R0</button>`;
 }
@@ -1055,7 +1118,9 @@ function renderTable() {
   $("levelFilter").disabled = $("filterPct").disabled = lvlsOn;
 
   const minPct = parseInt($("filterPct").value) || 0, lv = levelFilter();
-  const filterFn = x => x.pct >= minPct && matchesLevel(x, lv) && (!row0Only || x.r === 0);
+  if (sessSel != null && sessSel > last.sessCount) sessSel = null;
+    const baseFn = x => x.pct >= minPct && matchesLevel(x, lv) && (!row0Only || x.r === 0);
+    const filterFn = x => baseFn(x) && (sessSel == null || (x.sess || 1) === sessSel);
   const sortFn = (a, b) => (pctDesc ? b.pct - a.pct : a.pct - b.pct) || b.c1 - a.c1 || a.c - b.c || a.r - b.r;
   const rev = startBelow100(allRevs.filter(filterFn).sort(sortFn)).slice(0, TOP_LIMIT);
     const mom = startBelow100(allMoms.filter(filterFn).sort(sortFn)).slice(0, TOP_LIMIT);
@@ -1063,8 +1128,8 @@ function renderTable() {
     for (const x of rev) lvlAll[x.s1] = 1;
     for (const x of mom) lvlAll[x.s1] = 1;
 
-  const area = $("tableArea"), rank = buildSessionRankHTML(filterFn);
-  if (xsView && last.sessCount > 1) { area.innerHTML = rank + buildXsHTML(); return; }
+  const area = $("tableArea"), rank = "";
+    if (xsView && last.sessCount > 1 && sessSel == null) { area.innerHTML = rank + buildXsHTML(); return; }
   if (!rev.length && !mom.length) {
     area.innerHTML = rank + '<div class="state-empty"><div style="font-size:36px">○</div><div>No signals at current filters</div><div>Try lowering Min % or adjusting filters</div></div>';
     return;
@@ -1354,19 +1419,23 @@ function sessionPopup() {
   const [sh, sm] = cfg.from.split(":").map(Number), st = sh * 60 + sm;
   let h = `<div class="pop-box"><div class="pop-title">SESSION - ${hm(st)}-${hm(st + N)} (${fmtSess(N)})</div>` +
     `<div class="pop-display small">CYCLE MAX C${cfg.cmax} - SESSION MUST BE LONGER (DIMMED = TOO SHORT)</div><div class="pop-grid pss">`;
-  for (let d = 1; d <= N; d++) {
-    if (N % d) continue;
+  var opts = [];
+    for (let q = 60; q < N; q += 60) if (N % q === 0) opts.push(q);
+    opts.push(N);
+    for (const d of opts) {
     const ok = d * 60 > cfg.cmax, cnt = N / d, slot = i => hm(st + i * d) + "-" + hm(st + (i + 1) * d);
-    const tl = cnt <= 4
-      ? Array.from({ length: cnt }, (_, i) => slot(i)).join("<br>")
-      : slot(0) + "<br>...<br>" + slot(cnt - 1);
+    const sp = i => `<span class="pop-slot" data-i="${i}" style="display:block;padding:2px 0${d === cur && sessSel === i + 1 ? ";font-weight:700;text-decoration:underline" : ""}">${slot(i)}</span>`;
+        const tl = cnt <= 12
+          ? Array.from({ length: cnt }, (_, i) => sp(i)).join("")
+          : sp(0) + "...<br>" + sp(cnt - 1);
     h += `<button type="button" data-d="${d}" data-ok="${ok ? 1 : 0}" class="pop-btn${d === cur ? " on" : ""}${ok ? "" : " dim"}">${fmtSess(d)} &times;${cnt}<br><span class="pop-sub">${tl}</span></button>`;
   }
   showPop(h + "</div></div>", ev => {
     const b = ev.target.closest(".pop-btn");
     if (!b || b.dataset.ok !== "1") return;
-    const d = +b.dataset.d;
-    cfg.sess = d === N ? 0 : d;
+        const d = +b.dataset.d, spEl = ev.target.closest(".pop-slot");
+        cfg.sess = d === N ? 0 : d;
+        sessSel = spEl && d !== N ? +spEl.dataset.i + 1 : null;
     closePop();
   });
 }
@@ -1436,7 +1505,8 @@ const ACTIONS = {
   fm: () => timePopup("from", "FROM", false),
   th: () => timePopup("to", "TO", true),
   tm: () => timePopup("to", "TO", false),
-  sess: sessionPopup,
+  sess: sizePopup,
+    slice: slicePopup,
   cmin: () => keypad("CYC MIN", "cmin", 1, 900),
     cmax: () => keypad("CYC MAX", "cmax", 1, 900),
   prob: () => keypad("MIN PROB %", "minPct", 0, 100),
@@ -1451,9 +1521,11 @@ function renderBar() {
   const cell = (cls, act, txt) => `<button type="button" class="b-${cls}" data-act="${act}"><b>${txt}</b></button>`;
   $("bar").innerHTML =
     cell("pair", "pair", pairText()) + cell("date", "date", pad2(d.d) + " " + (MONTHS[d.m - 1] || "").slice(0, 3) + " " + d.y) +
-    "" +
-    cell("cmin", "cmin", cfg.cmin) + cell("cmax", "cmax", cfg.cmax) +
-    cell("run", "run", "&#9654;");
+    cell("sess", "sess", "SESS " + (cfg.sess ? fmtSess(cfg.sess) : "FULL")) +
+        cell("slice", "slice", sliceBtnText()) +
+        cell("cmin", "cmin", cfg.cmin) + cell("cmax", "cmax", cfg.cmax) +
+        cell("cache", "cache", "CLEAR CACHE") +
+        cell("run", "run", "&#9654;");
 }
 
 $("bar").addEventListener("click", e => {
