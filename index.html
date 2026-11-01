@@ -618,10 +618,10 @@ async function workerScanSessions(prices, cMin, cMax, pair, startTs, winSec, ses
   let merged = null;
   for (let si = 0; si < n; si++) {
     if (cancelFlag) break;
-    const a = si * sessSec, b = si === n - 1 ? prices.length : (si + 1) * sessSec;
-    const slice = prices.slice(a, b);
-    if (slice.length <= cMax) continue;
-    const r = await workerScan(slice, cMin, cMax, pair, 0, f => onFrac && onFrac((si + f) / n), ext.subarray(a, a + PR));
+    const a = si * sessSec, b = si === n - 1 ? prices.length : (si + 1) * sessSec + 1;
+        const slice = prices.slice(a, b);
+        if (slice.length <= cMax) continue;
+        const r = await workerScan(slice, cMin, cMax, pair, startTs + a, f => onFrac && onFrac((si + f) / n), ext.subarray(a, a + PR));
     for (const list of r) for (const it of list) it.sess = si + 1;
     merged = merged ? [merged[0].concat(r[0]), merged[1].concat(r[1])] : r;
   }
@@ -1085,8 +1085,8 @@ function simRun() {
     }
     const ext = D.ext, sess = sg.sess || 1, c = sg.c, code = sg.col === "G" ? 1 : 2;
     const a = last.sessMin ? (sess - 1) * sessSec : 0;
-    const b = last.sessMin ? (sess === ws ? D.prices.length : sess * sessSec) : D.prices.length;
-    const len = b - a, st = last.sessMin ? 0 : D.startTsUtc;
+    const b = last.sessMin ? (sess === ws ? D.prices.length : sess * sessSec + 1) : D.prices.length;
+        const len = b - a, st = D.startTsUtc + a;
     let rc = 0, rs = 0, first = true;
     for (let i = (((sg.r - st) % c) + c) % c; i < len; i += c) {
       const p = ext[PR + a + i], pk = PR + i - c;
