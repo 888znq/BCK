@@ -458,9 +458,27 @@ async function loadTicksForDay(pair, dayEpoch, secFrom, secTo, cached, logCb) {
       }
     }
     await sleep(1300);
-  }
-  return Array.from(prices);
-}
+      }
+      return Array.from(prices);
+    }
+    
+    const PRE_ROLL_SECS = 900;
+    async function loadPreRoll(pair, startTs) {
+      const arr = new Float64Array(PRE_ROLL_SECS).fill(-1);
+      const t0 = startTs - PRE_ROLL_SECS, t1 = startTs - 1;
+      if (t0 >= Math.floor(Date.now() / 1000)) return Array.from(arr);
+      let map = {};
+      for (let tr = 0; tr < 2 && !cancelFlag; tr++) {
+        map = await fetchChunk(pair, t0, t1);
+        if (Object.keys(map).length > 0) break;
+        await sleep(1500);
+      }
+      for (const ts in map) {
+        const j = +ts - t0;
+        if (j >= 0 && j < PRE_ROLL_SECS) arr[j] = map[ts];
+      }
+      return Array.from(arr);
+    }
 
 // ── streak scan (web workers) ──
 function workerMain() {
@@ -474,8 +492,9 @@ function workerMain() {
     return res;
   }
   self.onmessage = e => {
-    const { prices, minC, maxC, pair, startTsUtc } = e.data;
-    const n = prices.length, revs = [], moms = [];
+    const { prices, minC, maxC, pair, startTsUtc, pre } = e.data;
+        const preLen = pre ? pre.length : 0;
+        const n = prices.length, revs = [], moms = [];
     for (let c = minC; c <= maxC; c++) {
       const rowColor = new Int8Array(c), rowStreak = new Int16Array(c), rowCol = new Int32Array(c).fill(-2);
       const maxLen = [new Int16Array(c), new Int16Array(c)];            // [green, red]
@@ -488,11 +507,14 @@ function workerMain() {
       };
 
       for (let i = 0; i < n; i++) {
-        const total = startTsUtc + i, p = prices[i], prevP = i >= c ? prices[i - c] : -1;
+        const total = startTsUtc + i, p = prices[i];
+                let prevP = -1;
+                if (i >= c) prevP = prices[i - c];
+                else if (preLen) { const pk = preLen + i - c; if (pk >= 0) prevP = pre[pk]; }
         const col = Math.floor(total / c), row = total % c;
         const cont = rowCol[row] === col - 1;
         let newC, newS;
-        if (prevP === -1) newC = newS = p === -1 ? 0 : 1;
+        if (prevP === -1) newC = newS = (p === -1 || i < c) ? 0 : 1;
         else if (p === -1) newC = newS = 0;
         else if (p > prevP) { newC = 1; newS = cont && rowColor[row] === 1 && rowStreak[row] > 0 ? rowStreak[row] + 1 : 1; }
         else if (p < prevP) { newC = 2; newS = cont && rowColor[row] === 2 && rowStreak[row] > 0 ? rowStreak[row] + 1 : 1; }
@@ -525,7 +547,7 @@ function workerMain() {
 let workerURL = null;
 const getWorkerURL = () => workerURL ||= URL.createObjectURL(new Blob([`(${workerMain})()`], { type: "application/javascript" }));
 
-function workerScan(prices, minC, maxC, pair, startTsUtc, onProgress) {
+function workerScan(prices, minC, maxC, pair, startTsUtc, onProgress, pre) {
   return new Promise(resolve => {
     const total = maxC - minC + 1;
     const nWorkers = Math.min(navigator.hardwareConcurrency || 4, 16, total);
@@ -549,13 +571,18 @@ function workerScan(prices, minC, maxC, pair, startTsUtc, onProgress) {
         finish();
       };
       w.onerror = () => { w.terminate(); finish(); };
-      w.postMessage({ prices: buf, minC: a, maxC: b, pair, startTsUtc }, [buf.buffer]);
+      const pbuf = pre ? Float64Array.from(pre) : null;
+            w.postMessage({ prices: buf, minC: a, maxC: b, pair, startTsUtc, pre: pbuf }, [buf.buffer]);
     }
   });
 }
 
-async function workerScanSessions(prices, cMin, cMax, pair, startTs, winSec, sessMin, onFrac) {
-  if (!sessMin) return workerScan(prices, cMin, cMax, pair, startTs, onFrac);
+async function workerScanSessions(prices, cMin, cMax, pair, startTs, winSec, sessMin, onFrac, pre0) {
+  const PR = PRE_ROLL_SECS;
+  const ext = new Float64Array(PR + prices.length).fill(-1);
+  if (pre0 && pre0.length) ext.set(pre0.length > PR ? pre0.slice(pre0.length - PR) : pre0, PR - Math.min(pre0.length, PR));
+  ext.set(prices, PR);
+  if (!sessMin) return workerScan(prices, cMin, cMax, pair, startTs, onFrac, ext.subarray(0, PR));
   const n = Math.max(1, Math.round(winSec / (sessMin * 60)));
   const sessSec = Math.round(winSec / n);
   let merged = null;
@@ -564,7 +591,7 @@ async function workerScanSessions(prices, cMin, cMax, pair, startTs, winSec, ses
     const a = si * sessSec, b = si === n - 1 ? prices.length : (si + 1) * sessSec;
     const slice = prices.slice(a, b);
     if (slice.length <= cMax) continue;
-    const r = await workerScan(slice, cMin, cMax, pair, 0, f => onFrac && onFrac((si + f) / n));
+    const r = await workerScan(slice, cMin, cMax, pair, 0, f => onFrac && onFrac((si + f) / n), ext.subarray(a, a + PR));
     for (const list of r) for (const it of list) it.sess = si + 1;
     merged = merged ? [merged[0].concat(r[0]), merged[1].concat(r[1])] : r;
   }
@@ -650,13 +677,22 @@ async function runScan() {
       const prices = await loadTicksForDay(pair, dayEpoch, secFrom, secTo, tickCache[key], msg => setLog(`${tag}  ${cfg.date}  ${msg}`));
       if (cancelFlag || !prices) continue;
       tickCache[key] = prices;
-      idbSet(key, prices);
+            idbSet(key, prices);
+            const pkey = key + "|pre";
+            let pre = tickCache[pkey];
+            if (!pre) {
+              setProgress(scanBase, `${tag}  loading pre-session reference…`);
+              pre = await loadPreRoll(pair, startTsUtc);
+              if (cancelFlag) continue;
+              if (pre.some(v => v !== -1)) { tickCache[pkey] = pre; idbSet(pkey, pre); }
+            }
+            setLog(`${tag}  reference ticks: ${pre.filter(v => v !== -1).length}`);
 
       setProgress(scanBase, `${tag}  scanning (${cfg.date})…`, `Cycles C${cycleMin}–C${cycleMax}`);
       const [revs, moms] = await workerScanSessions(prices, cycleMin, cycleMax, pair, startTsUtc, winSec, sessMin, f =>
         setProgress(scanBase + f * scanSlice,
           `${tag}  ${cfg.date}  scanning… ${Math.round(f * 100)}%`,
-          `C${cycleMin}–C${cycleMax}  [${navigator.hardwareConcurrency || 4} workers]`));
+          `C${cycleMin}–C${cycleMax}  [${navigator.hardwareConcurrency || 4} workers]`), pre);
       allRevs = allRevs.concat(revs);
       allMoms = allMoms.concat(moms);
     }
