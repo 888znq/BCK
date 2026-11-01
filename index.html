@@ -550,7 +550,7 @@ function workerMain() {
         else if (p < prevP) { newC = 2; newS = cont && rowColor[row] === 2 && rowStreak[row] > 0 ? rowStreak[row] + 1 : 1; }
         else { newC = rowColor[row]; newS = 0; }
 
-        if (newS === 1 && rowStreak[row] > 0 && rowColor[row] !== 0 && cont) record(row, rowColor[row], rowStreak[row]);
+        if (newS === 1 && rowStreak[row] > 0 && rowColor[row] !== 0 && cont) record(row, rowColor[row], rowStreak[row], !(prevP !== -1 && newC === 3 - rowColor[row]));
         rowColor[row] = newC; rowStreak[row] = newS; rowCol[row] = col;
       }
       for (let r = 0; r < c; r++) if (rowStreak[r] >= 1 && rowColor[r] !== 0) record(r, rowColor[r], rowStreak[r]);
