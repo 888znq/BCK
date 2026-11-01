@@ -152,7 +152,7 @@ tbody tr { border-bottom: 1px solid var(--border); }
 #settingsOverlay.scanning .bar { display: none; }
 .bar {
   flex: 1; min-width: 0; min-height: 0; display: grid; overflow: hidden;
-  grid-template-columns: 1.4fr .9fr 2.4fr 1.4fr .9fr .9fr 1.3fr 1.2fr 1.2fr 1.3fr 1.1fr 1.5fr;
+  grid-template-columns: 1.4fr 5fr 1.2fr 1.4fr;
   grid-template-rows: 1fr 1fr; background: var(--bg); border-radius: 0 0 30px 30px;
 }
 .bar button {
@@ -165,7 +165,8 @@ tbody tr { border-bottom: 1px solid var(--border); }
 .bar b { max-width: 100%; font-size: clamp(10px, min(2.4vw, 2.6vh), 22px); font-weight: 500; line-height: 1; }
 .b-pair { grid-area: 1/1/3/2; padding-left: 14px !important; background: #FFD700; }
 .b-pair b { font-size: clamp(10px, min(2.2vw, 2.8vh), 20px); white-space: normal; word-break: break-all; text-align: center; }
-.b-day { grid-area: 1/2/3/3; background: #FF9F43; }
+.b-date { grid-area: 1/2/3/3; background: #FF9F43; }
+.b-date b { font-size: clamp(11px, 3.4vw, 20px); white-space: nowrap; }
 .b-mon { grid-area: 1/3/3/4; background: #54A0FF; }
 .b-mon b { font-size: clamp(7px, 2.6vw, 14px); white-space: nowrap; overflow: hidden; }
 .b-yr { grid-area: 1/4/3/5; background: #A29BFE; }
@@ -180,13 +181,13 @@ tbody tr { border-bottom: 1px solid var(--border); }
 .b-th::before { content: "END"; }
 .b-sess { grid-area: 1/7/3/8; background: #1DD1A1; }
 .b-sess b { font-size: clamp(9px, 1.8vw, 18px); white-space: nowrap; line-height: 1.2; text-align: center; }
-.b-cmin { grid-area: 1/8; background: #FF6B81; border-bottom: 1px solid rgba(0,4,50,.3) !important; }
-.b-cmax { grid-area: 2/8; background: #2ED573; }
+.b-cmin { grid-area: 1/3; background: #FF6B81; border-bottom: 1px solid rgba(0,4,50,.3) !important; }
+.b-cmax { grid-area: 2/3; background: #2ED573; }
 .b-prob { grid-area: 1/9/3/10; background: #FECA57; }
 .b-cache { grid-area: 1/10/3/11; background: #FF9F43; }
 .b-sim { grid-area: 1/11/3/12; background: #FFEAA7; }
 .b-sim b { font-size: clamp(9px, 1.8vw, 18px); }
-.b-run { grid-area: 1/12/3/13; padding-right: 14px !important; background: #CCF5DF; border-right: 0 !important; }
+.b-run { grid-area: 1/4/3/5; padding-right: 14px !important; background: #CCF5DF; border-right: 0 !important; }
 
 /* scan view */
 #scanPage { display: none; flex-direction: column; width: 100%; height: 100%; padding: 14px 12px; }
@@ -359,12 +360,12 @@ function pairName(p) {
 }
 
 // ── state ──
-const cfg = { date: new Date().toISOString().slice(0, 10), from: "05:30", to: "05:30", cmin: 60, cmax: 60, minPct: 10, sess: 0 };
-let selPairs = new Set(["cryBTCUSD"]);
+const cfg = { date: new Date().toISOString().slice(0, 10), from: "10:30", to: "22:30", cmin: 60, cmax: 60, minPct: 0, sess: 0 };
+let selPairs = new Set(["frxEURUSD"]);
 let allPairsMode = false;
 let allRevs = [], allMoms = [];
 let scanRunning = false, cancelFlag = false, cacheReady = false;
-let lvlsOn = true, ordOn = true, row0Only = false, xsView = false;
+let lvlsOn = false, ordOn = true, row0Only = false, xsView = false;
 let last = { sessCount: 1, sessMin: 0, startIST: "05:30" };
 const lvlsExp = {}, lvlsCnt = {};
 const tickCache = {};
@@ -565,7 +566,7 @@ function workerMain() {
             if (s < 1) continue;
             const base = { pair, c, r, s1: s, s2: s + 1, c1, c2, col };
             revs.push({ ...base, pct: 100 - Math.round(c2 / c1 * 100), type: "REV" });
-            if (c1 > 1) moms.push({ ...base, pct: Math.round(c2 / c1 * 100), type: "MOM" });
+            moms.push({ ...base, pct: Math.round(c2 / c1 * 100), type: "MOM" });
           }
         }
       }
@@ -658,10 +659,10 @@ function startScan() {
 async function runScan() {
   if (scanRunning) { cancelFlag = true; return; }
 
-  const pairs = allPairsMode ? ALL_PAIRS : (selPairs.size ? ALL_PAIRS.filter(p => selPairs.has(p)) : ["cryBTCUSD"]);
+  const pairs = allPairsMode ? ALL_PAIRS : (selPairs.size ? ALL_PAIRS.filter(p => selPairs.has(p)) : ["frxEURUSD"]);
   const cycleMin = Math.max(1, cfg.cmin || 120);
   const cycleMax = Math.max(cycleMin, cfg.cmax || 180);
-  const minPct = cfg.minPct || 100;
+  const minPct = 0;
 
   // inputs are IST (UTC+5:30); convert to seconds from UTC midnight
   const [fH, fM] = cfg.from.split(":").map(Number), [tH, tM] = cfg.to.split(":").map(Number);
@@ -734,7 +735,7 @@ async function runScan() {
     const nRev = allRevs.filter(x => x.pct >= minPct).length;
     const nMom = allMoms.filter(x => x.pct >= minPct).length;
     setProgress(100, "Complete", `Done — ${nRev} REV  |  ${nMom} MOM`);
-    $("filterBar").classList.add("show");
+    $("filterBar").classList.remove("show");
     $("filterPct").value = minPct;
     renderTable();
     toast(`Scan complete — ${nRev + nMom} signals`, "ok");
@@ -845,7 +846,7 @@ var lvlsAllHide = false;
 var lvlsPanel = {};
 function toggleAllLvls() { lvlsHide = {}; renderTable(); }
 function toggleLvlPanel(l) { lvlsPanel[l] = !lvlsPanel[l]; renderTable(); }
-var lvlSel = 1;
+var lvlSel = null;
 var lvlAll = {};
 function stepLvlSel(dir) {
   var opts = [null].concat(Object.keys(lvlAll).map(Number).sort(function (a, b) { return a - b; }));
@@ -907,12 +908,12 @@ function buildPane(label, data) {
     ? `<table>${SIG_COLS}<thead><tr><th>PAIR</th><th>CYCLE</th><th>ROW</th><th>STREAK</th><th>C1</th><th>C2</th><th>PROB%</th></tr></thead><tbody>${buildRows(data)}</tbody></table>`
     : '<div class="state-empty"><span>○</span><span>No signals</span></div>';
   const btnCss = "background:none;border:1px solid #2a3a6a;color:inherit;cursor:pointer;padding:0 10px;font:inherit;border-radius:3px";
-    const lvlTxt = lvlSel == null ? "ALL LEVELS" : "X" + lvlSel + "→X" + (lvlSel + 1);
+    const lvlTxt = (lvlSel == null ? "ALL LEVELS" : "X" + lvlSel + "→X" + (lvlSel + 1)) + " · " + (lvlSel == null ? data.length : data.filter(d => d.s1 === lvlSel).length);
     return `<div class="split-pane"><div class="pane-head"><span>${label}</span>` +
       `<span style="display:flex;gap:8px;align-items:center">` +
-      `<button type="button" onclick="stepLvlSel(-1)" title="Previous level" style="${btnCss}">◀</button>` +
+      "" +
       `<span>${lvlTxt}</span>` +
-      `<button type="button" onclick="stepLvlSel(1)" title="Next level" style="${btnCss}">▶</button>` +
+      "" +
       `</span><span>${data.length}</span></div><div class="pane-body">${body}</div></div>`;
 }
 function buildPaneOld(label, data) {
@@ -1014,8 +1015,11 @@ function renderTable() {
   const minPct = parseInt($("filterPct").value) || 0, lv = levelFilter();
   const filterFn = x => x.pct >= minPct && matchesLevel(x, lv) && (!row0Only || x.r === 0);
   const sortFn = (a, b) => b.pct * b.c1 - a.pct * a.c1;
-  const rev = lvlsOn ? lvlsBuild(allRevs) : allRevs.filter(filterFn).sort(sortFn).slice(0, 100);
-  const mom = lvlsOn ? lvlsBuild(allMoms) : allMoms.filter(filterFn).sort(sortFn).slice(0, 100);
+  const rev = allRevs.filter(filterFn).sort(sortFn);
+  const mom = allMoms.filter(filterFn).sort(sortFn);
+    for (const k in lvlAll) delete lvlAll[k];
+    for (const x of rev) lvlAll[x.s1] = 1;
+    for (const x of mom) lvlAll[x.s1] = 1;
 
   const area = $("tableArea"), rank = buildSessionRankHTML(filterFn);
   if (xsView && last.sessCount > 1) { area.innerHTML = rank + buildXsHTML(); return; }
@@ -1326,7 +1330,41 @@ const timePopup = (key, label, hour) => {
   else valuePopup(`${label} - MINUTE`, 60, 0, t.n, "pm", v => setTime(key, t.h, v));
 };
 
+function datePopup() {
+  const sel = dateParts();
+  let y = sel.y, m = sel.m;
+  const draw = () => {
+    const dim = new Date(Date.UTC(y, m, 0)).getUTCDate();
+    const dow = (new Date(Date.UTC(y, m - 1, 1)).getUTCDay() + 6) % 7;
+    const nav = (n, t) => `<button type="button" data-n="${n}" class="pop-btn" style="height:40px">${t}</button>`;
+    let h = `<div class="pop-box"><div class="pop-grid" style="grid-template-columns:1fr 1fr 3fr 1fr 1fr;margin-bottom:8px">` +
+      nav(-12, "&laquo;") + nav(-1, "&lsaquo;") +
+      `<div class="pop-title" style="margin:0;line-height:40px">${MONTHS[m - 1]} ${y}</div>` +
+      nav(1, "&rsaquo;") + nav(12, "&raquo;") + `</div><div class="pop-grid pd">`;
+    h += [..."MTWTFSS"].map((c, i) => `<span class="pop-dow${i >= 5 ? " we" : ""}">${c}</span>`).join("") + "<span></span>".repeat(dow);
+    for (let v = 1; v <= dim; v++) {
+      const on = y === sel.y && m === sel.m && v === sel.d;
+      h += `<button type="button" data-v="${v}" class="pop-btn${on ? " on" : ""}">${pad2(v)}</button>`;
+    }
+    showPop(h + "</div></div>", ev => {
+      const b = ev.target.closest(".pop-btn");
+      if (!b) return;
+      if (b.dataset.n) {
+        const tot = y * 12 + (m - 1) + (+b.dataset.n);
+        y = Math.floor(tot / 12);
+        m = tot % 12 + 1;
+        draw();
+        return;
+      }
+      setDate(y, m, +b.dataset.v);
+      closePop();
+    });
+  };
+  draw();
+}
+
 const ACTIONS = {
+  date: datePopup,
   pair: pairPopup,
   day() {
     const { y, m, d } = dateParts();
@@ -1358,10 +1396,10 @@ function renderBar() {
   if (cfg.sess && (cfg.sess >= N || N % cfg.sess !== 0)) cfg.sess = 0;
   const cell = (cls, act, txt) => `<button type="button" class="b-${cls}" data-act="${act}"><b>${txt}</b></button>`;
   $("bar").innerHTML =
-    cell("pair", "pair", pairText()) + cell("day", "day", pad2(d.d)) + cell("mon", "month", MONTHS[d.m - 1] || pad2(d.m)) + cell("yr", "year", d.y) +
-    cell("fh", "fh", pad2(f.h)) + cell("fm", "fm", pad2(f.n)) + cell("th", "th", pad2(t.h)) + cell("tm", "tm", pad2(t.n)) +
-    cell("sess", "sess", fmtSess(cfg.sess || N)) + cell("cmin", "cmin", cfg.cmin) + cell("cmax", "cmax", cfg.cmax) +
-    cell("prob", "prob", cfg.minPct + "%") + cell("cache", "cache", "&#9003;") + cell("sim", "sim", "SIM") + cell("run", "run", "&#9654;");
+    cell("pair", "pair", pairText()) + cell("date", "date", pad2(d.d) + " " + (MONTHS[d.m - 1] || "").slice(0, 3) + " " + d.y) +
+    "" +
+    cell("cmin", "cmin", cfg.cmin) + cell("cmax", "cmax", cfg.cmax) +
+    cell("run", "run", "&#9654;");
 }
 
 $("bar").addEventListener("click", e => {
