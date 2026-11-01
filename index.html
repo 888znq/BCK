@@ -1014,6 +1014,7 @@ function buildXsHTML() {
 }
 
 var skipTop100 = false;
+var TOP_LIMIT = 100;
 function toggleTop100() {
   skipTop100 = !skipTop100;
   renderTable();
@@ -1045,8 +1046,8 @@ function renderTable() {
   const minPct = parseInt($("filterPct").value) || 0, lv = levelFilter();
   const filterFn = x => x.pct >= minPct && matchesLevel(x, lv) && (!row0Only || x.r === 0);
   const sortFn = (a, b) => (pctDesc ? b.pct - a.pct : a.pct - b.pct) || b.c1 - a.c1 || a.c - b.c || a.r - b.r;
-  const rev = startBelow100(allRevs.filter(filterFn).sort(sortFn));
-    const mom = startBelow100(allMoms.filter(filterFn).sort(sortFn));
+  const rev = startBelow100(allRevs.filter(filterFn).sort(sortFn)).slice(0, TOP_LIMIT);
+    const mom = startBelow100(allMoms.filter(filterFn).sort(sortFn)).slice(0, TOP_LIMIT);
     for (const k in lvlAll) delete lvlAll[k];
     for (const x of rev) lvlAll[x.s1] = 1;
     for (const x of mom) lvlAll[x.s1] = 1;
