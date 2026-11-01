@@ -500,7 +500,7 @@ async function loadTicksForDay(pair, dayEpoch, secFrom, secTo, cached, logCb) {
       const t0 = startTs - PRE_ROLL_SECS, t1 = startTs - 1;
       if (t0 >= Math.floor(Date.now() / 1000)) return Array.from(arr);
       let map = {};
-      for (let tr = 0; tr < 2 && !cancelFlag; tr++) {
+      for (let tr = 0; tr < 4 && !cancelFlag; tr++) {
         map = await fetchChunk(pair, t0, t1);
         if (Object.keys(map).length > 0) break;
         await sleep(1500);
@@ -700,6 +700,7 @@ async function runScan() {
     const dayEpoch = Math.floor(new Date(cfg.date + "T00:00:00Z").getTime() / 1000);
     const startTsUtc = dayEpoch + secFrom;
     const n = pairs.length;
+        var skippedRef = [];
 
     for (let pi = 0; pi < n && !cancelFlag; pi++) {
       const pair = pairs[pi], tag = `[${pi + 1}/${n}] ${pair}`;
@@ -719,7 +720,13 @@ async function runScan() {
               if (cancelFlag) continue;
               if (pre.some(v => v !== -1)) { tickCache[pkey] = pre; idbSet(pkey, pre); }
             }
-            setLog(`${tag}  reference ticks: ${pre.filter(v => v !== -1).length}`);
+            var refN = pre.slice(-Math.min(cycleMax, PRE_ROLL_SECS)).filter(v => v !== -1).length;
+                        setLog(`${tag}  reference ticks: ${refN}`);
+                        if (refN < 1) {
+                          skippedRef.push(pairName(pair));
+                          setLog(`${tag}  NO REFERENCE - skipped`);
+                          continue;
+                        }
                         simData[pair] = { prices, pre, startTsUtc };
 
       setProgress(scanBase, `${tag}  scanning (${cfg.date})…`, `Cycles C${cycleMin}–C${cycleMax}`);
@@ -739,7 +746,8 @@ async function runScan() {
     $("filterBar").classList.remove("show");
     $("filterPct").value = minPct;
     renderTable();
-    toast(`Scan complete — ${nRev + nMom} signals`, "ok");
+    if (skippedRef.length) toast(`Skipped (no reference): ${skippedRef.join(", ")} — ${nRev + nMom} signals`, "err", 7000);
+        else toast(`Scan complete — ${nRev + nMom} signals`, "ok");
   } finally {
     scanRunning = false;
     cancelFlag = false;
@@ -916,7 +924,7 @@ function buildPane(label, data) {
     ? `<table>${SIG_COLS}<thead><tr><th>PAIR</th><th>CYCLE</th><th>ROW</th><th>STREAK</th><th>C1</th><th>C2</th><th>PROB%</th></tr></thead><tbody>${buildRows(data)}</tbody></table>`
     : '<div class="state-empty"><span>○</span><span>No signals</span></div>';
   const btnCss = "background:none;border:1px solid #2a3a6a;color:inherit;cursor:pointer;padding:0 10px;font:inherit;border-radius:3px";
-    const lvlTxt = top100Btn() + (lvlSel == null ? "ALL LEVELS" : "X" + lvlSel + "→X" + (lvlSel + 1)) + " · " + (lvlSel == null ? data.length : data.filter(d => d.s1 === lvlSel).length);
+    const lvlTxt = row0Btn() + top100Btn() + (lvlSel == null ? "ALL LEVELS" : "X" + lvlSel + "→X" + (lvlSel + 1)) + " · " + (lvlSel == null ? data.length : data.filter(d => d.s1 === lvlSel).length);
     return `<div class="split-pane"><div class="pane-head"><span>${label}</span>` +
       `<span style="display:flex;gap:8px;align-items:center">` +
       "" +
@@ -1015,6 +1023,9 @@ function buildXsHTML() {
 
 var skipTop100 = false;
 var TOP_LIMIT = 100;
+function row0Btn() {
+  return `<button type="button" onclick="toggleRow0()" title="Row 0 only" style="background:` + (row0Only ? "var(--green)" : "none") + `;border:1px solid #2a3a6a;color:` + (row0Only ? "#000432" : "inherit") + `;cursor:pointer;padding:0 8px;font:inherit;border-radius:3px;margin-right:6px">R0</button>`;
+}
 function toggleTop100() {
   skipTop100 = !skipTop100;
   renderTable();
@@ -1426,8 +1437,8 @@ const ACTIONS = {
   th: () => timePopup("to", "TO", true),
   tm: () => timePopup("to", "TO", false),
   sess: sessionPopup,
-  cmin: () => keypad("CYC MIN", "cmin", 1, 500),
-  cmax: () => keypad("CYC MAX", "cmax", 1, 500),
+  cmin: () => keypad("CYC MIN", "cmin", 1, 900),
+    cmax: () => keypad("CYC MAX", "cmax", 1, 900),
   prob: () => keypad("MIN PROB %", "minPct", 0, 100),
   cache: clearPersistedCache,
   sim: openSim,
