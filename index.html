@@ -9,11 +9,11 @@
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg: #000432; --surface: #000432; --panel: #000432;
-  --border: #454a7a; --border2: #565c93;
-  --green: #ccf5df; --red: #f7d9dc; --cyan: #cdf1ef;
-  --text: #eef0f7; --text-dim: #767ba3; --text-mid: #b2b6d9;
-  --sig-green: #2ED573; --sig-red: #E63946;
+  --bg: #0a0420; --surface: #140a3a; --panel: #140a3a;
+    --border: #3d2fa0; --border2: #6c4cff;
+    --green: #00f5a0; --red: #ff5c7a; --cyan: #00e5ff;
+    --text: #ffffff; --text-dim: #a79bf0; --text-mid: #d6ceff;
+    --sig-green: #00e676; --sig-red: #ff2e5b;
   --mono: 'JetBrains Mono', monospace; --sans: 'IBM Plex Sans', sans-serif;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -163,10 +163,11 @@ tbody tr { border-bottom: 1px solid var(--border); }
   cursor: pointer; touch-action: manipulation;
 }
 .bar button:hover { filter: brightness(1.15); }
+option, optgroup { background: #140a3a !important; color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; }
 .bar b { max-width: 100%; font-size: clamp(10px, min(2.4vw, 2.6vh), 22px); font-weight: 500; line-height: 1; }
-.b-pair { grid-area: 1/1/3/2; padding-left: 14px !important; background: #FFD700; }
+.b-pair { grid-area: 1/1/3/2; padding-left: 14px !important; background: #ffd60a; }
 .b-pair b { font-size: clamp(10px, min(2.2vw, 2.8vh), 20px); white-space: normal; word-break: break-all; text-align: center; }
-.b-date { grid-area: 1/2/3/3; background: #FF9F43; }
+.b-date { grid-area: 1/2/3/3; background: #ff9500; }
 .b-date b { font-size: clamp(11px, 3.4vw, 20px); white-space: nowrap; }
 .b-mon { grid-area: 1/3/3/4; background: #54A0FF; }
 .b-mon b { font-size: clamp(7px, 2.6vw, 14px); white-space: nowrap; overflow: hidden; }
@@ -180,18 +181,24 @@ tbody tr { border-bottom: 1px solid var(--border); }
 }
 .b-fh::before { content: "START"; }
 .b-th::before { content: "END"; }
-.b-sess { grid-area: 1/3/3/4; background: #1DD1A1; }
-.b-slice { grid-area: 1/4/3/5; background: #54A0FF; }
+.b-sess { grid-area: 1/3/3/4; background: #3ddcf5; }
+.b-slice { grid-area: 1/4/3/5; background: #6ea8ff; }
 .b-slice b { font-size: clamp(9px, 1.8vw, 18px); white-space: nowrap; line-height: 1.2; text-align: center; }
 .b-sess b { font-size: clamp(9px, 1.8vw, 18px); white-space: nowrap; line-height: 1.2; text-align: center; }
-.b-cmin { grid-area: 1/5; background: #FF6B81; border-bottom: 1px solid rgba(0,4,50,.3) !important; }
-.b-cmax { grid-area: 2/5; background: #2ED573; }
+.b-cmin { grid-area: 1/5; background: #e3b8ff; border-bottom: 1px solid rgba(0,4,50,.3) !important; }
+.b-cmax { grid-area: 2/5; background: #c48bff; }
 .b-prob { grid-area: 1/9/3/10; background: #FECA57; }
-.b-cache { grid-area: 1/6/3/7; background: #FF9F43; }
+.b-cache { grid-area: 1/6/3/7; background: #ff5c7a; }
+#dbD { background: #ffc266 !important; }
+#dbM { background: #ffad33 !important; }
+#dbY { background: #ff9500 !important; }
+#bWin { background: #3ddcf5 !important; }
+#bSize { background: #67c8ff !important; }
+.bar select:hover { filter: brightness(1.1); }
 .b-cache b { font-size: clamp(9px, 1.8vw, 18px); line-height: 1.2; text-align: center; }
 .b-sim { grid-area: 1/11/3/12; background: #FFEAA7; }
 .b-sim b { font-size: clamp(9px, 1.8vw, 18px); }
-.b-run { grid-area: 1/7/3/8; padding-right: 14px !important; background: #CCF5DF; border-right: 0 !important; }
+.b-run { grid-area: 1/7/3/8; padding-right: 14px !important; background: #00f5a0; border-right: 0 !important; }
 
 /* scan view */
 #scanPage { display: none; flex-direction: column; width: 100%; height: 100%; padding: 14px 12px; }
@@ -219,7 +226,7 @@ tbody tr { border-bottom: 1px solid var(--border); }
 /* popups */
 #pop {
   display: none; position: fixed; inset: 0; z-index: 1200; padding: 10px;
-  align-items: center; justify-content: center; background: rgba(0,2,24,.78);
+    align-items: center; justify-content: center; background: rgba(8,2,30,.82);
 }
 .pop-box {
   width: min(560px, 96vw); max-height: 96vh; overflow-y: auto; padding: 12px;
@@ -269,7 +276,7 @@ tbody tr { border-bottom: 1px solid var(--border); }
 /* trade simulation */
 #simPop {
   display: none; position: fixed; inset: 0; z-index: 1250; padding: 10px;
-  align-items: center; justify-content: center; background: rgba(0,2,24,.78);
+    align-items: center; justify-content: center; background: rgba(8,2,30,.82);
 }
 #simPop.show { display: flex; }
 .sim-box {
@@ -934,7 +941,7 @@ function buildPane(label, data) {
     ? `<table>${SIG_COLS}<thead><tr><th>PAIR</th><th>CYCLE</th><th>ROW</th><th>STREAK</th><th>C1</th><th>C2</th><th>PROB%</th></tr></thead><tbody>${buildRows(data)}</tbody></table>`
     : '<div class="state-empty"><span>○</span><span>No signals</span></div>';
   const btnCss = "background:none;border:1px solid #2a3a6a;color:inherit;cursor:pointer;padding:0 10px;font:inherit;border-radius:3px";
-    const lvlTxt = row0Btn() + top100Btn() + (lvlSel == null ? "ALL LEVELS" : "X" + lvlSel + "→X" + (lvlSel + 1)) + " · " + (lvlSel == null ? data.length : data.filter(d => d.s1 === lvlSel).length);
+    const lvlTxt = row0Btn() + (lvlSel == null ? "ALL LEVELS" : "X" + lvlSel + "→X" + (lvlSel + 1)) + " · " + (lvlSel == null ? data.length : data.filter(d => d.s1 === lvlSel).length);
     return `<div class="split-pane"><div class="pane-head"><span>${label}</span>` +
       `<span style="display:flex;gap:8px;align-items:center">` +
       "" +
@@ -1041,7 +1048,7 @@ function buildXsHTML() {
 }
 
 var skipTop100 = false;
-var TOP_LIMIT = 100;
+var TOP_LIMIT = Infinity;
 var sessSel = null;
 function setSessSel(v) { sessSel = v; renderTable(); }
 
@@ -1174,7 +1181,7 @@ function slicePopup() {
   });
 }
 function row0Btn() {
-  return `<button type="button" onclick="toggleRow0()" title="Row 0 only" style="background:` + (row0Only ? "var(--green)" : "none") + `;border:1px solid #2a3a6a;color:` + (row0Only ? "#000432" : "inherit") + `;cursor:pointer;padding:0 8px;font:inherit;border-radius:3px;margin-right:6px">R0</button>`;
+  return `<button type="button" onclick="toggleRow0()" title="Row 0 only" style="background:` + (row0Only ? "var(--green)" : "none") + `;border:1px solid var(--border2);color:` + (row0Only ? "#000432" : "inherit") + `;cursor:pointer;padding:0 8px;font:inherit;border-radius:3px;margin-right:6px">R0</button>`;
 }
 function toggleTop100() {
   skipTop100 = !skipTop100;
@@ -1182,19 +1189,10 @@ function toggleTop100() {
   toast(skipTop100 ? "100% signals hidden" : "100% signals shown", "ok", 1500);
 }
 function top100Btn() {
-  return `<button type="button" onclick="toggleTop100()" style="background:none;border:1px solid #2a3a6a;color:inherit;cursor:pointer;padding:0 8px;font:inherit;border-radius:3px;margin-right:6px">` + (skipTop100 ? "SHOW 100%" : "HIDE 100%") + `</button>`;
+  return `<button type="button" onclick="toggleTop100()" style="background:none;border:1px solid var(--border2);color:inherit;cursor:pointer;padding:0 8px;font:inherit;border-radius:3px;margin-right:6px">` + (skipTop100 ? "SHOW 100%" : "HIDE 100%") + `</button>`;
 }
 function startBelow100(list) {
-  if (!skipTop100 || !pctDesc) return list;
-  var minC1 = Infinity, lastIdx = -1, i;
-  for (i = 0; i < list.length; i++) {
-    if (list[i].pct >= 100 && list[i].c1 < minC1) minC1 = list[i].c1;
-  }
-  if (minC1 === Infinity) return list;
-  for (i = 0; i < list.length; i++) {
-    if (list[i].pct >= 100 && list[i].c1 === minC1) lastIdx = i;
-  }
-  return list.slice(lastIdx + 1);
+  return list;
 }
 
 function renderTable() {
