@@ -76,7 +76,7 @@ body::before {
 .split-pane:last-child { border-right: none; }
 .pane-head {
   display: flex; justify-content: space-between; align-items: center; flex: none;
-  padding: 6px 3px; background: var(--panel); border-bottom: 1px solid var(--border);
+  padding: 6px 14px; background: var(--panel); border-bottom: 1px solid var(--border);
   font-family: var(--mono); font-size: clamp(9px, 2.6vw, 13px); color: var(--text-mid);
 }
 .pane-body { flex: 1 1 0; min-height: 0; overflow: hidden auto; padding-bottom: 8px; }
@@ -93,6 +93,11 @@ th {
 }
 tbody tr { border-bottom: 1px solid var(--border); }
 .split-pane td { padding: 6px 2px 6px 4px; height: 30px; vertical-align: middle; }
+.split-pane th { vertical-align: middle; }
+.split-pane th:first-child, .split-pane td:first-child { padding-left: 14px; }
+.split-pane th:nth-child(5), .split-pane td:nth-child(5) { text-align: right; padding-right: 12px; }
+.split-pane th:nth-child(6), .split-pane td:nth-child(6) { text-align: center; }
+.split-pane th:nth-child(7), .split-pane td:nth-child(7) { text-align: right; padding-right: 14px; }
 .cell-pair { letter-spacing: .03em; }
 .sort-th { cursor: pointer; color: var(--green); }
 .row-red { color: var(--sig-red); }
@@ -101,7 +106,7 @@ tbody tr { border-bottom: 1px solid var(--border); }
 .row-green:hover { background: rgba(46,213,115,.08); border-left: 2px solid var(--sig-green); }
 
 .lvl-hdr { cursor: pointer; background: var(--panel); border-bottom: 1px solid var(--border2); }
-.split-pane .lvl-hdr td { padding: 5px 8px; color: var(--green); font-size: 12px; font-weight: 700; }
+.split-pane .lvl-hdr td { padding: 5px 14px; color: var(--green); font-size: 12px; font-weight: 700; }
 .lvl-hdr div { display: flex; align-items: center; justify-content: space-between; }
 .lvl-tog { padding: 1px 8px; border: 1px solid var(--border2); border-radius: 3px; font-size: 10px; color: var(--text); }
 
@@ -868,7 +873,7 @@ function toggleOrd() { ordOn = !ordOn; renderTable(); }
 function toggleRow0() { row0Only = !row0Only; renderTable(); }
 function toggleXs() { xsView = !xsView; $("xsBtn").classList.toggle("on", xsView); renderTable(); }
 var minC2 = 0;
-function toggleC2() { minC2 = (minC2 + 1) % 11; renderTable(); }
+function toggleC2(dir) { minC2 = (minC2 + (dir || 1) + 11) % 11; renderTable(); }
 var lvlsHide = {};
 var lvlsAllHide = false;
 var lvlsPanel = {};
@@ -893,7 +898,7 @@ function stepLvl(dir) {
 }
 
 // ── rendering ──
-const SIG_COLS = "<colgroup>" + [27, 13, 11, 16, 9, 9, 15].map(w => `<col style="width:${w}%">`).join("") + "</colgroup>";
+const SIG_COLS = "<colgroup>" + [22, 13, 11, 16, 9, 14, 15].map(w => `<col style="width:${w}%">`).join("") + "</colgroup>";
 
 function buildRow(d) {
   const red = d.col === "R";
@@ -934,7 +939,7 @@ function buildRowsOld(data) {
 
 function buildPane(label, data) {
   const body = data.length
-    ? `<table>${SIG_COLS}<thead><tr><th>PAIR</th><th>CYCLE</th><th>ROW</th><th>STREAK</th><th>C1</th><th class="c2-th" style="cursor:pointer" title="Click: show only this C2 count (0-10)">C2=${minC2}</th><th>PROB%</th></tr></thead><tbody>${buildRows(data)}</tbody></table>`
+    ? `<table>${SIG_COLS}<thead><tr><th>PAIR</th><th>CYCLE</th><th>ROW</th><th>STREAK</th><th>C1</th><th class="c2-th" style="white-space:nowrap"><span class="c2-dn" style="cursor:pointer;color:var(--green);padding:2px 4px 2px 0;font-size:.85em;user-select:none" title="Previous C2 count">&#9664;</span>C2=${minC2}<span class="c2-up" style="cursor:pointer;color:var(--green);padding:2px 0 2px 4px;font-size:.85em;user-select:none" title="Next C2 count">&#9654;</span></th><th>PROB%</th></tr></thead><tbody>${buildRows(data)}</tbody></table>`
     : '<div class="state-empty"><span>○</span><span>No signals</span></div>';
   const btnCss = "background:none;border:1px solid #2a3a6a;color:inherit;cursor:pointer;padding:0 10px;font:inherit;border-radius:3px";
     const lvlTxt = row0Btn() + (lvlSel == null ? "ALL LEVELS" : "X" + lvlSel + "→X" + (lvlSel + 1)) + " · " + (lvlSel == null ? data.length : data.filter(d => d.s1 === lvlSel).length);
@@ -1235,7 +1240,8 @@ function markSort() {
   });
 }
 $("tableArea").addEventListener("click", e => {
-  if (e.target.closest("th.c2-th")) toggleC2();
+  if (e.target.closest(".c2-dn")) toggleC2(-1);
+    else if (e.target.closest(".c2-up")) toggleC2(1);
 });
 
 // ── CSV export (session repeats) ──
