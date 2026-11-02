@@ -876,12 +876,6 @@ function toggleAllLvls() { lvlsHide = {}; renderTable(); }
 function toggleLvlPanel(l) { lvlsPanel[l] = !lvlsPanel[l]; renderTable(); }
 var lvlSel = null;
 var pctDesc = true;
-function toggleSort() {
-  pctDesc = !pctDesc;
-  renderBar();
-  if (!scanRunning && (allRevs.length || allMoms.length)) renderTable();
-  toast(pctDesc ? "PROB% highest to lowest" : "PROB% lowest to highest", "ok", 1500);
-}
 var lvlAll = {};
 function stepLvlSel(dir) {
   var opts = [null].concat(Object.keys(lvlAll).map(Number).sort(function (a, b) { return a - b; }));
@@ -1214,7 +1208,7 @@ function renderTable() {
   if (sessSel != null && sessSel > last.sessCount) sessSel = null;
     const baseFn = x => x.pct >= minPct && matchesLevel(x, lv) && (!row0Only || x.r === 0) && (x.c2 || 0) === minC2;
     const filterFn = x => baseFn(x) && (sessSel == null || (x.sess || 1) === sessSel);
-  const sortFn = (a, b) => (pctDesc ? b.pct - a.pct : a.pct - b.pct) || b.c1 - a.c1 || a.c - b.c || a.r - b.r;
+  const sortFn = (a, b) => b.pct - a.pct || b.c1 - a.c1 || a.c - b.c || a.r - b.r;
   const rev = startBelow100(allRevs.filter(filterFn).sort(sortFn)).slice(0, TOP_LIMIT);
     const mom = startBelow100(allMoms.filter(filterFn).sort(sortFn)).slice(0, TOP_LIMIT);
     for (const k in lvlAll) delete lvlAll[k];
@@ -1236,14 +1230,12 @@ $("levelFilter").addEventListener("change", renderTable);
 function markSort() {
   document.querySelectorAll("#tableArea .split-pane th").forEach(th => {
     if (th.textContent.indexOf("PROB%") === 0) {
-      th.classList.add("sort-th");
-      th.textContent = "PROB% " + (pctDesc ? "\u25BC" : "\u25B2");
-    }
+          th.textContent = "PROB% \u25BC";
+        }
   });
 }
 $("tableArea").addEventListener("click", e => {
-  if (e.target.closest("th.sort-th")) toggleSort();
-  else if (e.target.closest("th.c2-th")) toggleC2();
+  if (e.target.closest("th.c2-th")) toggleC2();
 });
 
 // ── CSV export (session repeats) ──
@@ -1647,8 +1639,8 @@ function datePopupOld() {
 }
 
 const ACTIONS = {
-  date: datePopup,
-  pair: pairPopup,
+  date: datePopupOld,
+    pair: pairPopup,
   day() {
     const { y, m, d } = dateParts();
     const dim = new Date(Date.UTC(y, m, 0)).getUTCDate();
@@ -1705,10 +1697,11 @@ function renderBar() {
         }).join("");
         var dsOpts = '<option value="0"' + (cfg.dayShift ? "" : " selected") + op + '>NEW</option><option value="-1"' + (cfg.dayShift ? " selected" : "") + op + '>OLDER</option>';
             var rowSt = st + ";width:auto;height:100%;border-right:1px solid rgba(0,4,50,.3)";
-            return '<div class="b-sess" style="display:flex;flex-direction:row;align-items:stretch;border-right:1px solid rgba(0,4,50,.3)">' +
-              '<select id="bWin" style="' + rowSt + '">' + wsOpts + '</select>' +
+                        var bt = function (on) { return "flex:1 1 0;min-width:0;min-height:0;padding:0 4px;border:1px solid rgba(0,4,50,.35);border-radius:4px;white-space:nowrap;cursor:pointer;font-family:var(--mono);font-size:clamp(9px,1.2vw,14px);font-weight:600;-webkit-appearance:none;appearance:none;" + (on ? "background:#000432;color:#fff;-webkit-text-fill-color:#fff" : "background:transparent;color:#000432;-webkit-text-fill-color:#000432"); };
+            return '<div class="b-sess" style="display:flex;flex-direction:row;align-items:stretch;gap:4px;padding:4px;box-sizing:border-box;min-width:0;border-right:1px solid rgba(0,4,50,.3)">' +
+              '<div style="display:flex;flex-direction:column;gap:3px;flex:1.3 1 0;min-width:0">' + wo.map(function (o) { return '<button type="button" data-win="' + o[0] + '" style="' + bt(o[0] === wk) + '">' + o[1] + '</button>'; }).join("") + '</div>' +
               
-              '<select id="bSize" style="' + rowSt + ';border-right:0">' + szOpts + '</select></div>';
+              '<div style="flex:2 1 0;min-width:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-rows:minmax(0,1fr);gap:3px">' + sizes.filter(function (z) { return z * 60 > cfg.cmax || z === cur; }).map(function (z) { return '<button type="button" data-size="' + z + '" style="' + bt(z === cur) + '">' + fmtSess(z) + '</button>'; }).join("") + '</div></div>';
       };
       var sliceCtl = function () {
           var st = "flex:1 1 0;min-width:0;width:100%;height:100%;padding:0;border:0;border-radius:0;background:transparent;color:#000432;-webkit-text-fill-color:#000432;font-family:var(--mono);font-size:clamp(9px,1.5vw,16px);font-weight:500;text-align:center;text-align-last:center;cursor:pointer;outline:none;-webkit-appearance:none;appearance:none";
@@ -1734,7 +1727,7 @@ function renderBar() {
             });
             return '<div class="b-pair" style="display:flex;align-items:stretch;border-right:1px solid rgba(0,4,50,.3)"><select id="bPair" style="' + st + '">' + o + '</select></div>';
           };
-          const cell = (cls, act, txt) => cls === "date" ? dateSel() : cls === "sess" ? sessCtl() : cls === "slice" ? sliceCtl() :  `<button type="button" class="b-${cls}" data-act="${act}"><b>${txt}</b></button>`;
+          const cell = (cls, act, txt) => cls === "sess" ? sessCtl() : cls === "slice" ? sliceCtl() :  `<button type="button" class="b-${cls}" data-act="${act}"><b>${txt}</b></button>`;
   $("bar").innerHTML =
     cell("pair", "pair", pairText()) + cell("date", "date", pad2(d.d) + " " + (MONTHS[d.m - 1] || "").slice(0, 3) + " " + d.y + (cfg.dayShift && cfg.from === cfg.to ? " (OLDER)" : "")) +
     cell("sess", "sess", "SESS " + (cfg.sess ? fmtSess(cfg.sess) : "FULL")) +
@@ -1746,7 +1739,23 @@ function renderBar() {
 
 $("bar").addEventListener("click", e => {
   const b = e.target.closest("button");
-  if (b) ACTIONS[b.dataset.act]?.();
+  if (!b) return;
+    if (b.dataset.win) {
+      if (b.dataset.win === "b") { cfg.from = "10:30"; cfg.to = "22:30"; cfg.dayShift = 0; }
+      else { cfg.from = cfg.to = "05:30"; cfg.dayShift = 0; }
+      cfg.sess = 0;
+      sessSel = null;
+      renderBar();
+      return;
+    }
+    if (b.dataset.size) {
+      const z = +b.dataset.size, nn = winMinutes();
+      cfg.sess = z === nn ? 0 : z;
+      sessSel = null;
+      renderBar();
+      return;
+    }
+    ACTIONS[b.dataset.act]?.();
 });
 $("scanCancelBtn").addEventListener("click", () => { if (scanRunning) cancelFlag = true; });
 function openSel(id) {
