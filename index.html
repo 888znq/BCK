@@ -378,7 +378,7 @@ function pairName(p) {
 
 // ── state ──
 const cfg = { date: new Date().toISOString().slice(0, 10), from: "10:30", to: "22:30", cmin: 60, cmax: 60, minPct: 0, sess: 0, dayShift: 0 };
-let selPairs = new Set(["frxEURUSD"]);
+let selPairs = new Set(["cryBTCUSD"]);
 let allPairsMode = false;
 let allRevs = [], allMoms = [];
 let scanRunning = false, cancelFlag = false, cacheReady = false;
@@ -676,7 +676,7 @@ function startScan() {
 async function runScan() {
   if (scanRunning) { cancelFlag = true; return; }
 
-  const pairs = allPairsMode ? ALL_PAIRS : (selPairs.size ? ALL_PAIRS.filter(p => selPairs.has(p)) : ["frxEURUSD"]);
+  const pairs = allPairsMode ? ALL_PAIRS : (selPairs.size ? ALL_PAIRS.filter(p => selPairs.has(p)) : ["cryBTCUSD"]);
   const cycleMin = Math.max(1, cfg.cmin || 120);
   const cycleMax = Math.max(cycleMin, cfg.cmax || 180);
   const minPct = 0;
@@ -867,6 +867,8 @@ function toggleLvls() { lvlsOn = !lvlsOn; renderTable(); }
 function toggleOrd() { ordOn = !ordOn; renderTable(); }
 function toggleRow0() { row0Only = !row0Only; renderTable(); }
 function toggleXs() { xsView = !xsView; $("xsBtn").classList.toggle("on", xsView); renderTable(); }
+var minC2 = 0;
+function toggleC2() { minC2 = (minC2 + 1) % 11; renderTable(); }
 var lvlsHide = {};
 var lvlsAllHide = false;
 var lvlsPanel = {};
@@ -938,7 +940,7 @@ function buildRowsOld(data) {
 
 function buildPane(label, data) {
   const body = data.length
-    ? `<table>${SIG_COLS}<thead><tr><th>PAIR</th><th>CYCLE</th><th>ROW</th><th>STREAK</th><th>C1</th><th>C2</th><th>PROB%</th></tr></thead><tbody>${buildRows(data)}</tbody></table>`
+    ? `<table>${SIG_COLS}<thead><tr><th>PAIR</th><th>CYCLE</th><th>ROW</th><th>STREAK</th><th>C1</th><th class="c2-th" style="cursor:pointer" title="Click: show only this C2 count (0-10)">C2=${minC2}</th><th>PROB%</th></tr></thead><tbody>${buildRows(data)}</tbody></table>`
     : '<div class="state-empty"><span>○</span><span>No signals</span></div>';
   const btnCss = "background:none;border:1px solid #2a3a6a;color:inherit;cursor:pointer;padding:0 10px;font:inherit;border-radius:3px";
     const lvlTxt = row0Btn() + (lvlSel == null ? "ALL LEVELS" : "X" + lvlSel + "→X" + (lvlSel + 1)) + " · " + (lvlSel == null ? data.length : data.filter(d => d.s1 === lvlSel).length);
@@ -1192,7 +1194,13 @@ function top100Btn() {
   return `<button type="button" onclick="toggleTop100()" style="background:none;border:1px solid var(--border2);color:inherit;cursor:pointer;padding:0 8px;font:inherit;border-radius:3px;margin-right:6px">` + (skipTop100 ? "SHOW 100%" : "HIDE 100%") + `</button>`;
 }
 function startBelow100(list) {
-  return list;
+  var best = {};
+  var key = function (x) { return x.pair + "|" + (x.sess || 1) + "|" + x.col + "|" + x.s1 + "|" + x.s2 + "|" + x.pct + "|" + x.c1 + "|" + x.c2; };
+  list.forEach(function (x) {
+    var k = key(x), b = best[k];
+    if (!b || x.r < b.r || (x.r === b.r && x.c < b.c)) best[k] = x;
+  });
+  return list.filter(function (x) { return best[key(x)] === x; });
 }
 
 function renderTable() {
@@ -1204,7 +1212,7 @@ function renderTable() {
 
   const minPct = parseInt($("filterPct").value) || 0, lv = levelFilter();
   if (sessSel != null && sessSel > last.sessCount) sessSel = null;
-    const baseFn = x => x.pct >= minPct && matchesLevel(x, lv) && (!row0Only || x.r === 0);
+    const baseFn = x => x.pct >= minPct && matchesLevel(x, lv) && (!row0Only || x.r === 0) && (x.c2 || 0) === minC2;
     const filterFn = x => baseFn(x) && (sessSel == null || (x.sess || 1) === sessSel);
   const sortFn = (a, b) => (pctDesc ? b.pct - a.pct : a.pct - b.pct) || b.c1 - a.c1 || a.c - b.c || a.r - b.r;
   const rev = startBelow100(allRevs.filter(filterFn).sort(sortFn)).slice(0, TOP_LIMIT);
@@ -1216,7 +1224,7 @@ function renderTable() {
   const area = $("tableArea"), rank = "";
     if (xsView && last.sessCount > 1 && sessSel == null) { area.innerHTML = rank + buildXsHTML(); return; }
   if (!rev.length && !mom.length) {
-    area.innerHTML = rank + '<div class="state-empty"><div style="font-size:36px">○</div><div>No signals at current filters</div><div>Try lowering Min % or adjusting filters</div></div>';
+    area.innerHTML = rank + '<div class="state-empty"><div style="font-size:36px">○</div><div>No signals at current filters</div><div>Try lowering Min % or adjusting filters</div><button type="button" class="export-btn" onclick="toggleC2()">C2 = ' + minC2 + ' (click for next)</button></div>';
     return;
   }
   area.innerHTML = rank + `<div class="split-table-wrap">${buildPane("REVERSAL", rev)}${buildPane("MOMENTUM", mom)}</div>`;
@@ -1235,6 +1243,7 @@ function markSort() {
 }
 $("tableArea").addEventListener("click", e => {
   if (e.target.closest("th.sort-th")) toggleSort();
+  else if (e.target.closest("th.c2-th")) toggleC2();
 });
 
 // ── CSV export (session repeats) ──
