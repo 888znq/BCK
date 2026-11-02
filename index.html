@@ -153,7 +153,7 @@ tbody tr { border-bottom: 1px solid var(--border); }
 #settingsOverlay.scanning .bar { display: none; }
 .bar {
   flex: 1; min-width: 0; min-height: 0; display: grid; overflow: hidden;
-  grid-template-columns: 1.4fr 3.4fr 1.2fr 1.9fr 1.2fr 1.2fr 1.4fr;
+  grid-template-columns: 1.4fr 3fr 3.4fr 1.6fr 1.2fr 1.2fr 1.4fr;
   grid-template-rows: 1fr 1fr; background: var(--bg); border-radius: 0 0 30px 30px;
 }
 .bar button {
@@ -347,11 +347,10 @@ const WS_URL = "wss://api.derivws.com/trading/v1/options/ws/public?app_id=1089";
 const IST_OFFSET = 19800;
 const MONTHS = ["JANUARY","FEBRUARY","MARCH","APRIL","MAY","JUNE","JULY","AUGUST","SEPTEMBER","OCTOBER","NOVEMBER","DECEMBER"];
 const PAIR_GROUPS = [
-  ["METALS", ["frxXAGUSD", "frxXAUUSD", "frxXPTUSD"]],
-  ["FOREX", ["frxAUDCAD", "frxAUDCHF", "frxAUDJPY", "frxAUDUSD", "frxEURAUD", "frxEURCAD", "frxEURCHF", "frxEURGBP", "frxEURJPY", "frxEURUSD", "frxGBPAUD", "frxGBPCAD", "frxGBPCHF", "frxGBPJPY", "frxGBPUSD", "frxUSDCAD", "frxUSDCHF", "frxUSDJPY"]],
-  ["CRYPTO", ["cryBTCUSD", "cryETHUSD"]],
-  ["VOLATILITY (1s)", ["1HZ10V", "1HZ15V", "1HZ25V", "1HZ30V", "1HZ50V", "1HZ75V", "1HZ90V", "1HZ100V"]]
-];
+  ["METALS", ["frxXAGUSD", "frxXAUUSD", "frxXPDUSD", "frxXPTUSD"]],
+  ["FOREX", ["frxAUDCAD", "frxAUDCHF", "frxAUDJPY", "frxAUDUSD", "frxEURAUD", "frxEURCAD", "frxEURCHF", "frxEURGBP", "frxEURJPY", "frxEURUSD", "frxGBPAUD", "frxGBPCAD", "frxGBPCHF", "frxGBPJPY", "frxGBPUSD", "frxUSDCAD", "frxUSDCHF", "frxUSDJPY", "frxAUDNZD", "frxEURNZD", "frxGBPNZD", "frxNZDJPY", "frxNZDUSD", "frxUSDMXN", "frxUSDPLN"]],
+  ["CRYPTO", ["cryBTCUSD", "cryETHUSD"]]
+  ];
 const ALL_PAIRS = PAIR_GROUPS.flatMap(g => g[1]);
 
 function pairLabel(v) {
@@ -364,7 +363,7 @@ function pairName(p) {
 }
 
 // ── state ──
-const cfg = { date: new Date().toISOString().slice(0, 10), from: "10:30", to: "22:30", cmin: 60, cmax: 60, minPct: 0, sess: 0 };
+const cfg = { date: new Date().toISOString().slice(0, 10), from: "10:30", to: "22:30", cmin: 60, cmax: 60, minPct: 0, sess: 0, dayShift: 0 };
 let selPairs = new Set(["frxEURUSD"]);
 let allPairsMode = false;
 let allRevs = [], allMoms = [];
@@ -679,6 +678,7 @@ async function runScan() {
     secTo = ((istTo - IST_OFFSET) % 86400 + 86400) % 86400 || 86400;
   }
   if (secTo <= secFrom) { toast("Time window must stay inside 05:30 → 05:30 IST (end after start)", "err"); return; }
+    const shiftDays = istFrom === istTo ? (cfg.dayShift || 0) : 0;
 
   const winSec = secTo - secFrom;
   let sessMin = cfg.sess;
@@ -700,15 +700,15 @@ async function runScan() {
   allRevs = []; allMoms = [];
 
   try {
-    const dayEpoch = Math.floor(new Date(cfg.date + "T00:00:00Z").getTime() / 1000);
-    const startTsUtc = dayEpoch + secFrom;
-    const n = pairs.length;
+    const dayEpoch = Math.floor(new Date(cfg.date + "T00:00:00Z").getTime() / 1000) + shiftDays * 86400;
+        const startTsUtc = dayEpoch + secFrom;
+        const n = pairs.length;
         var skippedRef = [];
 
     for (let pi = 0; pi < n && !cancelFlag; pi++) {
       const pair = pairs[pi], tag = `[${pi + 1}/${n}] ${pair}`;
       const fetchBase = pi / n * 60, scanBase = 60 + pi / n * 28, scanSlice = 28 / n;
-      const key = `${pair}|${cfg.date}|${secFrom}-${secTo}`;
+      const key = `${pair}|${cfg.date}|${secFrom}-${secTo}` + (shiftDays ? "|d" + shiftDays : "");
 
       setProgress(fetchBase, `${tag}  syncing day`, `${pair}  ${cfg.from}–${cfg.to} IST`);
       const prices = await loadTicksForDay(pair, dayEpoch, secFrom, secTo, tickCache[key], msg => setLog(`${tag}  ${cfg.date}  ${msg}`));
@@ -1039,10 +1039,87 @@ var sessSel = null;
 function setSessSel(v) { sessSel = v; renderTable(); }
 
 function sizePopup() {
+  var sty = 'background:var(--bg);text-align:center';
+  var h = '<div class="pop-box"><div class="pop-title">SESSION SIZE</div><div class="pop-grid pss"><select id="winSel" class="pop-btn" style="' + sty + '"></select><select id="sessSizeSel" class="pop-btn" style="' + sty + '"></select></div></div>';
+  showPop(h, function () {});
+  var ws = $("winSel"), ss = $("sessSizeSel");
+  function winKey() {
+    if (cfg.from === "05:30" && cfg.to === "05:30") return cfg.dayShift ? "a1" : "a0";
+    if (cfg.from === "10:30" && cfg.to === "22:30") return "b";
+    return "c";
+  }
+  function fillWin() {
+    var k = winKey();
+    ws.innerHTML = '<option value="a0">05:30 &rarr; 05:30 NEW</option><option value="a1">05:30 &rarr; 05:30 OLDER</option><option value="b">10:30 &rarr; 22:30</option>' + (k === "c" ? '<option value="c">' + cfg.from + ' &rarr; ' + cfg.to + '</option>' : "");
+    ws.value = k;
+  }
+  function fillSize() {
+    var N = winMinutes(), cur = cfg.sess || N, opts = [], s = "";
+    for (var q = 60; q < N; q += 60) if (N % q === 0) opts.push(q);
+    opts.push(N);
+    opts.forEach(function (d) {
+      if (d * 60 <= cfg.cmax) return;
+      s += '<option value="' + d + '">' + (d === N ? "FULL " : "") + fmtSess(d) + '</option>';
+    });
+    ss.innerHTML = s;
+    ss.value = String(cur);
+  }
+  ws.onchange = function () {
+    var k = ws.value;
+    if (k === "c") return;
+    if (k === "b") { cfg.from = "10:30"; cfg.to = "22:30"; cfg.dayShift = 0; }
+    else { cfg.from = cfg.to = "05:30"; cfg.dayShift = k === "a1" ? -1 : 0; }
+    cfg.sess = 0;
+    sessSel = null;
+    fillSize();
+    renderBar();
+  };
+  ss.onchange = function () {
+    var d = +ss.value, n = winMinutes();
+    cfg.sess = d === n ? 0 : d;
+    sessSel = null;
+    renderBar();
+  };
+  fillWin();
+  fillSize();
+}
+
+function sizePopupV2() {
   var N = winMinutes(), cur = cfg.sess || N, opts = [];
   for (var q = 60; q < N; q += 60) if (N % q === 0) opts.push(q);
   opts.push(N);
-  var h = '<div class="pop-box"><div class="pop-title">SESSION SIZE</div><div class="pop-grid pp">';
+  var full = cfg.from === cfg.to;
+  var isA = full && cfg.from === "05:30", isB = cfg.from === "10:30" && cfg.to === "22:30";
+  var h = '<div class="pop-box"><div class="pop-title">SESSION SIZE</div><div class="pop-grid pss" style="margin-bottom:8px">' +
+    '<button type="button" data-w="a" class="pop-btn' + (isA ? " on" : "") + '">05:30 &rarr; 05:30</button>' +
+    '<button type="button" data-w="b" class="pop-btn' + (isB ? " on" : "") + '">10:30 &rarr; 22:30</button></div>' +
+    '<div class="pop-grid pss"><select id="sessSizeSel" class="pop-btn" style="background:var(--bg);text-align:center">';
+  opts.forEach(function (d) {
+    if (d * 60 <= cfg.cmax) return;
+    h += '<option value="' + d + '"' + (d === cur ? " selected" : "") + '>' + (d === N ? "FULL " : "") + fmtSess(d) + '</option>';
+  });
+  h += '</select>' + (full ? '<select id="dayShiftSel" class="pop-btn" style="background:var(--bg);text-align:center"><option value="0">NEW 05:30</option><option value="-1">OLDER 05:30</option></select>' : '<div></div>') + '</div>';
+  showPop(h + "</div>", function (ev) {
+    var b = ev.target.closest(".pop-btn");
+    if (!b || !b.dataset.w) return;
+    if (b.dataset.w === "a") { cfg.from = cfg.to = "05:30"; }
+    else { cfg.from = "10:30"; cfg.to = "22:30"; cfg.dayShift = 0; }
+    cfg.sess = 0;
+    sessSel = null;
+    sizePopup();
+  });
+  var ss = $("sessSizeSel");
+  if (ss) ss.onchange = function () { var d = +ss.value; cfg.sess = d === N ? 0 : d; sessSel = null; };
+  var ds = $("dayShiftSel");
+  if (ds) { ds.value = String(cfg.dayShift || 0); ds.onchange = function () { cfg.dayShift = +ds.value; }; }
+}
+
+function sizePopupOld() {
+  var N = winMinutes(), cur = cfg.sess || N, opts = [];
+  for (var q = 60; q < N; q += 60) if (N % q === 0) opts.push(q);
+  opts.push(N);
+  var full = cfg.from === cfg.to;
+    var h = '<div class="pop-box"><div class="pop-title">SESSION SIZE</div><div class="pop-grid pss" style="margin-bottom:8px"><button type="button" data-w="1" class="pop-btn' + (full && cfg.from === "05:30" ? " on" : "") + '">05:30 &rarr; 05:30</button>' + (full ? '<select id="dayShiftSel" class="pop-btn" style="background:var(--bg);text-align:center"><option value="0">NEW 05:30</option><option value="-1">OLDER 05:30</option></select>' : '<div></div>') + '</div><div class="pop-grid pp">';
   opts.forEach(function (d) {
       var ok = d * 60 > cfg.cmax;
       if (!ok) return;
@@ -1050,13 +1127,16 @@ function sizePopup() {
   });
   showPop(h + "</div></div>", function (ev) {
     var b = ev.target.closest(".pop-btn");
-    if (!b || b.dataset.ok !== "1") return;
-    var d = +b.dataset.d;
-    cfg.sess = d === N ? 0 : d;
-    sessSel = null;
-    closePop();
-  });
-}
+    if (b && b.dataset.w) { cfg.from = cfg.to = "05:30"; cfg.sess = 0; sessSel = null; sizePopup(); return; }
+        if (!b || b.dataset.ok !== "1") return;
+        var d = +b.dataset.d;
+        cfg.sess = d === N ? 0 : d;
+        sessSel = null;
+        closePop();
+      });
+      var sel = $("dayShiftSel");
+      if (sel) { sel.value = String(cfg.dayShift || 0); sel.onchange = function () { cfg.dayShift = +sel.value; }; }
+    }
 
 function sliceLbl(i) {
   var N = winMinutes(), d = cfg.sess || N, p = cfg.from.split(":").map(Number), st = p[0] * 60 + p[1];
@@ -1387,6 +1467,42 @@ function pairText() {
 }
 
 function pairPopup() {
+  var dd = $("pairDD");
+  if (dd) { dd.remove(); return; }
+  dd = document.createElement("div");
+  dd.id = "pairDD";
+  dd.style.cssText = "position:fixed;left:8px;bottom:calc(9dvh + 16px);z-index:1210;width:150px;max-height:calc(91dvh - 24px);overflow-y:auto;padding:4px;background:var(--surface);border:1px solid var(--border2);border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.6);font-family:var(--mono)";
+  function box(v, txt, on) {
+    return '<label style="display:flex;align-items:center;gap:6px;padding:2px 6px;border:1px solid var(--border2);border-radius:4px;font-size:12px;white-space:nowrap;overflow:hidden;cursor:pointer;' + (on ? 'background:var(--green);color:#000432;font-weight:700' : 'color:var(--text-mid)') + '"><input type="checkbox" data-v="' + v + '"' + (on ? " checked" : "") + ' style="accent-color:#000432;width:11px;height:11px;margin:0;flex:none">' + txt + '</label>';
+  }
+  function draw() {
+    var keep = dd.scrollTop;
+    var h = '<div style="display:flex;flex-direction:column;gap:2px">' + box("__ALL__", "ALL", allPairsMode);
+        ALL_PAIRS.slice().sort(function (a, b) { return pairLabel(a).localeCompare(pairLabel(b), undefined, { numeric: true }); }).forEach(function (p) {
+          h += box(p, pairLabel(p), allPairsMode || selPairs.has(p));
+        });
+        h += '</div>';
+    dd.innerHTML = h;
+    dd.scrollTop = keep;
+  }
+  dd.onchange = function (e) {
+    var v = e.target.dataset.v;
+    if (!v) return;
+    togglePair(v);
+    draw();
+    renderBar();
+  };
+  var off = function (e) {
+    if (dd.contains(e.target) || (e.target.closest && e.target.closest(".b-pair"))) return;
+    dd.remove();
+    document.removeEventListener("pointerdown", off, true);
+  };
+  document.addEventListener("pointerdown", off, true);
+  draw();
+  document.body.appendChild(dd);
+}
+
+function pairPopupOld() {
   const pop = $("pop");
   const draw = () => {
     const keep = pop.querySelector(".pop-box")?.scrollTop || 0;
@@ -1454,6 +1570,36 @@ const timePopup = (key, label, hour) => {
 };
 
 function datePopup() {
+  var p = dateParts(), now = new Date().getFullYear();
+  var y0 = Math.min(now - 10, p.y), y1 = Math.max(now, p.y);
+  var sty = 'background:var(--bg);text-align:center';
+  var mo = "", yr = "";
+  for (var i = 1; i <= 12; i++) mo += '<option value="' + i + '">' + MONTHS[i - 1] + '</option>';
+  for (var yy = y1; yy >= y0; yy--) yr += '<option value="' + yy + '">' + yy + '</option>';
+  var h = '<div class="pop-box"><div class="pop-title">DATE</div><div class="pop-grid" style="grid-template-columns:repeat(3,minmax(0,1fr))">' +
+    '<select id="dpD" class="pop-btn" style="' + sty + '"></select>' +
+    '<select id="dpM" class="pop-btn" style="' + sty + '">' + mo + '</select>' +
+    '<select id="dpY" class="pop-btn" style="' + sty + '">' + yr + '</select></div></div>';
+  showPop(h, function () {});
+  var sd = $("dpD"), sm = $("dpM"), sy = $("dpY");
+  function fillDays(day) {
+    var dim = new Date(Date.UTC(+sy.value, +sm.value, 0)).getUTCDate(), s = "";
+    for (var d = 1; d <= dim; d++) s += '<option value="' + d + '">' + pad2(d) + '</option>';
+    sd.innerHTML = s;
+    sd.value = String(Math.min(day, dim));
+  }
+  function applyDate() {
+    setDate(+sy.value, +sm.value, +sd.value);
+    renderBar();
+  }
+  sm.value = String(p.m);
+  sy.value = String(p.y);
+  fillDays(p.d);
+  sd.onchange = applyDate;
+  sm.onchange = sy.onchange = function () { fillDays(+sd.value); applyDate(); };
+}
+
+function datePopupOld() {
   const sel = dateParts();
   let y = sel.y, m = sel.m;
   const draw = () => {
@@ -1518,9 +1664,65 @@ const ACTIONS = {
 function renderBar() {
   const d = dateParts(), f = timeParts("from"), t = timeParts("to"), N = winMinutes();
   if (cfg.sess && (cfg.sess >= N || N % cfg.sess !== 0)) cfg.sess = 0;
-  const cell = (cls, act, txt) => `<button type="button" class="b-${cls}" data-act="${act}"><b>${txt}</b></button>`;
+  var dateSel = function () {
+      var now = new Date().getFullYear(), y0 = Math.min(now - 10, d.y), y1 = Math.max(now, d.y);
+      var st = "flex:1 1 0;min-width:0;height:100%;padding:0;border:0;border-radius:0;background:transparent;color:#000432;-webkit-text-fill-color:#000432;font-family:var(--mono);font-size:clamp(11px,2.6vw,20px);font-weight:500;text-align:center;text-align-last:center;cursor:pointer;outline:none;-webkit-appearance:none;appearance:none";
+      var op = ' style="background:#fff;color:#000432;-webkit-text-fill-color:#000432"';
+      var dim = new Date(Date.UTC(d.y, d.m, 0)).getUTCDate(), od = "", om = "", oy = "", i;
+      for (i = 1; i <= dim; i++) od += '<option value="' + i + '"' + (i === d.d ? " selected" : "") + op + '>' + pad2(i) + '</option>';
+      for (i = 1; i <= 12; i++) om += '<option value="' + i + '"' + (i === d.m ? " selected" : "") + op + '>' + MONTHS[i - 1].slice(0, 3) + '</option>';
+      for (i = y1; i >= y0; i--) oy += '<option value="' + i + '"' + (i === d.y ? " selected" : "") + op + '>' + i + '</option>';
+      return '<div class="b-date" style="display:flex;align-items:stretch;border-right:1px solid rgba(0,4,50,.3)">' +
+        '<select id="dbD" style="' + st + '">' + od + '</select>' +
+        '<select id="dbM" style="' + st + '">' + om + '</select>' +
+        '<select id="dbY" style="' + st + '">' + oy + '</select></div>';
+    };
+    var sessCtl = function () {
+        var st = "display:block;flex:1 1 0;min-height:0;width:100%;padding:0;border:0;border-radius:0;background:transparent;color:#000432;-webkit-text-fill-color:#000432;font-family:var(--mono);font-size:clamp(9px,1.5vw,15px);font-weight:500;text-align:center;text-align-last:center;cursor:pointer;outline:none;-webkit-appearance:none;appearance:none";
+        var op = ' style="background:#fff;color:#000432;-webkit-text-fill-color:#000432"';
+        var wk = cfg.from === "05:30" && cfg.to === "05:30" ? "a" : "b";
+            var wo = [["a", "05:30&rarr;05:30"], ["b", "10:30&rarr;22:30"]];
+        var wsOpts = wo.map(function (o) { return '<option value="' + o[0] + '"' + (o[0] === wk ? " selected" : "") + op + '>' + o[1] + '</option>'; }).join("");
+        var cur = cfg.sess || N, sizes = [], q;
+        for (q = 60; q < N; q += 60) if (N % q === 0) sizes.push(q);
+        sizes.push(N);
+        var szOpts = sizes.filter(function (z) { return z * 60 > cfg.cmax || z === cur; }).map(function (z) {
+          return '<option value="' + z + '"' + (z === cur ? " selected" : "") + op + '>' + fmtSess(z) + '</option>';
+        }).join("");
+        var dsOpts = '<option value="0"' + (cfg.dayShift ? "" : " selected") + op + '>NEW</option><option value="-1"' + (cfg.dayShift ? " selected" : "") + op + '>OLDER</option>';
+            var rowSt = st + ";width:auto;height:100%;border-right:1px solid rgba(0,4,50,.3)";
+            return '<div class="b-sess" style="display:flex;flex-direction:row;align-items:stretch;border-right:1px solid rgba(0,4,50,.3)">' +
+              '<select id="bWin" style="' + rowSt + '">' + wsOpts + '</select>' +
+              
+              '<select id="bSize" style="' + rowSt + ';border-right:0">' + szOpts + '</select></div>';
+      };
+      var sliceCtl = function () {
+          var st = "flex:1 1 0;min-width:0;width:100%;height:100%;padding:0;border:0;border-radius:0;background:transparent;color:#000432;-webkit-text-fill-color:#000432;font-family:var(--mono);font-size:clamp(9px,1.5vw,16px);font-weight:500;text-align:center;text-align-last:center;cursor:pointer;outline:none;-webkit-appearance:none;appearance:none";
+          var op = ' style="background:#fff;color:#000432;-webkit-text-fill-color:#000432"';
+          var cnt = cfg.sess ? Math.round(N / cfg.sess) : 1, i;
+          var st0 = cfg.from.split(":").map(Number), s0 = st0[0] * 60 + st0[1];
+              var o = '<option value="0"' + (sessSel == null ? " selected" : "") + op + '>' + hm(s0) + "-" + hm(s0 + N) + '</option>';
+          if (cnt >= 2) for (i = 0; i < cnt; i++) o += '<option value="' + (i + 1) + '"' + (sessSel === i + 1 ? " selected" : "") + op + '>' + sliceLbl(i) + '</option>';
+          return '<div class="b-slice" style="display:flex;align-items:stretch;border-right:1px solid rgba(0,4,50,.3)"><select id="bSlice" style="' + st + '">' + o + '</select></div>';
+        };
+        var pairCtl = function () {
+            var st = "flex:1 1 0;min-width:0;width:100%;height:100%;padding:0;border:0;border-radius:0;background:transparent;color:#000432;-webkit-text-fill-color:#000432;font-family:var(--mono);font-size:clamp(10px,2.2vw,20px);font-weight:500;text-align:center;text-align-last:center;cursor:pointer;outline:none;-webkit-appearance:none;appearance:none";
+            var op = ' style="background:#fff;color:#000432;-webkit-text-fill-color:#000432"';
+            var single = !allPairsMode && selPairs.size === 1;
+            var o = '<option value="__ALL__"' + (allPairsMode ? " selected" : "") + op + '>ALL</option>';
+            if (!allPairsMode && !single) o += '<option value="__MULTI__" selected disabled' + op + '>' + pairText() + '</option>';
+            PAIR_GROUPS.forEach(function (g) {
+              o += '<optgroup label="' + g[0] + '">';
+              g[1].forEach(function (p) {
+                o += '<option value="' + p + '"' + (single && selPairs.has(p) ? " selected" : "") + op + '>' + pairLabel(p) + '</option>';
+              });
+              o += '</optgroup>';
+            });
+            return '<div class="b-pair" style="display:flex;align-items:stretch;border-right:1px solid rgba(0,4,50,.3)"><select id="bPair" style="' + st + '">' + o + '</select></div>';
+          };
+          const cell = (cls, act, txt) => cls === "date" ? dateSel() : cls === "sess" ? sessCtl() : cls === "slice" ? sliceCtl() :  `<button type="button" class="b-${cls}" data-act="${act}"><b>${txt}</b></button>`;
   $("bar").innerHTML =
-    cell("pair", "pair", pairText()) + cell("date", "date", pad2(d.d) + " " + (MONTHS[d.m - 1] || "").slice(0, 3) + " " + d.y) +
+    cell("pair", "pair", pairText()) + cell("date", "date", pad2(d.d) + " " + (MONTHS[d.m - 1] || "").slice(0, 3) + " " + d.y + (cfg.dayShift && cfg.from === cfg.to ? " (OLDER)" : "")) +
     cell("sess", "sess", "SESS " + (cfg.sess ? fmtSess(cfg.sess) : "FULL")) +
         cell("slice", "slice", sliceBtnText()) +
         cell("cmin", "cmin", cfg.cmin) + cell("cmax", "cmax", cfg.cmax) +
@@ -1533,6 +1735,58 @@ $("bar").addEventListener("click", e => {
   if (b) ACTIONS[b.dataset.act]?.();
 });
 $("scanCancelBtn").addEventListener("click", () => { if (scanRunning) cancelFlag = true; });
+function openSel(id) {
+  setTimeout(function () {
+    var s = $(id);
+    if (!s) return;
+    s.focus();
+    if (s.showPicker) { try { s.showPicker(); } catch (err) {} }
+  }, 60);
+}
+$("bar").addEventListener("change", function (e) {
+  var id = e.target.id;
+  if (id === "bWin") {
+      var k = e.target.value;
+          if (k === "b") { cfg.from = "10:30"; cfg.to = "22:30"; cfg.dayShift = 0; }
+          else { cfg.from = cfg.to = "05:30"; cfg.dayShift = 0; }
+              cfg.sess = 0;
+              sessSel = null;
+              renderBar();
+                  return;
+    }
+    if (id === "bPair") {
+            var pv = e.target.value;
+            if (pv === "__MULTI__") return;
+            if (pv === "__ALL__") { allPairsMode = true; selPairs.clear(); }
+            else { allPairsMode = false; selPairs = new Set([pv]); }
+            renderBar();
+            return;
+          }
+        if (id === "bDay") {
+        cfg.dayShift = +e.target.value;
+        renderBar();
+        return;
+      }
+      if (id === "bSlice") {
+          sessSel = +e.target.value || null;
+          renderBar();
+          if (allRevs.length || allMoms.length) {
+            if (last.sessMin !== cfg.sess) toast("Scan again with this session size", "err");
+            else renderTable();
+          }
+          return;
+        }
+        if (id === "bSize") {
+      var z = +e.target.value, nn = winMinutes();
+      cfg.sess = z === nn ? 0 : z;
+          sessSel = null;
+          renderBar();
+              return;
+    }
+    if (id !== "dbD" && id !== "dbM" && id !== "dbY") return;
+  setDate(+$("dbY").value, +$("dbM").value, +$("dbD").value);
+  renderBar();
+});
 
 // ── init ──
 renderBar();
