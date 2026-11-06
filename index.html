@@ -939,7 +939,7 @@ function buildRowsOld(data) {
 
 function buildPane(label, data) {
   const body = data.length
-    ? `<table>${SIG_COLS}<thead><tr><th>PAIR</th><th>CYCLE</th><th>ROW</th><th>STREAK</th><th>C1</th><th class="c2-th" style="white-space:nowrap"><span class="c2-dn" style="cursor:pointer;color:var(--green);padding:2px 4px 2px 0;font-size:.85em;user-select:none" title="Previous C2 count">&#9664;</span>C2=${minC2}<span class="c2-up" style="cursor:pointer;color:var(--green);padding:2px 0 2px 4px;font-size:.85em;user-select:none" title="Next C2 count">&#9654;</span></th><th>PROB%</th></tr></thead><tbody>${buildRows(data)}</tbody></table>`
+    ? `<table>${SIG_COLS}<thead><tr><th>PAIR</th><th>CYCLE</th><th>ROW</th><th>STREAK</th><th>C1</th><th class="c2-th" style="white-space:nowrap"><span class="c2-dn" style="cursor:pointer;color:var(--green);padding:2px 4px 2px 0;font-size:.85em;user-select:none" title="Previous C2 count">&#9664;</span>C2=${label === "MOMENTUM" ? (minC2 ? "C1-" + minC2 : "C1") : minC2}<span class="c2-up" style="cursor:pointer;color:var(--green);padding:2px 0 2px 4px;font-size:.85em;user-select:none" title="Next C2 count">&#9654;</span></th><th>PROB%</th></tr></thead><tbody>${buildRows(data)}</tbody></table>`
     : '<div class="state-empty"><span>○</span><span>No signals</span></div>';
   const btnCss = "background:none;border:1px solid #2a3a6a;color:inherit;cursor:pointer;padding:0 10px;font:inherit;border-radius:3px";
     const lvlTxt = row0Btn() + (lvlSel == null ? "ALL LEVELS" : "X" + lvlSel + "→X" + (lvlSel + 1)) + " · " + (lvlSel == null ? data.length : data.filter(d => d.s1 === lvlSel).length);
@@ -1211,7 +1211,7 @@ function renderTable() {
 
   const minPct = parseInt($("filterPct").value) || 0, lv = levelFilter();
   if (sessSel != null && sessSel > last.sessCount) sessSel = null;
-    const baseFn = x => x.pct >= minPct && matchesLevel(x, lv) && (!row0Only || x.r === 0) && (x.c2 || 0) === minC2;
+    const baseFn = x => x.pct >= minPct && matchesLevel(x, lv) && (!row0Only || x.r === 0) && (x.type === "MOM" ? (x.c1 || 0) - (x.c2 || 0) : (x.c2 || 0)) === minC2;
     const filterFn = x => baseFn(x) && (sessSel == null || (x.sess || 1) === sessSel);
   const sortFn = (a, b) => b.pct - a.pct || b.c1 - a.c1 || a.c - b.c || a.r - b.r;
   const rev = startBelow100(allRevs.filter(filterFn).sort(sortFn)).slice(0, TOP_LIMIT);
