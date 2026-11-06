@@ -588,7 +588,7 @@ function workerMain() {
             if (s < 1) continue;
             const base = { pair, c, r, s1: s, s2: s + 1, c1, c2, col };
             revs.push({ ...base, pct: 100 - Math.round(c2 / c1 * 100), type: "REV" });
-            moms.push({ ...base, pct: Math.round(c2 / c1 * 100), type: "MOM" });
+            moms.push({ ...base, c2: c1 - c2, pct: Math.round(c2 / c1 * 100), type: "MOM" });
           }
         }
       }
