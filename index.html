@@ -329,7 +329,6 @@ option, optgroup { background: #140a3a !important; color: #ffffff !important; -w
       <button type="button" class="export-btn on" id="lvlsBtn" onclick="toggleLvls()" title="Best % row of every level at once">LVLS</button>
       <button type="button" class="export-btn on" id="ordBtn" onclick="toggleOrd()" title="With LVLS: list levels in order X1, X2, X3...">ORD</button>
       <button type="button" class="export-btn" id="xsBtn" onclick="toggleXs()" style="display:none">BY SESSION</button>
-            <button type="button" class="export-btn on" id="holdBtn" onclick="toggleHold()" title="Signal filter: longest hold first">HOLD</button>
     </div>
     <div class="table-area" id="tableArea"></div>
   </div>
@@ -903,7 +902,7 @@ const SIG_COLS = "<colgroup>" + [22, 13, 11, 16, 9, 14, 15].map(w => `<col style
 
 function buildRow(d) {
   const red = d.col === "R";
-  return `<tr class="${red ? "row-red" : "row-green"}"><td class="cell-pair">${red ? "↓" : "↑"} ${pairName(d.pair)}${d._holdT ? holdTag(d) : ""}</td>` +
+  return `<tr class="${red ? "row-red" : "row-green"}"><td class="cell-pair">${red ? "↓" : "↑"} ${pairName(d.pair)}</td>` +
     `<td>C${d.c}</td><td>R${d.r}</td><td>X${d.s1}→X${d.s2}</td><td>${d.c1}</td><td>${d.c2}</td><td>${d.pct}%</td></tr>`;
 }
 
@@ -1203,130 +1202,8 @@ function startBelow100(list) {
   return list.filter(function (x) { return best[key(x)] === x; });
 }
 
-var holdOn = true;
-function toggleHold() { holdOn = !holdOn; renderTable(); }
-function holdP2(n) { return n < 10 ? "0" + n : "" + n; }
-
-function holdGeo(x) {
-  var d = simData[x.pair];
-  if (!d || !d.prices) return null;
-  var PR = PRE_ROLL_SECS, prices = d.prices, n = prices.length, ext = d.ext, a = 0, b = n, ns, ss, si, pre0;
-  if (!ext) {
-    pre0 = d.pre;
-    ext = new Float64Array(PR + n).fill(-1);
-    if (pre0 && pre0.length) ext.set(pre0.length > PR ? pre0.slice(pre0.length - PR) : pre0, PR - Math.min(pre0.length, PR));
-    ext.set(prices, PR);
-    d.ext = ext;
-  }
-  if (last.sessMin) {
-    ns = Math.max(1, Math.round(last.winSec / (last.sessMin * 60)));
-    ss = Math.round(last.winSec / ns);
-    si = (x.sess || 1) - 1;
-    a = si * ss;
-    b = si === ns - 1 ? n : (si + 1) * ss + 1;
-  }
-  return { ext: ext, PR: PR, a: a, len: b - a, base: d.startTsUtc + a };
-}
-
-function holdOne(x, tag, g) {
-  var c = x.c, s1 = x.s1, cc = x.col === "G" ? 1 : 2, mom = tag === "MOM";
-  if (!(c > 0) || !(s1 >= 1)) return null;
-  var ext = g.ext, o = g.PR + g.a, hi = g.len - 1, lim = g.len;
-  while (hi > 0 && ext[o + hi] === -1) hi--;
-  var i = (((x.r - (g.base % c)) % c) + c) % c;
-  var color = 0, streak = 0, n1 = 0, n2 = 0, since = 0, runStart = -1, lastRun = -1;
-  var p, q, k, nc, ns, live, l1, l2, pc;
-  for (; i <= hi; i += c) {
-    p = ext[o + i];
-    k = o + i - c;
-    q = k >= 0 ? ext[k] : -1;
-    if (q === -1) {
-      if (p === -1 || i < c) { nc = 0; ns = 0; }
-      else { nc = 1; ns = 1; }
-    } else if (p === -1) {
-      nc = 0; ns = 0;
-    } else if (p > q) {
-      nc = 1;
-      ns = (color === 1 && streak > 0) ? streak + 1 : 1;
-    } else if (p < q) {
-      nc = 2;
-      ns = (color === 2 && streak > 0) ? streak + 1 : 1;
-    } else {
-      nc = color; ns = 0;
-    }
-    if (ns === 1 && streak > 0 && color !== 0 && color === cc) {
-      if (streak >= s1) n1++;
-      if (streak > s1) n2++;
-    }
-    color = nc;
-    streak = ns;
-    live = (color === cc && i + c >= lim) ? streak : 0;
-    l1 = n1 + (live >= s1 ? 1 : 0);
-    l2 = n2 + (live > s1 ? 1 : 0);
-    if (l1 >= 4) {
-      pc = mom ? Math.round((l2 / l1) * 100) : 100 - Math.round((l2 / l1) * 100);
-    } else {
-      pc = -1;
-    }
-    if (l1 >= 4 && pc >= 75) {
-      if (runStart < 0) runStart = i;
-      lastRun = runStart;
-      since = 0;
-    } else {
-      runStart = -1;
-      since++;
-    }
-  }
-  if (lastRun < 0 || since > 3) return null;
-  return (g.base + lastRun) * 1000;
-}
-
-function holdTag(d) {
-  var s = Math.max(0, Math.floor((d._holdEnd - d._holdT) / 1000));
-  var h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), r = s % 60;
-  var dur = h > 0 ? (h + "h " + holdP2(m) + "m") : (m > 0 ? (m + "m " + holdP2(r) + "s") : (r + "s"));
-  var im = Math.floor((((Math.floor(d._holdT / 1000) + IST_OFFSET) % 86400) + 86400) % 86400 / 60);
-  return '<span style="display:block;font-size:8px;font-weight:800;line-height:9px;opacity:.9">\u25B2 ' + dur + ' \u00B7 ' + holdP2(Math.floor(im / 60)) + ':' + holdP2(im % 60) + '</span>';
-}
-
-function holdBuild(list, tag) {
-  var best = {}, out = [], i, x, g, e, k, o, rp, endMs, t, topC1 = 0, c1Floor, endSec;
-  var misOf = function (z) { return tag === "MOM" ? ((z.c1 || 0) - (z.c2 || 0)) : (z.c2 || 0); };
-  for (i = 0; i < list.length; i++) {
-    x = list[i];
-    if (!x || (x.pct || 0) < 75 || (x.c1 || 0) < 4 || (x.s1 || 0) < 1) continue;
-    g = holdGeo(x);
-    if (g) {
-      endSec = g.base + g.len;
-      e = (((x.r - (endSec % x.c)) % x.c) + x.c) % x.c;
-    } else {
-      e = lvlsEta(x);
-    }
-    k = x.pair + "|" + x.c + "|" + x.s1 + "|" + x.s2 + "|" + x.col;
-    o = best[k];
-    if (!o || (x.c1 || 0) > (o.z.c1 || 0) || ((x.c1 || 0) === (o.z.c1 || 0) && ((x.pct || 0) > (o.z.pct || 0) || ((x.pct || 0) === (o.z.pct || 0) && e < o.e)))) best[k] = { z: x, e: e, g: g };
-  }
-  for (k in best) {
-    o = best[k];
-    endMs = o.g ? (o.g.base + o.g.len) * 1000 : 0;
-    rp = o.g ? holdOne(o.z, tag, o.g) : null;
-    t = rp !== null ? Math.min(rp, endMs) : endMs;
-    out.push(Object.assign({}, o.z, { _holdT: t, _holdEnd: endMs }));
-  }
-  out.forEach(function (z) { if ((z.c1 || 0) > topC1) topC1 = z.c1 || 0; });
-  c1Floor = Math.ceil(topC1 * 0.6);
-  out.sort(function (a, b) {
-    var qa = ((a.c1 || 0) >= c1Floor) ? 0 : 1, qb = ((b.c1 || 0) >= c1Floor) ? 0 : 1;
-    if (qa !== qb) return qa - qb;
-    if (qa === 0) return (a._holdT - b._holdT) || (misOf(a) - misOf(b)) || ((b.c1 || 0) - (a.c1 || 0));
-    return ((b.c1 || 0) - (a.c1 || 0)) || (misOf(a) - misOf(b)) || (a._holdT - b._holdT);
-  });
-  return out.slice(0, 100);
-}
-
 function renderTable() {
   $("lvlsBtn").classList.toggle("on", lvlsOn);
-  $("holdBtn").classList.toggle("on", holdOn);
   $("ordBtn").classList.toggle("on", ordOn);
   $("row0Btn").classList.toggle("on", row0Only);
   if (lvlsOn) $("levelFilter").value = "__ALL__";
@@ -1337,9 +1214,8 @@ function renderTable() {
     const baseFn = x => x.pct >= minPct && matchesLevel(x, lv) && (!row0Only || x.r === 0) && (x.type === "MOM" ? (x.c1 || 0) - (x.c2 || 0) : (x.c2 || 0)) === minC2;
     const filterFn = x => baseFn(x) && (sessSel == null || (x.sess || 1) === sessSel);
   const sortFn = (a, b) => b.pct - a.pct || b.c1 - a.c1 || a.c - b.c || a.r - b.r;
-  var holdFn = x => (!row0Only || x.r === 0) && (sessSel == null || (x.sess || 1) === sessSel);
-    var rev = holdOn ? holdBuild(allRevs.filter(holdFn), "REV") : startBelow100(allRevs.filter(filterFn).sort(sortFn)).slice(0, TOP_LIMIT);
-    var mom = holdOn ? holdBuild(allMoms.filter(holdFn), "MOM") : startBelow100(allMoms.filter(filterFn).sort(sortFn)).slice(0, TOP_LIMIT);
+  const rev = startBelow100(allRevs.filter(filterFn).sort(sortFn)).slice(0, TOP_LIMIT);
+    const mom = startBelow100(allMoms.filter(filterFn).sort(sortFn)).slice(0, TOP_LIMIT);
     for (const k in lvlAll) delete lvlAll[k];
     for (const x of rev) lvlAll[x.s1] = 1;
     for (const x of mom) lvlAll[x.s1] = 1;
