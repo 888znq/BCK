@@ -909,9 +909,67 @@ function stepLvl(dir) {
 // ── rendering ──
 const SIG_COLS = "<colgroup>" + [22, 13, 11, 16, 9, 14, 15].map(w => `<col style="width:${w}%">`).join("") + "</colgroup>";
 
+function holdPad2(n) { return n < 10 ? "0" + n : "" + n; }
+function holdInfo(d) {
+  try {
+    var D = simData[d.pair];
+    if (!D || !D.prices || !D.prices.length) return "";
+    var PR = PRE_ROLL_SECS, c = d.c, s1 = d.s1, code = d.col === "G" ? 1 : 2;
+    if (!(c > 0) || !(s1 >= 1)) return "";
+    var hk = (d.sess || 1) + "|" + c + "|" + d.r + "|" + s1 + "|" + d.col;
+    var H = D.hold || (D.hold = {});
+    var h = H[hk];
+    if (h === undefined) {
+      if (!D.ext) {
+        var e = new Float64Array(PR + D.prices.length).fill(-1), p0 = D.pre;
+        if (p0 && p0.length) e.set(p0.length > PR ? p0.slice(p0.length - PR) : p0, PR - Math.min(p0.length, PR));
+        e.set(D.prices, PR);
+        D.ext = e;
+      }
+      var ext = D.ext;
+      var ws = last.sessMin ? Math.max(1, Math.round(last.winSec / (last.sessMin * 60))) : 1;
+      var sessSec = Math.round(last.winSec / ws);
+      var si = last.sliceNo ? 1 : (d.sess || 1);
+      var a = last.sessMin ? (si - 1) * sessSec : 0;
+      var b = last.sessMin ? (si === ws ? D.prices.length : si * sessSec + 1) : D.prices.length;
+      var len = b - a, st = D.startTsUtc + a;
+      var rc = 0, rs = 0, first = -1, lastCol = -1, i, p, q, qi, nc, ns;
+      for (i = (((d.r - st) % c) + c) % c; i < len; i += c) {
+        p = ext[PR + a + i];
+        qi = PR + a + i - c;
+        q = qi >= 0 ? ext[qi] : -1;
+        if (q === -1) { nc = ns = (p === -1 || i < c) ? 0 : 1; }
+        else if (p === -1) { nc = ns = 0; }
+        else if (p > q) { nc = 1; ns = (rc === 1 && rs > 0) ? rs + 1 : 1; }
+        else if (p < q) { nc = 2; ns = (rc === 2 && rs > 0) ? rs + 1 : 1; }
+        else { nc = rc; ns = 0; }
+        if (ns === 1 && rs > 0 && rc === code && rs >= s1) { first = i; break; }
+        rc = nc; rs = ns; lastCol = i;
+      }
+      if (first < 0 && rc === code && rs >= s1 && lastCol >= 0) first = lastCol;
+      if (first < 0) { h = null; }
+      else {
+        var ek = a + "|" + b, EO = D.endOf || (D.endOf = {}), j = EO[ek];
+        if (j === undefined) {
+          j = len - 1;
+          while (j > 0 && ext[PR + a + j] === -1) j--;
+          EO[ek] = j;
+        }
+        h = { first: st + first, hold: Math.max(0, (j - first)) };
+      }
+      H[hk] = h;
+    }
+    if (!h) return "";
+    var s = h.hold, hh = Math.floor(s / 3600), mm = Math.floor((s % 3600) / 60), ss = s % 60;
+    var dur = hh > 0 ? (hh + "h " + holdPad2(mm) + "m") : (mm > 0 ? (mm + "m " + holdPad2(ss) + "s") : (ss + "s"));
+    var t = (((h.first + (typeof IST_OFFSET !== "undefined" ? IST_OFFSET : 19800)) % 86400) + 86400) % 86400;
+    return '<div class="holdT" style="display:block;font-size:8px;line-height:9px;font-weight:800;letter-spacing:0;opacity:.9">\u25B2 ' + dur + " \u00B7 " + holdPad2(Math.floor(t / 3600)) + ":" + holdPad2(Math.floor((t % 3600) / 60)) + ":" + holdPad2(t % 60) + "</div>";
+  } catch (eH) { return ""; }
+}
+
 function buildRow(d) {
   const red = d.col === "R";
-  return `<tr class="${red ? "row-red" : "row-green"}"><td class="cell-pair">${red ? "↓" : "↑"} ${pairName(d.pair)}</td>` +
+  return `<tr class="${red ? "row-red" : "row-green"}"><td class="cell-pair">${red ? "↓" : "↑"} ${pairName(d.pair)}${holdInfo(d)}</td>` +
     `<td>C${d.c}</td><td>R${d.r}</td><td>X${d.s1}→X${d.s2}</td><td>${d.c1}</td><td>${d.c2}</td><td>${d.pct}%</td></tr>`;
 }
 
