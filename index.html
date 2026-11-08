@@ -382,7 +382,7 @@ function pairName(p) {
 }
 
 // ── state ──
-const cfg = { date: new Date().toISOString().slice(0, 10), from: "10:30", to: "22:30", cmin: 60, cmax: 60, minPct: 0, sess: 0, dayShift: 0 };
+const cfg = { date: new Date().toISOString().slice(0, 10), from: "11:30", to: "23:30", cmin: 60, cmax: 60, minPct: 0, sess: 0, dayShift: 0 };
 let selPairs = new Set(["cryBTCUSD"]);
 let allPairsMode = false;
 let allRevs = [], allMoms = [];
@@ -699,12 +699,20 @@ async function runScan() {
   if (secTo <= secFrom) { toast("Time window must stay inside 05:30 → 05:30 IST (end after start)", "err"); return; }
     const shiftDays = istFrom === istTo ? (cfg.dayShift || 0) : 0;
 
-  const winSec = secTo - secFrom;
+  let winSec = secTo - secFrom;
   let sessMin = cfg.sess;
   if (sessMin && (winSec % (sessMin * 60) !== 0 || sessMin * 60 >= winSec)) sessMin = cfg.sess = 0;
   if (sessMin && sessMin * 60 <= cycleMax) { toast(`Session ${sessMin}m must be longer than cycle max C${cycleMax}`, "err"); return; }
 
-  last = { sessCount: sessMin ? Math.round(winSec / (sessMin * 60)) : 1, sessMin, startIST: cfg.from, winSec };
+  const fullCount = sessMin ? Math.round(winSec / (sessMin * 60)) : 1;
+    let sliceNo = 0;
+    if (sessMin && sessSel && sessSel <= fullCount) {
+      sliceNo = sessSel;
+      secFrom += (sessSel - 1) * sessMin * 60;
+      secTo = secFrom + sessMin * 60;
+      winSec = sessMin * 60;
+    }
+    last = { sessCount: fullCount, sessMin, startIST: cfg.from, winSec, sliceNo };
     simData = {};
   xsView = last.sessCount > 1;
   $("xsBtn").style.display = xsView ? "inline-block" : "none";
@@ -756,7 +764,8 @@ async function runScan() {
         setProgress(scanBase + f * scanSlice,
           `${tag}  ${cfg.date}  scanning… ${Math.round(f * 100)}%`,
           `C${cycleMin}–C${cycleMax}  [${navigator.hardwareConcurrency || 4} workers]`), pre);
-      allRevs = allRevs.concat(revs);
+      if (sliceNo) { revs.forEach(x => { x.sess = sliceNo; }); moms.forEach(x => { x.sess = sliceNo; }); }
+            allRevs = allRevs.concat(revs);
       allMoms = allMoms.concat(moms);
     }
 
@@ -1060,12 +1069,12 @@ function sizePopup() {
   var ws = $("winSel"), ss = $("sessSizeSel");
   function winKey() {
     if (cfg.from === "05:30" && cfg.to === "05:30") return cfg.dayShift ? "a1" : "a0";
-    if (cfg.from === "10:30" && cfg.to === "22:30") return "b";
+    if (cfg.from === "11:30" && cfg.to === "23:30") return "b";
     return "c";
   }
   function fillWin() {
     var k = winKey();
-    ws.innerHTML = '<option value="a0">05:30 &rarr; 05:30 NEW</option><option value="a1">05:30 &rarr; 05:30 OLDER</option><option value="b">10:30 &rarr; 22:30</option>' + (k === "c" ? '<option value="c">' + cfg.from + ' &rarr; ' + cfg.to + '</option>' : "");
+    ws.innerHTML = '<option value="a0">05:30 &rarr; 05:30 NEW</option><option value="a1">05:30 &rarr; 05:30 OLDER</option><option value="b">11:30 &rarr; 23:30</option>' + (k === "c" ? '<option value="c">' + cfg.from + ' &rarr; ' + cfg.to + '</option>' : "");
     ws.value = k;
   }
   function fillSize() {
@@ -1082,6 +1091,7 @@ function sizePopup() {
   ws.onchange = function () {
     var k = ws.value;
     if (k === "c") return;
+        if (k === "b") { cfg.from = "11:30"; cfg.to = "23:30"; cfg.dayShift = 0; cfg.sess = 0; sessSel = null; fillSize(); renderBar(); return; }
     if (k === "b") { cfg.from = "10:30"; cfg.to = "22:30"; cfg.dayShift = 0; }
     else { cfg.from = cfg.to = "05:30"; cfg.dayShift = k === "a1" ? -1 : 0; }
     cfg.sess = 0;
@@ -1104,10 +1114,10 @@ function sizePopupV2() {
   for (var q = 60; q < N; q += 60) if (N % q === 0) opts.push(q);
   opts.push(N);
   var full = cfg.from === cfg.to;
-  var isA = full && cfg.from === "05:30", isB = cfg.from === "10:30" && cfg.to === "22:30";
+  var isA = full && cfg.from === "05:30", isB = cfg.from === "11:30" && cfg.to === "23:30";
   var h = '<div class="pop-box"><div class="pop-title">SESSION SIZE</div><div class="pop-grid pss" style="margin-bottom:8px">' +
     '<button type="button" data-w="a" class="pop-btn' + (isA ? " on" : "") + '">05:30 &rarr; 05:30</button>' +
-    '<button type="button" data-w="b" class="pop-btn' + (isB ? " on" : "") + '">10:30 &rarr; 22:30</button></div>' +
+    '<button type="button" data-w="b" class="pop-btn' + (isB ? " on" : "") + '">11:30 &rarr; 23:30</button></div>' +
     '<div class="pop-grid pss"><select id="sessSizeSel" class="pop-btn" style="background:var(--bg);text-align:center">';
   opts.forEach(function (d) {
     if (d * 60 <= cfg.cmax) return;
@@ -1118,7 +1128,7 @@ function sizePopupV2() {
     var b = ev.target.closest(".pop-btn");
     if (!b || !b.dataset.w) return;
     if (b.dataset.w === "a") { cfg.from = cfg.to = "05:30"; }
-    else { cfg.from = "10:30"; cfg.to = "22:30"; cfg.dayShift = 0; }
+    else { cfg.from = "11:30"; cfg.to = "23:30"; cfg.dayShift = 0; }
     cfg.sess = 0;
     sessSel = null;
     sizePopup();
@@ -1299,8 +1309,9 @@ function simRun() {
       D.ext = e;
     }
     const ext = D.ext, sess = sg.sess || 1, c = sg.c, code = sg.col === "G" ? 1 : 2;
-    const a = last.sessMin ? (sess - 1) * sessSec : 0;
-    const b = last.sessMin ? (sess === ws ? D.prices.length : sess * sessSec + 1) : D.prices.length;
+    const si = last.sliceNo ? 1 : sess;
+        const a = last.sessMin ? (si - 1) * sessSec : 0;
+    const b = last.sessMin ? (si === ws ? D.prices.length : si * sessSec + 1) : D.prices.length;
         const len = b - a, st = D.startTsUtc + a;
     let rc = 0, rs = 0, first = true;
     for (let i = (((sg.r - st) % c) + c) % c; i < len; i += c) {
@@ -1693,7 +1704,7 @@ function renderBar() {
         var st = "display:block;flex:1 1 0;min-height:0;width:100%;padding:0;border:0;border-radius:0;background:transparent;color:#000432;-webkit-text-fill-color:#000432;font-family:var(--mono);font-size:clamp(9px,1.5vw,15px);font-weight:500;text-align:center;text-align-last:center;cursor:pointer;outline:none;-webkit-appearance:none;appearance:none";
         var op = ' style="background:#fff;color:#000432;-webkit-text-fill-color:#000432"';
         var wk = cfg.from === "05:30" && cfg.to === "05:30" ? "a" : "b";
-            var wo = [["a", "05:30&rarr;05:30"], ["b", "10:30&rarr;22:30"]];
+            var wo = [["a", "05:30&rarr;05:30"], ["b", "11:30&rarr;23:30"]];
         var wsOpts = wo.map(function (o) { return '<option value="' + o[0] + '"' + (o[0] === wk ? " selected" : "") + op + '>' + o[1] + '</option>'; }).join("");
         var cur = cfg.sess || N, sizes = [], q;
         for (q = 60; q < N; q += 60) if (N % q === 0) sizes.push(q);
@@ -1747,7 +1758,7 @@ $("bar").addEventListener("click", e => {
   const b = e.target.closest("button");
   if (!b) return;
     if (b.dataset.win) {
-      if (b.dataset.win === "b") { cfg.from = "10:30"; cfg.to = "22:30"; cfg.dayShift = 0; }
+      if (b.dataset.win === "b") { cfg.from = "11:30"; cfg.to = "23:30"; cfg.dayShift = 0; }
       else { cfg.from = cfg.to = "05:30"; cfg.dayShift = 0; }
       cfg.sess = 0;
       sessSel = null;
@@ -1776,6 +1787,7 @@ $("bar").addEventListener("change", function (e) {
   var id = e.target.id;
   if (id === "bWin") {
       var k = e.target.value;
+                if (k === "b") { cfg.from = "11:30"; cfg.to = "23:30"; cfg.dayShift = 0; cfg.sess = 0; sessSel = null; renderBar(); return; }
           if (k === "b") { cfg.from = "10:30"; cfg.to = "22:30"; cfg.dayShift = 0; }
           else { cfg.from = cfg.to = "05:30"; cfg.dayShift = 0; }
               cfg.sess = 0;
@@ -1798,6 +1810,7 @@ $("bar").addEventListener("change", function (e) {
       }
       if (id === "bSlice") {
           sessSel = +e.target.value || null;
+                    if (last.sliceNo && last.sliceNo !== sessSel) { renderBar(); toast("Scan again to load this slice", "err"); return; }
           renderBar();
           if (allRevs.length || allMoms.length) {
             if (last.sessMin !== cfg.sess) toast("Scan again with this session size", "err");
