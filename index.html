@@ -787,7 +787,7 @@ async function runScan() {
 
 // ── filters / level view ──
 function levelFilter() {
-  return { s1: 1, s2: 2 };
+  return null;
 }
 const matchesLevel = (d, lv) => !lv || (d.s1 === lv.s1 && d.s2 === lv.s2);
 
@@ -1263,7 +1263,7 @@ function startBelow100(list) {
     var k = key(x), b = best[k];
     if (!b || x.r < b.r || (x.r === b.r && x.c < b.c)) best[k] = x;
   });
-  return list.filter(function (x) { return best[key(x)] === x; });
+  return list;
 }
 
 function renderTable() {
@@ -1279,8 +1279,8 @@ function renderTable() {
         const baseFn = x => x.pct >= minPct && matchesLevel(x, lv) && (!row0Only || x.r === 0);
     const filterFn = x => baseFn(x) && (sessSel == null || (x.sess || 1) === sessSel);
   const sortFn = (a, b) => c2k(a) - c2k(b) || b.pct - a.pct || b.c1 - a.c1 || a.c - b.c || a.r - b.r;
-  const rev = startBelow100(allRevs.filter(filterFn).sort(sortFn)).slice(0, TOP_LIMIT);
-    const mom = startBelow100(allMoms.filter(filterFn).sort(sortFn)).slice(0, TOP_LIMIT);
+  const rev = startBelow100(allRevs.filter(filterFn).sort(sortFn));
+    const mom = startBelow100(allMoms.filter(filterFn).sort(sortFn));
     for (const k in lvlAll) delete lvlAll[k];
     for (const x of rev) lvlAll[x.s1] = 1;
     for (const x of mom) lvlAll[x.s1] = 1;
