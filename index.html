@@ -1089,7 +1089,7 @@ function computeCrossSession() {
   const build = list => {
     const groups = {};
     for (const d of list) {
-      if (d.pct < minPct || !matchesLevel(d, lv) || (row0Only && d.r !== 0)) continue;
+      if (d.pct < minPct || !matchesLevel(d, lv) || (row0Only && d.r !== 0) || (lvlSel != null && d.s1 !== lvlSel)) continue;
       const g = groups[d.pair + "|" + d.c + "|" + d.r + "|" + d.col + "|" + d.s1] ||= { hits: [], sum: 0 };
       g.hits.push(d);
       g.sum += d.pct;
@@ -1114,9 +1114,11 @@ function buildXsPane(label, list, total) {
       `<td>X${g.s1}→X${g.s2}</td><td class="xs-hits">${g.n}/${total}</td><td>${g.avg}%</td></tr>` +
       `<tr class="${cls} xs-d"><td colspan="6">${det}</td></tr>`;
   }).join("");
-  const cols = "<colgroup>" + [28, 13, 12, 19, 15, 13].map(w => `<col style="width:${w}%">`).join("") + "</colgroup>";
+  const hbX = "background:none;border:1px solid var(--border2);color:inherit;cursor:pointer;padding:0 3px;font:inherit;font-size:9px;border-radius:3px;margin:0 2px";
+    const stX = `<button type="button" onclick="stepLvlSel(-1)" title="Previous level" style="${hbX}">◀</button>STREAK${lvlSel == null ? "" : " X" + lvlSel}<button type="button" onclick="stepLvlSel(1)" title="Next level" style="${hbX}">▶</button>`;
+    const cols = "<colgroup>" + [26, 12, 11, 22, 15, 14].map(w => `<col style="width:${w}%">`).join("") + "</colgroup>";
   const body = rows
-    ? `<table class="xs-t">${cols}<thead><tr><th>PAIR</th><th>CYC</th><th>ROW</th><th>STREAK</th><th>HITS</th><th>AVG%</th></tr></thead><tbody>${rows}</tbody></table>`
+    ? `<table class="xs-t">${cols}<thead><tr><th>PAIR</th><th>CYC</th><th>ROW</th><th>${stX}</th><th>HITS</th><th>AVG%</th></tr></thead><tbody>${rows}</tbody></table>`
     : '<div class="state-empty">No wall repeats in 2+ sessions</div>';
   return `<div class="xs-pane"><div class="xs-head"><span>${label} · S: C1/C2 PER SESSION</span><span>${list.length}</span></div>${body}</div>`;
 }
@@ -1780,7 +1782,7 @@ function renderBar() {
             var wo = [["b", "11:30&rarr;23:30"]];
         var wsOpts = wo.map(function (o) { return '<option value="' + o[0] + '"' + (o[0] === wk ? " selected" : "") + op + '>' + o[1] + '</option>'; }).join("");
         var cur = cfg.sess || N, sizes = [], q;
-        for (q = 60; q < N; q += 60) if (N % q === 0) sizes.push(q);
+        for (q = 1; q < N; q++) if (N % q === 0) sizes.push(q);
         sizes.push(N);
         var szOpts = sizes.filter(function (z) { return z * 60 > cfg.cmax || z === cur; }).map(function (z) {
           return '<option value="' + z + '"' + (z === cur ? " selected" : "") + op + '>' + fmtSess(z) + '</option>';
@@ -1791,7 +1793,7 @@ function renderBar() {
             return '<div class="b-sess" style="display:flex;flex-direction:row;align-items:stretch;gap:4px;padding:4px;box-sizing:border-box;min-width:0;border-right:1px solid rgba(0,4,50,.3)">' +
               '<div style="display:flex;flex-direction:column;gap:3px;flex:1.3 1 0;min-width:0">' + wo.map(function (o) { return '<button type="button" data-win="' + o[0] + '" style="' + bt(o[0] === wk) + '">' + o[1] + '</button>'; }).join("") + '</div>' +
               
-              '<div style="flex:2 1 0;min-width:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-rows:minmax(0,1fr);gap:3px">' + sizes.filter(function (z) { return z * 60 > cfg.cmax || z === cur; }).map(function (z) { return '<button type="button" data-size="' + z + '" style="' + bt(z === cur) + '">' + fmtSess(z) + '</button>'; }).join("") + '</div></div>';
+              '<select id="bSize" style="' + st + ';flex:2 1 0;width:auto;height:100%;border:1px solid rgba(0,4,50,.35);border-radius:4px">' + sizes.filter(function (z) { return z * 60 > cfg.cmax || z === cur; }).map(function (z) { var lb = z % 60 === 0 ? fmtSess(z) : (z < 60 ? z + "m" : Math.floor(z / 60) + "h" + (z % 60) + "m"); return '<option value="' + z + '"' + (z === cur ? " selected" : "") + op + '>' + (z === N ? "FULL " : "") + lb + '</option>'; }).join("") + '</select></div>';
       };
       var sliceCtl = function () {
           var st = "flex:1 1 0;min-width:0;width:100%;height:100%;padding:0;border:0;border-radius:0;background:transparent;color:#000432;-webkit-text-fill-color:#000432;font-family:var(--mono);font-size:clamp(9px,1.5vw,16px);font-weight:500;text-align:center;text-align-last:center;cursor:pointer;outline:none;-webkit-appearance:none;appearance:none";
