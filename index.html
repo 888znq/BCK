@@ -877,8 +877,22 @@ function toggleLvls() { lvlsOn = !lvlsOn; renderTable(); }
 function toggleOrd() { ordOn = !ordOn; renderTable(); }
 function toggleRow0() { row0Only = !row0Only; renderTable(); }
 function toggleXs() { xsView = !xsView; $("xsBtn").classList.toggle("on", xsView); renderTable(); }
-var minC2 = 0;
-function toggleC2(dir) { minC2 = (minC2 + (dir || 1) + 11) % 11; renderTable(); }
+var minC2 = null;
+function toggleC2(dir) {
+  var vals = {};
+  var mp = parseInt($("filterPct").value) || 0;
+    allRevs.concat(allMoms).forEach(function (x) {
+      if (x.pct < mp || (row0Only && x.r !== 0)) return;
+      if (sessSel != null && (x.sess || 1) !== sessSel) return;
+      if (lvlSel != null && x.s1 !== lvlSel) return;
+      vals[x.c2 || 0] = 1;
+    });
+  var opts = [null].concat(Object.keys(vals).map(Number).sort(function (a, b) { return a - b; }));
+  var i = opts.indexOf(minC2);
+  if (i < 0) i = 0;
+  minC2 = opts[(i + (dir || 1) + opts.length) % opts.length];
+  renderTable();
+}
 var lvlsHide = {};
 var lvlsAllHide = false;
 var lvlsPanel = {};
@@ -1001,8 +1015,11 @@ function buildRowsOld(data) {
     }
 
 function buildPane(label, data) {
+  const hb = "background:none;border:1px solid var(--border2);color:inherit;cursor:pointer;padding:0 3px;font:inherit;font-size:9px;border-radius:3px;margin:0 2px";
+  const stH = `<button type="button" onclick="stepLvlSel(-1)" title="Previous level" style="${hb}">◀</button>STREAK<button type="button" onclick="stepLvlSel(1)" title="Next level" style="${hb}">▶</button>`;
+  const c2H = `<button type="button" class="c2-dn" title="Lower min C2" style="${hb}">◀</button>C2${minC2 == null ? "" : "=" + minC2}<button type="button" class="c2-up" title="Raise min C2" style="${hb}">▶</button>`;
   const body = data.length
-    ? `<table>${SIG_COLS}<thead><tr><th>PAIR</th><th>CYCLE</th><th>ROW</th><th>STREAK</th><th>C1</th><th>C2</th><th>PROB%</th></tr></thead><tbody>${buildRows(data)}</tbody></table>`
+    ? `<table>${SIG_COLS}<thead><tr><th>PAIR</th><th>CYCLE</th><th>ROW</th><th>${stH}</th><th>C1</th><th>${c2H}</th><th>PROB%</th></tr></thead><tbody>${buildRows(data)}</tbody></table>`
     : '<div class="state-empty"><span>○</span><span>No signals</span></div>';
   const btnCss = "background:none;border:1px solid #2a3a6a;color:inherit;cursor:pointer;padding:0 10px;font:inherit;border-radius:3px";
     const lvlTxt = row0Btn() + (lvlSel == null ? "ALL LEVELS" : "X" + lvlSel + "→X" + (lvlSel + 1)) + " · " + (lvlSel == null ? data.length : data.filter(d => d.s1 === lvlSel).length);
@@ -1276,7 +1293,7 @@ function renderTable() {
   const minPct = parseInt($("filterPct").value) || 0, lv = levelFilter();
   if (sessSel != null && sessSel > last.sessCount) sessSel = null;
     var c2k = x => x.type === "MOM" ? (x.c1 || 0) - (x.c2 || 0) : (x.c2 || 0);
-        const baseFn = x => x.pct >= minPct && matchesLevel(x, lv) && (!row0Only || x.r === 0);
+        const baseFn = x => x.pct >= minPct && matchesLevel(x, lv) && (!row0Only || x.r === 0) && (minC2 == null || (x.c2 || 0) === minC2);
     const filterFn = x => baseFn(x) && (sessSel == null || (x.sess || 1) === sessSel);
   const sortFn = (a, b) => c2k(a) - c2k(b) || b.pct - a.pct || b.c1 - a.c1 || a.c - b.c || a.r - b.r;
   const rev = startBelow100(allRevs.filter(filterFn).sort(sortFn));
@@ -1284,6 +1301,7 @@ function renderTable() {
     for (const k in lvlAll) delete lvlAll[k];
     for (const x of rev) lvlAll[x.s1] = 1;
     for (const x of mom) lvlAll[x.s1] = 1;
+        if (lvlSel != null && !lvlAll[lvlSel]) lvlSel = null;
 
   const area = $("tableArea"), rank = "";
     if (xsView && last.sessCount > 1 && sessSel == null) { area.innerHTML = rank + buildXsHTML(); return; }
