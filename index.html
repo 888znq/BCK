@@ -1315,12 +1315,7 @@ function renderTable() {
         const mx = {}, bk = x => (x.sess || 1) + "|" + x.s1;
         list.forEach(x => { const k = bk(x); if ((x.c1 || 0) > (mx[k] || 0)) mx[k] = x.c1 || 0; });
         const top = x => ((x.c1 || 0) >= (mx[bk(x)] || 0) - 5 ? 1 : 0);
-        return list.sort((a, b) => {
-          const ta = top(a), tb = top(b);
-          if (ta !== tb) return tb - ta;
-          if (ta) return b.pct - a.pct || b.c1 - a.c1 || c2k(a) - c2k(b) || a.c - b.c || a.r - b.r;
-          return b.c1 - a.c1 || b.pct - a.pct || a.c - b.c || a.r - b.r;
-        });
+        return list.sort((a, b) => b.pct - a.pct || (b.c1 || 0) - (a.c1 || 0) || c2k(a) - c2k(b) || a.c - b.c || a.r - b.r);
       };
       const etaDedupe = list => {
         const best = {}, keys = new Array(list.length);
