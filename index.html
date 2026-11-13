@@ -587,7 +587,7 @@ function workerMain() {
             if (s < 1) continue;
             const base = { pair, c, r, s1: s, s2: s + 1, c1, c2, col };
             revs.push({ ...base, pct: 100 - Math.round(c2 / c1 * 100), type: "REV" });
-            moms.push({ ...base, pct: Math.round(c2 / c1 * 100), type: "MOM" });
+                        if (c1 > 1) moms.push({ ...base, pct: Math.round(c2 / c1 * 100), type: "MOM" });
           }
         }
       }
@@ -879,6 +879,8 @@ function toggleRow0() { row0Only = !row0Only; renderTable(); }
 function toggleXs() { xsView = !xsView; $("xsBtn").classList.toggle("on", xsView); renderTable(); }
 var minC2 = null;
 function toggleC2(dir) {
+  minC2 = null;
+  return;
   var vals = {};
   var mp = parseInt($("filterPct").value) || 0;
     allRevs.concat(allMoms).forEach(function (x) {
@@ -1309,9 +1311,30 @@ function renderTable() {
     var c2k = x => x.type === "MOM" ? (x.c1 || 0) - (x.c2 || 0) : (x.c2 || 0);
         const baseFn = x => x.pct >= minPct && matchesLevel(x, lv) && (!row0Only || x.r === 0) && (minC2 == null || (x.c2 || 0) === minC2);
     const filterFn = x => baseFn(x) && (sessSel == null || (x.sess || 1) === sessSel);
-  const sortFn = (a, b) => c2k(a) - c2k(b) || b.pct - a.pct || b.c1 - a.c1 || a.c - b.c || a.r - b.r;
-  const rev = startBelow100(allRevs.filter(filterFn).sort(sortFn));
-    const mom = startBelow100(allMoms.filter(filterFn).sort(sortFn));
+      const bandSort = list => {
+        const mx = {}, bk = x => (x.sess || 1) + "|" + x.s1;
+        list.forEach(x => { const k = bk(x); if ((x.c1 || 0) > (mx[k] || 0)) mx[k] = x.c1 || 0; });
+        const top = x => ((x.c1 || 0) >= (mx[bk(x)] || 0) - 5 ? 1 : 0);
+        return list.sort((a, b) => {
+          const ta = top(a), tb = top(b);
+          if (ta !== tb) return tb - ta;
+          if (ta) return b.pct - a.pct || b.c1 - a.c1 || c2k(a) - c2k(b) || a.c - b.c || a.r - b.r;
+          return b.c1 - a.c1 || b.pct - a.pct || a.c - b.c || a.r - b.r;
+        });
+      };
+      const etaDedupe = list => {
+        const best = {}, keys = new Array(list.length);
+        for (let i = 0; i < list.length; i++) {
+          const x = list[i], k = x.pair + "|" + (x.sess || 1) + "|" + x.s1 + "|" + x.s2 + "|" + x.pct + "|" + x.c1 + "|" + x.c2, b = best[k];
+          keys[i] = k;
+          if (!b) { best[k] = x; continue; }
+          const ex = lvlsEta(x), eb = lvlsEta(b);
+          if (ex < eb || (ex === eb && (x.c < b.c || (x.c === b.c && x.r < b.r)))) best[k] = x;
+        }
+        return list.filter((z, j) => best[keys[j]] === z);
+      };
+      const rev = etaDedupe(bandSort(allRevs.filter(filterFn)));
+        const mom = etaDedupe(bandSort(allMoms.filter(filterFn)));
     ;
     ;
     ;
@@ -1327,6 +1350,11 @@ function renderTable() {
     markSort();
 }
 
+(function () {
+  var st = document.createElement("style");
+  st.textContent = ".c2-dn,.c2-up{pointer-events:none !important;opacity:.35 !important;}";
+  document.head.appendChild(st);
+})();
 $("filterPct").addEventListener("input", renderTable);
 $("levelFilter").addEventListener("change", renderTable);
 function markSort() {
@@ -1917,6 +1945,7 @@ $("bar").addEventListener("change", function (e) {
 });
 
 // ── init ──
+try { lvlSel = 1; } catch (eLv) {}
 renderBar();
 (async () => {
   try {
