@@ -898,7 +898,7 @@ var lvlsAllHide = false;
 var lvlsPanel = {};
 function toggleAllLvls() { lvlsHide = {}; renderTable(); }
 function toggleLvlPanel(l) { lvlsPanel[l] = !lvlsPanel[l]; renderTable(); }
-var lvlSel = null;
+var lvlSel = 1;
 var pctDesc = true;
 var lvlAll = {};
 function stepLvlSel(dir) {
@@ -1294,16 +1294,28 @@ function renderTable() {
 
   const minPct = parseInt($("filterPct").value) || 0, lv = levelFilter();
   if (sessSel != null && sessSel > last.sessCount) sessSel = null;
+      var _lvPre = allRevs.concat(allMoms).filter(function (x) { return x.pct >= minPct && matchesLevel(x, lv) && (!row0Only || x.r === 0) && (sessSel == null || (x.sess || 1) === sessSel); });
+      Object.keys(lvlAll).forEach(function (k) { delete lvlAll[k]; });
+      _lvPre.forEach(function (x) { lvlAll[x.s1] = 1; });
+      if (_lvPre.length && lvlSel != null && !lvlAll[lvlSel]) lvlSel = null;
+      if (lvlSel != null && minC2 != null && !_lvPre.some(function (x) { return x.s1 === lvlSel && (x.c2 || 0) === minC2; })) {
+        var _lvBest = null;
+        _lvPre.forEach(function (x) {
+          if (x.s1 !== lvlSel) return;
+          if (!_lvBest || x.pct > _lvBest.pct || (x.pct === _lvBest.pct && ((x.c1 || 0) > (_lvBest.c1 || 0) || ((x.c1 || 0) === (_lvBest.c1 || 0) && (x.c2 || 0) < (_lvBest.c2 || 0))))) _lvBest = x;
+        });
+        if (_lvBest) minC2 = _lvBest.c2 || 0;
+      }
     var c2k = x => x.type === "MOM" ? (x.c1 || 0) - (x.c2 || 0) : (x.c2 || 0);
         const baseFn = x => x.pct >= minPct && matchesLevel(x, lv) && (!row0Only || x.r === 0) && (minC2 == null || (x.c2 || 0) === minC2);
     const filterFn = x => baseFn(x) && (sessSel == null || (x.sess || 1) === sessSel);
   const sortFn = (a, b) => c2k(a) - c2k(b) || b.pct - a.pct || b.c1 - a.c1 || a.c - b.c || a.r - b.r;
   const rev = startBelow100(allRevs.filter(filterFn).sort(sortFn));
     const mom = startBelow100(allMoms.filter(filterFn).sort(sortFn));
-    for (const k in lvlAll) delete lvlAll[k];
-    for (const x of rev) lvlAll[x.s1] = 1;
-    for (const x of mom) lvlAll[x.s1] = 1;
-        if (lvlSel != null && !lvlAll[lvlSel]) lvlSel = null;
+    ;
+    ;
+    ;
+        ;
 
   const area = $("tableArea"), rank = "";
     if (xsView && last.sessCount > 1 && sessSel == null) { area.innerHTML = rank + buildXsHTML(); return; }
