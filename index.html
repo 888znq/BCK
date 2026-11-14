@@ -902,6 +902,13 @@ function toggleAllLvls() { lvlsHide = {}; renderTable(); }
 function toggleLvlPanel(l) { lvlsPanel[l] = !lvlsPanel[l]; renderTable(); }
 var lvlSel = null;
 var pctDesc = true;
+var lvlDir = 1;
+var bestLvl = true;
+function toggleBest() { bestLvl = !bestLvl; renderTable(); }
+function bestBtn() {
+  return `<button type="button" onclick="toggleBest()" title="Only the best row of each level (highest % then highest C1)" style="background:` + (bestLvl ? "var(--green)" : "none") + `;border:1px solid var(--border2);color:` + (bestLvl ? "#000432" : "inherit") + `;cursor:pointer;padding:0 8px;font:inherit;border-radius:3px;margin-right:6px">BEST</button>`;
+}
+function toggleLvlSort() { lvlDir = lvlDir === 1 ? -1 : 1; renderTable(); }
 var lvlAll = {};
 function stepLvlSel(dir) {
   var opts = [null].concat(Object.keys(lvlAll).map(Number).sort(function (a, b) { return a - b; }));
@@ -1018,7 +1025,7 @@ function buildRowsOld(data) {
 
 function buildPane(label, data) {
   const hb = "background:none;border:1px solid var(--border2);color:inherit;cursor:pointer;padding:0 3px;font:inherit;font-size:9px;border-radius:3px;margin:0 2px";
-  const stH = `<button type="button" onclick="stepLvlSel(-1)" title="Previous level" style="${hb}">◀</button>STREAK<button type="button" onclick="stepLvlSel(1)" title="Next level" style="${hb}">▶</button>`;
+  const stH = `<button type="button" onclick="toggleLvlSort()" title="Sort by level: click to switch between lowest first and highest first" style="${hb};padding:0 8px">STREAK ${lvlDir === -1 ? "▼" : "▲"}</button>`;
   const c2H = `<button type="button" class="c2-dn" title="Lower min C2" style="${hb}">◀</button>C2${minC2 == null ? "" : "=" + minC2}<button type="button" class="c2-up" title="Raise min C2" style="${hb}">▶</button>`;
   const body = data.length
     ? `<table>${SIG_COLS}<thead><tr><th>PAIR</th><th>CYCLE</th><th>ROW</th><th>${stH}</th><th>C1</th><th>${c2H}</th><th>PROB%</th></tr></thead><tbody>${buildRows(data)}</tbody></table>`
@@ -1346,8 +1353,19 @@ function renderTable() {
                                     return true;
                                   });
                       };
-                      const rev = bestC2(allRevs.filter(filterFn).sort(c2c1));
-        const mom = bestC2(allMoms.filter(filterFn).sort(c2c1));
+                      const lvlOrd = list => lvlDir ? list.sort((a, b) => (lvlDir === 1 ? a.s1 - b.s1 : b.s1 - a.s1) || c2k(a) - c2k(b) || (b.c1 || 0) - (a.c1 || 0) || b.pct - a.pct || a.c - b.c || a.r - b.r) : list;
+                                            const bestLv = list => {
+                                                                    if (!bestLvl) return list;
+                                                                    const b = {};
+                                                                    list.forEach(x => {
+                                                                      const k = (x.sess || 1) + "|" + x.s1, o = b[k];
+                                                                      if (!o || x.pct > o.pct || (x.pct === o.pct && (x.c1 || 0) > (o.c1 || 0))) b[k] = x;
+                                                                    });
+                                                                    const out = list.filter(x => b[(x.sess || 1) + "|" + x.s1] === x);
+                                                                    return lvlDir ? out : out.sort((a, b2) => (a.s1 - b2.s1) || (a.c - b2.c) || (a.r - b2.r));
+                                                                  };
+                                                                  const rev = bestLv(lvlOrd(bestC2(allRevs.filter(filterFn).sort(c2c1))));
+        const mom = bestLv(lvlOrd(bestC2(allMoms.filter(filterFn).sort(c2c1))));
     ;
     ;
     ;
