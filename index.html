@@ -900,7 +900,7 @@ var lvlsAllHide = false;
 var lvlsPanel = {};
 function toggleAllLvls() { lvlsHide = {}; renderTable(); }
 function toggleLvlPanel(l) { lvlsPanel[l] = !lvlsPanel[l]; renderTable(); }
-var lvlSel = 1;
+var lvlSel = null;
 var pctDesc = true;
 var lvlAll = {};
 function stepLvlSel(dir) {
@@ -1315,7 +1315,13 @@ function renderTable() {
         const mx = {}, bk = x => (x.sess || 1) + "|" + x.s1;
         list.forEach(x => { const k = bk(x); if ((x.c1 || 0) > (mx[k] || 0)) mx[k] = x.c1 || 0; });
         const top = x => ((x.c1 || 0) >= (mx[bk(x)] || 0) - 5 ? 1 : 0);
-        return list.sort((a, b) => b.pct - a.pct || (b.c1 || 0) - (a.c1 || 0) || c2k(a) - c2k(b) || a.c - b.c || a.r - b.r);
+        const srt = list.sort((a, b) => (b.c1 || 0) - (a.c1 || 0) || c2k(a) - c2k(b) || b.pct - a.pct || a.c - b.c || a.r - b.r);
+                const mn = {}, fr = [], rest = [];
+                srt.forEach(x => {
+                  const k = bk(x), v = c2k(x);
+                  if (mn[k] === undefined || v < mn[k]) { mn[k] = v; fr.push(x); } else rest.push(x);
+                });
+                return fr.concat(rest);
       };
       const etaDedupe = list => {
         const best = {}, keys = new Array(list.length);
@@ -1328,8 +1334,20 @@ function renderTable() {
         }
         return list.filter((z, j) => best[keys[j]] === z);
       };
-      const rev = etaDedupe(bandSort(allRevs.filter(filterFn)));
-        const mom = etaDedupe(bandSort(allMoms.filter(filterFn)));
+      const c2c1 = (a, b) => c2k(a) - c2k(b) || (b.c1 || 0) - (a.c1 || 0) || b.pct - a.pct || a.c - b.c || a.r - b.r;
+              const bestC2 = list => {
+                        const seen = {}, seenP = {};
+                                  return list.filter(x => {
+                                    const k = (x.sess || 1) + "|" + c2k(x);
+                                                const pk = (x.sess || 1) + "|" + x.s1 + "|" + x.pair;
+                                    if (seen[k] || seenP[pk]) return false;
+                                    seen[k] = 1;
+                                    seenP[pk] = 1;
+                                    return true;
+                                  });
+                      };
+                      const rev = bestC2(allRevs.filter(filterFn).sort(c2c1));
+        const mom = bestC2(allMoms.filter(filterFn).sort(c2c1));
     ;
     ;
     ;
@@ -1354,8 +1372,8 @@ $("filterPct").addEventListener("input", renderTable);
 $("levelFilter").addEventListener("change", renderTable);
 function markSort() {
   document.querySelectorAll("#tableArea .split-pane th").forEach(th => {
-    if (th.textContent.indexOf("PROB%") === 0) {
-          th.textContent = "PROB% \u25BC";
+    if (th.textContent.indexOf("C1") === 0) {
+          th.textContent = "C1 \u25BC";
         }
   });
 }
@@ -1940,7 +1958,7 @@ $("bar").addEventListener("change", function (e) {
 });
 
 // ── init ──
-try { lvlSel = 1; } catch (eLv) {}
+try { lvlSel = null; } catch (eLv) {}
 renderBar();
 (async () => {
   try {
