@@ -1096,11 +1096,19 @@ let workerURL = null;
 const getWorkerURL = () => workerURL ||= URL.createObjectURL(new Blob([`(${workerMain})()`], { type: "application/javascript" }));
 
 // ── Cross-Cycle Prime Selection Engine (Ported from App 1) ──
+function kingFwdStat(k, lvl, type) {
+  var f1 = Math.max(0, (k.lastSeenC1 || 0) - (k.initialC1 || 0)) + 1;
+  var f2 = Math.min(f1, Math.max(0, (k.lastSeenC2 || 0) - (k.initialC2 || 0)) + ((k.crownStreak || lvl) >= lvl + 1 ? 1 : 0));
+  var pc = type === "REV" ? 100 - Math.round(f2 / f1 * 100) : Math.round(f2 / f1 * 100);
+  var p = Math.max(0, Math.min(1, pc / 100)), z = 1.645, z2 = z * z;
+  var sc = Math.max(0, (p + z2 / (2 * f1) - z * Math.sqrt((p * (1 - p) + z2 / (4 * f1)) / f1)) / (1 + z2 / f1)) * 100;
+  return { c1: f1, c2: f2, pct: pc, sc: sc };
+}
 function selectBestPrimeForLevelAcrossRange(allKingsOnLevel, fallbackSig, pair, sess, type, lvl, primeMinProb) {
   if (!allKingsOnLevel || !allKingsOnLevel.length) return { chosen: fallbackSig, rankedDurable: [] };
 
   const maxC1 = Math.max(...allKingsOnLevel.map(k => k.initialC1 || 0));
-    const minSampleC1 = maxC1 >= 6 ? 4 : 1;
+    const minSampleC1 = 1;
   
     const durable = allKingsOnLevel
       .filter(k => k.initialPct >= primeMinProb && (k.initialC1 || 0) >= minSampleC1)
@@ -1111,7 +1119,10 @@ function selectBestPrimeForLevelAcrossRange(allKingsOnLevel, fallbackSig, pair, 
         (a.c - b.c)
       );
 
-  let chosenKing = null;
+  var _sc = new Map(allKingsOnLevel.map(k => [k, kingFwdStat(k, lvl, type)]));
+    var _cmpK = (a, b) => (_sc.get(b).sc - _sc.get(a).sc) || (a.becameLeaderAtTs - b.becameLeaderAtTs) || (a.c - b.c) || (a.r - b.r);
+    durable.sort(_cmpK);
+    let chosenKing = null;
   if (durable.length > 0) {
     chosenKing = durable[0];
   } else {
@@ -1121,7 +1132,7 @@ function selectBestPrimeForLevelAcrossRange(allKingsOnLevel, fallbackSig, pair, 
           (b.initialC1 - a.initialC1) ||
           (a.c - b.c)
         );
-    chosenKing = sortedFallback[0];
+    chosenKing = [...allKingsOnLevel].sort(_cmpK)[0];
   }
 
   if (!chosenKing) return { chosen: fallbackSig, rankedDurable: durable };
@@ -1660,7 +1671,7 @@ function buildPrimeDetailHtml(d) {
   detHtml += `<div style="margin-bottom:6px;color:var(--sig-green)"><b>★ GLOBAL LEVEL X${d.s1} PRIME WINNER:</b> <b>${pairName(d.pair)} C${d.c} R${d.r} (${d.col})</b> | Embryo Born: <b>${birthStr}</b> | Crown→End: <b>${d.c1}/${d.c2} (${d.pct}%)</b>${d.initC1 === undefined ? "" : ` | Initial: <b>${d.initC1}/${d.initC2} (${d.initPct}%)</b>`}<br><span style="color:var(--text-dim)">Reason: ${d.primeReason || "PRIME"}</span></div>`;
 
   if (cfg.cmin !== cfg.cmax && topContenders.length > 1) {
-    detHtml += `<div style="margin-bottom:6px;color:var(--amber)"><b>🏆 TOP COMPETING DURABLE CYCLES ON LEVEL X${d.s1} (SORTED BY EARLIEST CROWN):</b><br>` +
+    detHtml += `<div style="margin-bottom:6px;color:var(--amber)"><b>🏆 TOP COMPETING DURABLE CYCLES ON LEVEL X${d.s1} (SORTED BY CROWN→END SCORE):</b><br>` +
       topContenders.map((k, idx) => `${idx === 0 ? "★" : `#${idx + 1}`} <b>C${k.c} R${k.r} (${k.col})</b> — Crowned: <b>${k.becameLeaderAtStr}</b> | Initial: <b>${k.initialC1}/${k.initialC2} (${k.initialPct}%)</b> | Final: <b>${k.lastSeenC1}/${k.lastSeenC2} (${k.lastSeenPct}%)</b>`).join("<br>") +
       `</div>`;
   }
