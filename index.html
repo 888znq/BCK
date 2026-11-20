@@ -590,7 +590,7 @@ function workerMain() {
   function evalRawSlotMetric(st, r, colChar, s, type, includeActive) {
     if (!st) return null;
     const k = colChar === "R" ? 1 : 0;
-    const raw = st.hist[k][r];
+    const raw = st.H.subarray((k * st.c + r) * st.L, (k * st.c + r + 1) * st.L);
     let maxS = st.maxLen[k][r];
     const wantColor = k ? 2 : 1;
     const act = includeActive && st.rowColor[r] === wantColor && st.rowStreak[r] >= 1 ? st.rowStreak[r] : 0;
@@ -829,8 +829,8 @@ function workerMain() {
     }
 
     const record = (st, r, col, s) => {
-      const k = col === 1 ? 0 : 1, h = st.hist[k][r] ||= {};
-      h[s] = (h[s] || 0) + 1;
+      const k = col === 1 ? 0 : 1;
+      // counts are kept in st.H
             st.H[(k * st.c + r) * st.L + s]++;
       if (s > st.maxLen[k][r]) st.maxLen[k][r] = s;
     };
