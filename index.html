@@ -2044,10 +2044,10 @@ function renderBar() {
     if (cnt >= 2) for (i = 0; i < cnt; i++) o += '<option value="' + (i + 1) + '"' + (sessSel === i + 1 ? " selected" : "") + op + '>' + sliceLbl(i) + '</option>';
     return '<div class="b-slice" style="display:flex;align-items:stretch;border-right:1px solid rgba(0,4,50,.3)"><select id="bSlice" style="' + st + '">' + o + '</select></div>';
   };
-  const cell = (cls, act, txt) => cls === "date" ? dateSel() : cls === "sess" ? sessCtl() : cls === "slice" ? sliceCtl() : `<button type="button" class="b-${cls}" data-act="${act}"><b>${txt}</b></button>`;
+  const cell = (cls, act, txt) => cls === "sess" ? sessCtl() : cls === "slice" ? sliceCtl() : `<button type="button" class="b-${cls}" data-act="${act}"><b>${txt}</b></button>`;
   $("bar").innerHTML =
     cell("pair", "pair", pairText()) +
-    cell("date", "date", "") +
+    cell("date", "date", pad2(d.d) + " " + MONTHS[d.m - 1].slice(0, 3) + " " + d.y) +
     cell("sess", "sess", "") +
     cell("slice", "slice", "") +
     cell("cmin", "cmin", cfg.cmin) + cell("cmax", "cmax", cfg.cmax) +
