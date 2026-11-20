@@ -609,11 +609,35 @@ function workerMain() {
     return { c1, c2, pct, currentStreak: st.rowColor[r] === wantColor ? st.rowStreak[r] : 0 };
   }
 
-  function buildSignalsFromStates(states, pair, includeActive) {
-    const revs = [], moms = [];
-    for (const st of states) {
-      const { c, rowColor, rowStreak, maxLen, hist } = st;
-      for (let r = 0; r < c; r++) {
+  const precedes = (a, b) => a.c1 !== b.c1 ? a.c1 > b.c1 : a.pct !== b.pct ? a.pct > b.pct : a.r < b.r;
+    function consider(bk, ck, c, r, s, c1, c2, pct, type, col, pair, q) {
+      const slot = bk[ck] || (bk[ck] = {});
+      const o = slot[s];
+      if (o && !(c1 > o.x.c1 || (c1 === o.x.c1 && (pct > o.x.pct || (pct === o.x.pct && r < o.x.r))))) return;
+      slot[s] = { q, x: { pair, c, r, s1: s, s2: s + 1, c1, c2, col, pct, type } };
+    }
+    function pickWinners(bk) {
+      const out = [], seenS = {};
+      for (const ck in bk) {
+        const slot = bk[ck];
+        let best = null;
+        for (const sk in slot) {
+          if (seenS[sk]) continue;
+          const e = slot[sk];
+          if (!best || precedes(e.x, best.x) || (!precedes(best.x, e.x) && e.q < best.q)) best = e;
+        }
+        if (best) { seenS[best.x.s1] = 1; out.push(best.x); }
+      }
+      return out.sort((a, b) => a.s1 - b.s1);
+    }
+  
+    function buildSignalsFromStates(states, pair, includeActive) {
+      const revs = [], moms = [];
+      for (const st of states) {
+        const { c, rowColor, rowStreak, maxLen, hist } = st;
+        const bR = {}, bM = {};
+        let q = 0;
+        for (let r = 0; r < c; r++) {
         for (let k = 0; k < 2; k++) {
           const raw = hist[k][r];
           let maxS = maxLen[k][r];
@@ -628,14 +652,16 @@ function workerMain() {
           }
           for (const key in cm) {
             const s = +key, c1 = cm[s], c2 = cm[s + 1] || 0;
-            const base = { pair, c, r, s1: s, s2: s + 1, c1, c2, col: k ? "R" : "G" };
-            revs.push({ ...base, pct: 100 - Math.round(c2 / c1 * 100), type: "REV" });
-            if (c1 > 1) moms.push({ ...base, pct: Math.round(c2 / c1 * 100), type: "MOM" });
-          }
-        }
-      }
-    }
-    return applyWallspectrumPipeline(revs, moms);
+            q++;
+                        consider(bR, c2, c, r, s, c1, c2, 100 - Math.round(c2 / c1 * 100), "REV", k ? "R" : "G", pair, q);
+                        if (c1 > 1) consider(bM, c1 - c2, c, r, s, c1, c2, Math.round(c2 / c1 * 100), "MOM", k ? "R" : "G", pair, q);
+                      }
+                    }
+                  }
+                  for (const x of pickWinners(bR)) revs.push(x);
+                  for (const x of pickWinners(bM)) moms.push(x);
+                }
+                return { rev: revs, mom: moms, revAll: revs, momAll: moms };
   }
 
   self.onmessage = e => {
