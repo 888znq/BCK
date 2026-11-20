@@ -867,8 +867,9 @@ function workerMain() {
           becameLeaderAtStr: tsStr,
           becameLeaderAtTs: ts,
           initialC1: sig.c1,
-          initialC2: sig.c2,
-          initialPct: sig.pct,
+                    initialC2: sig.c2,
+                    initialPct: sig.pct,
+                    crownStreak: (stateByC[sig.c] && stateByC[sig.c].rowStreak[sig.r]) || sig.s1,
           dethronedAtStr: null,
           dethronedAtTs: null,
           atDethroneC1: null,
@@ -1098,32 +1099,36 @@ const getWorkerURL = () => workerURL ||= URL.createObjectURL(new Blob([`(${worke
 function selectBestPrimeForLevelAcrossRange(allKingsOnLevel, fallbackSig, pair, sess, type, lvl, primeMinProb) {
   if (!allKingsOnLevel || !allKingsOnLevel.length) return { chosen: fallbackSig, rankedDurable: [] };
 
-  const maxC1 = Math.max(...allKingsOnLevel.map(k => k.lastSeenC1 || 0));
-  const minSampleC1 = maxC1 >= 6 ? 4 : 1;
-
-  const durable = allKingsOnLevel
-    .filter(k => k.lastSeenPct >= primeMinProb && k.lastSeenC1 >= minSampleC1)
-    .sort((a, b) =>
-      (a.becameLeaderAtTs - b.becameLeaderAtTs) ||
-      (b.lastSeenPct - a.lastSeenPct) ||
-      (b.lastSeenC1 - a.lastSeenC1) ||
-      (a.c - b.c)
-    );
+  const maxC1 = Math.max(...allKingsOnLevel.map(k => k.initialC1 || 0));
+    const minSampleC1 = maxC1 >= 6 ? 4 : 1;
+  
+    const durable = allKingsOnLevel
+      .filter(k => k.initialPct >= primeMinProb && (k.initialC1 || 0) >= minSampleC1)
+      .sort((a, b) =>
+        (a.becameLeaderAtTs - b.becameLeaderAtTs) ||
+        (b.initialPct - a.initialPct) ||
+        (b.initialC1 - a.initialC1) ||
+        (a.c - b.c)
+      );
 
   let chosenKing = null;
   if (durable.length > 0) {
     chosenKing = durable[0];
   } else {
     const sortedFallback = [...allKingsOnLevel].sort((a, b) =>
-      (b.lastSeenPct - a.lastSeenPct) ||
-      (a.becameLeaderAtTs - b.becameLeaderAtTs) ||
-      (b.lastSeenC1 - a.lastSeenC1) ||
-      (a.c - b.c)
-    );
+          (b.initialPct - a.initialPct) ||
+          (a.becameLeaderAtTs - b.becameLeaderAtTs) ||
+          (b.initialC1 - a.initialC1) ||
+          (a.c - b.c)
+        );
     chosenKing = sortedFallback[0];
   }
 
   if (!chosenKing) return { chosen: fallbackSig, rankedDurable: durable };
+  
+    var fwdC1 = Math.max(0, (chosenKing.lastSeenC1 || 0) - (chosenKing.initialC1 || 0)) + 1;
+    var fwdC2 = Math.max(0, (chosenKing.lastSeenC2 || 0) - (chosenKing.initialC2 || 0)) + ((chosenKing.crownStreak || lvl) >= lvl + 1 ? 1 : 0);
+    var fwdPct = type === "REV" ? 100 - Math.round(fwdC2 / fwdC1 * 100) : Math.round(fwdC2 / fwdC1 * 100);
 
   return {
     chosen: {
@@ -1133,16 +1138,19 @@ function selectBestPrimeForLevelAcrossRange(allKingsOnLevel, fallbackSig, pair, 
       r: chosenKing.r,
       s1: lvl,
       s2: lvl + 1,
-      c1: chosenKing.lastSeenC1,
-      c2: chosenKing.lastSeenC2,
-      pct: chosenKing.lastSeenPct,
+      c1: fwdC1,
+            c2: fwdC2,
+            pct: fwdPct,
+            initC1: chosenKing.initialC1,
+            initC2: chosenKing.initialC2,
+            initPct: chosenKing.initialPct,
       col: chosenKing.col,
       type,
       durablePoolCount: durable.length,
       totalPoolCount: allKingsOnLevel.length,
       primeReason: durable.length > 0
-        ? `EARLY_DURABLE_PRIME (Crowned ${chosenKing.becameLeaderAtStr}, Final ${chosenKing.lastSeenPct}% >= ${primeMinProb}%, Pool ${durable.length}/${allKingsOnLevel.length})`
-        : `ADAPTIVE_BEST_PRIME (Crowned ${chosenKing.becameLeaderAtStr}, Final ${chosenKing.lastSeenPct}%, Pool ${allKingsOnLevel.length})`
+        ? `EARLY_DURABLE_PRIME (Crowned ${chosenKing.becameLeaderAtStr}, Initial ${chosenKing.initialC1}/${chosenKing.initialC2} ${chosenKing.initialPct}% >= ${primeMinProb}%, Pool ${durable.length}/${allKingsOnLevel.length})`
+                : `ADAPTIVE_BEST_PRIME (Crowned ${chosenKing.becameLeaderAtStr}, Initial ${chosenKing.initialC1}/${chosenKing.initialC2} ${chosenKing.initialPct}%, Pool ${allKingsOnLevel.length})`
     },
     rankedDurable: durable.slice(0, 10)
   };
@@ -1649,11 +1657,11 @@ function buildPrimeDetailHtml(d) {
     <span>SIM W / L: <span class="G">${st.w}W</span> / <span class="R">${st.l}L</span></span>
   </div>`;
 
-  detHtml += `<div style="margin-bottom:6px;color:var(--sig-green)"><b>★ GLOBAL LEVEL X${d.s1} PRIME WINNER:</b> <b>${pairName(d.pair)} C${d.c} R${d.r} (${d.col})</b> | Embryo Born: <b>${birthStr}</b> | End-of-Session: <b>${d.c1}/${d.c2} (${d.pct}%)</b><br><span style="color:var(--text-dim)">Reason: ${d.primeReason || "PRIME"}</span></div>`;
+  detHtml += `<div style="margin-bottom:6px;color:var(--sig-green)"><b>★ GLOBAL LEVEL X${d.s1} PRIME WINNER:</b> <b>${pairName(d.pair)} C${d.c} R${d.r} (${d.col})</b> | Embryo Born: <b>${birthStr}</b> | Crown→End: <b>${d.c1}/${d.c2} (${d.pct}%)</b>${d.initC1 === undefined ? "" : ` | Initial: <b>${d.initC1}/${d.initC2} (${d.initPct}%)</b>`}<br><span style="color:var(--text-dim)">Reason: ${d.primeReason || "PRIME"}</span></div>`;
 
   if (cfg.cmin !== cfg.cmax && topContenders.length > 1) {
     detHtml += `<div style="margin-bottom:6px;color:var(--amber)"><b>🏆 TOP COMPETING DURABLE CYCLES ON LEVEL X${d.s1} (SORTED BY EARLIEST CROWN):</b><br>` +
-      topContenders.map((k, idx) => `${idx === 0 ? "★" : `#${idx + 1}`} <b>C${k.c} R${k.r} (${k.col})</b> — Crowned: <b>${k.becameLeaderAtStr}</b> | Final: <b>${k.lastSeenC1}/${k.lastSeenC2} (${k.lastSeenPct}%)</b>`).join("<br>") +
+      topContenders.map((k, idx) => `${idx === 0 ? "★" : `#${idx + 1}`} <b>C${k.c} R${k.r} (${k.col})</b> — Crowned: <b>${k.becameLeaderAtStr}</b> | Initial: <b>${k.initialC1}/${k.initialC2} (${k.initialPct}%)</b> | Final: <b>${k.lastSeenC1}/${k.lastSeenC2} (${k.lastSeenPct}%)</b>`).join("<br>") +
       `</div>`;
   }
 
