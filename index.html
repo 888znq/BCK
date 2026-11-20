@@ -506,6 +506,7 @@ async function loadTicksForDay(pair, dayEpoch, secFrom, secTo, cached, logCb) {
 
   const chunks = [];
   for (const [a, b] of gaps) for (let s = a; s <= b; s += 901) chunks.push([s, Math.min(s + 900, b)]);
+    if (cached && !chunks.length && cached.length === length) return cached;
 
   const WORKERS = 16;
   for (let i = 0; i < chunks.length; i += WORKERS) {
@@ -631,7 +632,146 @@ function workerMain() {
       return out.sort((a, b) => a.s1 - b.s1);
     }
   
-    function buildSignalsFromStates(states, pair, includeActive) {
+    let curI = 0;
+        let _qCap = 0, _qR, _qK, _qS, _qC1, _qC2, _mB, _oB;
+        let _cnt = new Int32Array(64), _pos = new Int32Array(64), _tmp = new Int32Array(64), _used = new Uint8Array(64), _pres = new Uint8Array(64);
+        function buildSignalsFromStates(states, pair, includeActive) {
+              const revs = [], moms = [];
+              for (let si = 0; si < states.length; si++) {
+                const st = states[si], c = st.c, L = st.L, H = st.H, rowColor = st.rowColor, rowStreak = st.rowStreak, ml0 = st.maxLen[0], ml1 = st.maxLen[1];
+                let need = 0, top = 0;
+                for (let r = 0; r < c; r++) for (let k = 0; k < 2; k++) {
+                  let ms = (k ? ml1 : ml0)[r];
+                  if (includeActive && rowColor[r] === (k ? 2 : 1) && rowStreak[r] > ms) ms = rowStreak[r];
+                  need += ms; if (ms > top) top = ms;
+                }
+                if (!need) continue;
+                if (need > _qCap) {
+                  _qCap = Math.max(need, _qCap * 2, 1024);
+                  _qR = new Int32Array(_qCap); _qK = new Uint8Array(_qCap); _qS = new Int32Array(_qCap); _qC1 = new Int32Array(_qCap); _qC2 = new Int32Array(_qCap); _mB = new Int32Array(_qCap); _oB = new Int32Array(_qCap);
+                }
+                const z = top + 2;
+                if (_tmp.length < z) _tmp = new Int32Array(z * 2);
+                if (_used.length < z) { _used = new Uint8Array(z * 2); _pres = new Uint8Array(z * 2); }
+                let nq = 0;
+                for (let r = 0; r < c; r++) for (let k = 0; k < 2; k++) {
+                  let ms = (k ? ml1 : ml0)[r];
+                  const act = (includeActive && rowColor[r] === (k ? 2 : 1) && rowStreak[r] >= 1) ? rowStreak[r] : 0;
+                  if (act > ms) ms = act;
+                  if (!ms) continue;
+                  const base = (k * c + r) * L;
+                  let cum = 0;
+                  for (let i = ms; i >= 1; i--) { cum += H[base + i] + (act === i ? 1 : 0); _tmp[i] = cum; }
+                  _tmp[ms + 1] = 0;
+                  for (let s = 1; s <= ms; s++) if (_tmp[s] > 0) { _qR[nq] = r; _qK[nq] = k; _qS[nq] = s; _qC1[nq] = _tmp[s]; _qC2[nq] = _tmp[s + 1]; nq++; }
+                }
+                for (let t = 0; t < 2; t++) {
+                  const mom = t === 1;
+                  let maxM = -1, nPres = 0, nUsed = 0;
+                  _used.fill(0, 0, z); _pres.fill(0, 0, z);
+                  for (let j = 0; j < nq; j++) {
+                    let m;
+                    if (mom) { if (_qC1[j] <= 1) { _mB[j] = -1; continue; } m = _qC1[j] - _qC2[j]; } else m = _qC2[j];
+                    _mB[j] = m;
+                    if (m > maxM) maxM = m;
+                    if (!_pres[_qS[j]]) { _pres[_qS[j]] = 1; nPres++; }
+                  }
+                  if (maxM < 0) continue;
+                  if (_cnt.length < maxM + 2) { _cnt = new Int32Array((maxM + 2) * 2); _pos = new Int32Array((maxM + 2) * 2); }
+                  _cnt.fill(0, 0, maxM + 2);
+                  for (let j = 0; j < nq; j++) if (_mB[j] >= 0) _cnt[_mB[j] + 1]++;
+                  for (let m = 0; m <= maxM; m++) _cnt[m + 1] += _cnt[m];
+                  for (let m = 0; m <= maxM; m++) _pos[m] = _cnt[m];
+                  for (let j = 0; j < nq; j++) { const m = _mB[j]; if (m >= 0) _oB[_pos[m]++] = j; }
+                  const win = [];
+                  for (let m = 0; m <= maxM && nUsed < nPres; m++) {
+                    let best = -1;
+                    for (let u = _cnt[m], e = _cnt[m + 1]; u < e; u++) {
+                      const j = _oB[u];
+                      if (_used[_qS[j]]) continue;
+                      if (best < 0) best = j;
+                      else { const c1 = _qC1[j]; if (c1 > _qC1[best] || (c1 === _qC1[best] && _qR[j] < _qR[best])) best = j; }
+                    }
+                    if (best >= 0) { _used[_qS[best]] = 1; nUsed++; win.push(best); }
+                  }
+                  win.sort((a, b) => _qS[a] - _qS[b]);
+                  for (const j of win) {
+                    const c1 = _qC1[j], c2 = _qC2[j], q = Math.round(c2 / c1 * 100);
+                    (mom ? moms : revs).push({ pair, c, r: _qR[j], s1: _qS[j], s2: _qS[j] + 1, c1, c2, col: _qK[j] ? "R" : "G", pct: mom ? q : 100 - q, type: mom ? "MOM" : "REV" });
+                  }
+                }
+              }
+              return { rev: revs, mom: moms, revAll: revs, momAll: moms };
+            }
+            function buildSignalsFromStatesOld(states, pair, includeActive) {
+          const revs = [], moms = [];
+          for (let si = 0; si < states.length; si++) {
+            const st = states[si], c = st.c, L = st.L, H = st.H, rowColor = st.rowColor, rowStreak = st.rowStreak, ml0 = st.maxLen[0], ml1 = st.maxLen[1];
+            let need = 0, top = 0;
+            for (let r = 0; r < c; r++) for (let k = 0; k < 2; k++) {
+              let ms = (k ? ml1 : ml0)[r];
+              if (includeActive && rowColor[r] === (k ? 2 : 1) && rowStreak[r] > ms) ms = rowStreak[r];
+              need += ms; if (ms > top) top = ms;
+            }
+            if (!need) continue;
+            if (need > _qCap) {
+              _qCap = Math.max(need, _qCap * 2, 1024);
+              _qR = new Int32Array(_qCap); _qK = new Uint8Array(_qCap); _qS = new Int32Array(_qCap); _qC1 = new Int32Array(_qCap); _qC2 = new Int32Array(_qCap); _mB = new Int32Array(_qCap); _oB = new Int32Array(_qCap);
+            }
+            const z = top + 2;
+            if (_tmp.length < z) _tmp = new Int32Array(z * 2);
+            if (_used.length < z) { _used = new Uint8Array(z * 2); _pres = new Uint8Array(z * 2); }
+            let nq = 0;
+            for (let r = 0; r < c; r++) for (let k = 0; k < 2; k++) {
+              let ms = (k ? ml1 : ml0)[r];
+              const act = (includeActive && rowColor[r] === (k ? 2 : 1) && rowStreak[r] >= 1) ? rowStreak[r] : 0;
+              if (act > ms) ms = act;
+              if (!ms) continue;
+              const base = (k * c + r) * L;
+              let cum = 0;
+              for (let i = ms; i >= 1; i--) { cum += H[base + i] + (act === i ? 1 : 0); _tmp[i] = cum; }
+              _tmp[ms + 1] = 0;
+              for (let s = 1; s <= ms; s++) if (_tmp[s] > 0) { _qR[nq] = r; _qK[nq] = k; _qS[nq] = s; _qC1[nq] = _tmp[s]; _qC2[nq] = _tmp[s + 1]; nq++; }
+            }
+            for (let t = 0; t < 2; t++) {
+              const mom = t === 1;
+              let maxM = -1, nPres = 0, nUsed = 0;
+              _used.fill(0, 0, z); _pres.fill(0, 0, z);
+              for (let j = 0; j < nq; j++) {
+                let m;
+                if (mom) { if (_qC1[j] <= 1) { _mB[j] = -1; continue; } m = _qC1[j] - _qC2[j]; } else m = _qC2[j];
+                _mB[j] = m;
+                if (m > maxM) maxM = m;
+                if (!_pres[_qS[j]]) { _pres[_qS[j]] = 1; nPres++; }
+              }
+              if (maxM < 0) continue;
+              if (_cnt.length < maxM + 2) { _cnt = new Int32Array((maxM + 2) * 2); _pos = new Int32Array((maxM + 2) * 2); }
+              _cnt.fill(0, 0, maxM + 2);
+              for (let j = 0; j < nq; j++) if (_mB[j] >= 0) _cnt[_mB[j] + 1]++;
+              for (let m = 0; m <= maxM; m++) _cnt[m + 1] += _cnt[m];
+              for (let m = 0; m <= maxM; m++) _pos[m] = _cnt[m];
+              for (let j = 0; j < nq; j++) { const m = _mB[j]; if (m >= 0) _oB[_pos[m]++] = j; }
+              const win = [];
+              for (let m = 0; m <= maxM && nUsed < nPres; m++) {
+                let best = -1;
+                for (let u = _cnt[m], e = _cnt[m + 1]; u < e; u++) {
+                  const j = _oB[u];
+                  if (_used[_qS[j]]) continue;
+                  if (best < 0) best = j;
+                  else { const c1 = _qC1[j]; if (c1 > _qC1[best] || (c1 === _qC1[best] && _qR[j] < _qR[best])) best = j; }
+                }
+                if (best >= 0) { _used[_qS[best]] = 1; nUsed++; win.push(best); }
+              }
+              win.sort((a, b) => _qS[a] - _qS[b]);
+              for (const j of win) {
+                const c1 = _qC1[j], c2 = _qC2[j], q = Math.round(c2 / c1 * 100);
+                (mom ? moms : revs).push({ pair, c, r: _qR[j], s1: _qS[j], s2: _qS[j] + 1, c1, c2, col: _qK[j] ? "R" : "G", pct: mom ? q : 100 - q, type: mom ? "MOM" : "REV" });
+              }
+            }
+          }
+          return { rev: revs, mom: moms, revAll: revs, momAll: moms };
+        }
+        function buildSignalsFromStatesOld(states, pair, includeActive) {
       const revs = [], moms = [];
       for (const st of states) {
         const { c, rowColor, rowStreak, maxLen, hist } = st;
@@ -678,7 +818,11 @@ function workerMain() {
         rowStreak: new Int16Array(c),
         rowCol: new Int32Array(c).fill(-2),
         maxLen: [new Int16Array(c), new Int16Array(c)],
-        hist: [new Array(c).fill(null), new Array(c).fill(null)]
+        rowT: new Int32Array(c).fill(-1),
+                tc: new Int32Array(2 * (Math.ceil(n / c) + 8)),
+                L: Math.ceil(n / c) + 8,
+                H: new Uint16Array(2 * c * (Math.ceil(n / c) + 8)),
+                hist: [new Array(c).fill(null), new Array(c).fill(null)]
       };
       states.push(st);
       stateByC[c] = st;
@@ -687,6 +831,7 @@ function workerMain() {
     const record = (st, r, col, s) => {
       const k = col === 1 ? 0 : 1, h = st.hist[k][r] ||= {};
       h[s] = (h[s] || 0) + 1;
+            st.H[(k * st.c + r) * st.L + s]++;
       if (s > st.maxLen[k][r]) st.maxLen[k][r] = s;
     };
 
@@ -749,7 +894,10 @@ function workerMain() {
           const map = levelLeaders[type][csKey];
           for (const lKey in map) {
             const rec = map[lKey];
-            const m = evalRawSlotMetric(stateByC[rec.c], rec.r, rec.col, s, type, includeActive);
+            const stK = stateByC[rec.c];
+                        if (includeActive && rec.calcI !== undefined && stK.rowT[rec.r] <= rec.calcI) continue;
+                        rec.calcI = curI;
+                        const m = evalRawSlotMetric(stK, rec.r, rec.col, s, type, includeActive);
             if (m) {
               rec.lastSeenC1 = m.c1;
               rec.lastSeenC2 = m.c2;
@@ -890,20 +1038,10 @@ function workerMain() {
         else if (p < prevP) { newC = 2; newS = cont && oldC === 2 && oldS > 0 ? oldS + 1 : 1; }
         else { newC = oldC; newS = 0; }
 
-        if (cont && oldS >= 1 && oldC !== 0 && p !== -1 && prevP !== -1 && p !== prevP) {
-          const colChar = oldC === 1 ? "G" : "R", continued = newC === oldC;
-          const csKey = `${c}_${oldS}`;
-          for (const type of ["REV", "MOM"]) {
-            const matchKey = `C${c}_R${row}_${colChar}`;
-            if (oldS <= (candidates[matchKey]?.maxLevel || 0) || states[si].rowStreak[row] >= oldS) {
-              const stObj = states[si];
-              if (stObj.rowColor[row] === oldC && stObj.rowStreak[row] >= oldS) {
-                const tst = (tradeStats[type][csKey] ||= { w: 0, l: 0 });
-                (type === "REV" ? !continued : continued) ? tst.w++ : tst.l++;
-              }
-            }
-          }
-        }
+        st.rowT[row] = i; curI = i;
+                if (cont && oldS >= 1 && oldC !== 0 && p !== -1 && prevP !== -1 && p !== prevP) {
+                  st.tc[oldS * 2 + (newC === oldC ? 1 : 0)]++;
+                }
 
         const streakEnded = newS === 1 && oldS > 0 && oldC !== 0 && cont;
         if (streakEnded) record(st, row, oldC, oldS);
@@ -919,7 +1057,25 @@ function workerMain() {
       }
     }
 
-    trackCandidatesAndLeaders(startTsUtc + n - 1);
+    curI = n;
+        for (const st of states) st.rowT.fill(n);
+        curI = n;
+            for (const st of states) st.rowT.fill(n);
+            trackCandidatesAndLeaders(startTsUtc + n - 1);
+            for (const st of states) {
+              const tcA = st.tc;
+              for (let s = 1; s * 2 + 1 < tcA.length; s++) {
+                const nc = tcA[s * 2], cn = tcA[s * 2 + 1];
+                if (nc || cn) { const key = `${st.c}_${s}`; tradeStats.REV[key] = { w: nc, l: cn }; tradeStats.MOM[key] = { w: cn, l: nc }; }
+              }
+            }
+        for (const st of states) {
+          const tcA = st.tc;
+          for (let s = 1; s * 2 + 1 < tcA.length; s++) {
+            const nc = tcA[s * 2], cn = tcA[s * 2 + 1];
+            if (nc || cn) { const key = `${st.c}_${s}`; tradeStats.REV[key] = { w: nc, l: cn }; tradeStats.MOM[key] = { w: cn, l: nc }; }
+          }
+        }
     updateAllRegisteredKings(false);
 
     const finalStanding = buildSignalsFromStates(states, pair, false);
@@ -1040,7 +1196,84 @@ function finalizePrimeFromMeta(revs, moms, meta, pair, sess) {
   }
 }
 
+const POOL_N = Math.max(2, Math.min(navigator.hardwareConcurrency || 4, 16));
+const wPool = [], wQueue = [], persistedSet = new WeakSet();
+function poolPump() {
+  while (wQueue.length) {
+    let w = wPool.find(x => !x.task);
+    if (!w && wPool.length < POOL_N) {
+      w = new Worker(getWorkerURL());
+      w.task = null;
+      w.onmessage = e => { const t = w.task; w.task = null; if (t) t.done(e.data); poolPump(); };
+      w.onerror = () => {
+        const t = w.task; w.task = null;
+        try { w.terminate(); } catch {}
+        const ix = wPool.indexOf(w); if (ix >= 0) wPool.splice(ix, 1);
+        if (t) t.done(null);
+        poolPump();
+      };
+      wPool.push(w);
+    }
+    if (!w) return;
+    const t = wQueue.shift();
+    if (cancelFlag) { t.done(null); continue; }
+    const [msg, tr] = t.make();
+    w.task = t;
+    w.postMessage(msg, tr);
+  }
+}
+const poolRun = make => new Promise(done => { wQueue.push({ make, done }); poolPump(); });
+
 function workerScan(prices, minC, maxC, pair, startTsUtc, onProgress, pre, sess = 1) {
+  return new Promise(resolve => {
+    const total = maxC - minC + 1;
+    const nSh = Math.min(total, POOL_N * 2);
+    const per = Math.ceil(total / nSh);
+    const shards = [];
+    for (let s = minC; s <= maxC; s += per) shards.push([s, Math.min(s + per - 1, maxC)]);
+    const revs = [], moms = [];
+    const meta = {
+      dethroneLog: { REV: {}, MOM: {} },
+      tradeStats: { REV: {}, MOM: {} },
+      candidates: {},
+      challengerLog: { REV: {}, MOM: {} },
+      levelLeaders: { REV: {}, MOM: {} }
+    };
+    let done = 0;
+    const finish = () => {
+      done++;
+      if (onProgress) onProgress(done / shards.length);
+      if (done === shards.length) {
+        finalizePrimeFromMeta(revs, moms, meta, pair, sess);
+        scanMeta[`${pair}|${sess}`] = meta;
+        for (const lvl in meta.primeBest.REV) { const pw = meta.primeBest.REV[lvl]; pw._isPrimeWinner = true; revs.push(pw); }
+        for (const lvl in meta.primeBest.MOM) { const pw = meta.primeBest.MOM[lvl]; pw._isPrimeWinner = true; moms.push(pw); }
+        resolve([revs, moms]);
+      }
+    };
+    for (const [a, b] of shards) {
+      poolRun(() => {
+        const buf = new Float64Array(prices);
+        return [{ prices: buf, minC: a, maxC: b, pair, startTsUtc, pre: pre ? Float64Array.from(pre) : null }, [buf.buffer]];
+      }).then(d => {
+        if (d) {
+          for (const x of d.revs) { x.sess = sess; revs.push(x); }
+          for (const x of d.moms) { x.sess = sess; moms.push(x); }
+          Object.assign(meta.candidates, d.candidates);
+          for (const t of ["REV", "MOM"]) {
+            Object.assign(meta.dethroneLog[t], d.dethroneLog[t]);
+            Object.assign(meta.tradeStats[t], d.tradeStats[t]);
+            Object.assign(meta.challengerLog[t], d.challengerLog[t]);
+            Object.assign(meta.levelLeaders[t], d.levelLeaders[t]);
+          }
+        }
+        finish();
+      });
+    }
+  });
+}
+
+function workerScanOld(prices, minC, maxC, pair, startTsUtc, onProgress, pre, sess = 1) {
   return new Promise(resolve => {
     const total = maxC - minC + 1;
     const nWorkers = Math.min(navigator.hardwareConcurrency || 4, 16, total);
@@ -1100,6 +1333,31 @@ function workerScan(prices, minC, maxC, pair, startTsUtc, onProgress, pre, sess 
 }
 
 async function workerScanSessions(prices, cMin, cMax, pair, startTs, winSec, sessMin, onFrac, pre0, sliceNo) {
+  const PR = PRE_ROLL_SECS;
+  const ext = new Float64Array(PR + prices.length).fill(-1);
+  if (pre0 && pre0.length) ext.set(pre0.length > PR ? pre0.slice(pre0.length - PR) : pre0, PR - Math.min(pre0.length, PR));
+  ext.set(prices, PR);
+  if (!sessMin) return workerScan(prices, cMin, cMax, pair, startTs, onFrac, ext.subarray(0, PR), sliceNo || 1);
+  const n = Math.max(1, Math.round(winSec / (sessMin * 60)));
+  const sessSec = Math.round(winSec / n);
+  const jobs = [];
+  for (let si = 0; si < n; si++) {
+    if (cancelFlag) break;
+    const a = si * sessSec, b = si === n - 1 ? prices.length : (si + 1) * sessSec + 1;
+    const slice = prices.slice(a, b);
+    if (slice.length <= cMax) continue;
+    const sIdx = sliceNo || (si + 1);
+    jobs.push(workerScan(slice, cMin, cMax, pair, startTs + a, null, ext.subarray(a, a + PR), sIdx).then(r => {
+      for (const list of r) for (const it of list) it.sess = sIdx;
+      return r;
+    }));
+  }
+  let merged = null;
+  for (const r of await Promise.all(jobs)) merged = merged ? [merged[0].concat(r[0]), merged[1].concat(r[1])] : r;
+  return merged || [[], []];
+}
+
+async function workerScanSessionsOld(prices, cMin, cMax, pair, startTs, winSec, sessMin, onFrac, pre0, sliceNo) {
   const PR = PRE_ROLL_SECS;
   const ext = new Float64Array(PR + prices.length).fill(-1);
   if (pre0 && pre0.length) ext.set(pre0.length > PR ? pre0.slice(pre0.length - PR) : pre0, PR - Math.min(pre0.length, PR));
@@ -1200,7 +1458,7 @@ async function runScan() {
     const dayEpoch = Math.floor(new Date(cfg.date + "T00:00:00Z").getTime() / 1000) + shiftDays * 86400;
     const startTsUtc = dayEpoch + secFrom;
     const n = pairs.length;
-    var skippedRef = [];
+    var skippedRef = [], scanJobs = [], scanDone = 0, fetchFin = false;
 
     for (let pi = 0; pi < n && !cancelFlag; pi++) {
       const pair = pairs[pi], tag = `[${pi + 1}/${n}] ${pair}`;
@@ -1211,7 +1469,7 @@ async function runScan() {
       const prices = await loadTicksForDay(pair, dayEpoch, secFrom, secTo, tickCache[key], msg => setLog(`${tag}  ${cfg.date}  ${msg}`));
       if (cancelFlag || !prices) continue;
       tickCache[key] = prices;
-      idbSet(key, prices);
+      if (!persistedSet.has(prices)) { persistedSet.add(prices); idbSet(key, prices); }
       const pkey = key + "|pre";
       let pre = tickCache[pkey];
       if (!pre) {
@@ -1230,15 +1488,18 @@ async function runScan() {
       simData[pair] = { prices, pre, startTsUtc };
 
       setProgress(scanBase, `${tag}  scanning (${cfg.date})…`, `Cycles C${cycleMin}–C${cycleMax}`);
-      const [revs, moms] = await workerScanSessions(prices, cycleMin, cycleMax, pair, startTsUtc, winSec, sliceNo ? 0 : sessMin, f =>
-        setProgress(scanBase + f * scanSlice,
-          `${tag}  ${cfg.date}  scanning… ${Math.round(f * 100)}%`,
-          `C${cycleMin}–C${cycleMax}  [${navigator.hardwareConcurrency || 4} workers]`), pre, sliceNo);
-      allRevs = allRevs.concat(revs);
-      allMoms = allMoms.concat(moms);
+      scanJobs.push(workerScanSessions(prices, cycleMin, cycleMax, pair, startTsUtc, winSec, sliceNo ? 0 : sessMin, null, pre, sliceNo).then(r => {
+              scanDone++;
+              setLog(`${tag}  scanned (${scanDone}/${n})`);
+              if (fetchFin) setProgress(60 + scanDone / n * 40, `Scanning… ${scanDone}/${n}`);
+              return r;
+            }));
     }
 
-    if (cancelFlag) { toast("Scan cancelled", "err"); return; }
+    fetchFin = true;
+        setProgress(60, "Finishing scans…", `${scanJobs.length - scanDone} scan job(s) running`);
+        for (const [revs, moms] of await Promise.all(scanJobs)) { allRevs = allRevs.concat(revs); allMoms = allMoms.concat(moms); }
+        if (cancelFlag) { toast("Scan cancelled", "err"); return; }
 
     const nRev = allRevs.filter(x => x._isPrimeWinner && x.pct >= minPct).length;
     const nMom = allMoms.filter(x => x._isPrimeWinner && x.pct >= minPct).length;
