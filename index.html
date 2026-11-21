@@ -1586,7 +1586,7 @@ const lvlsEta = x => {
 function toggleLvlExp(k) { lvlsExp[k] = !lvlsExp[k]; renderTable(); }
 function toggleLvls() { lvlsOn = !lvlsOn; renderTable(); }
 function toggleOrd() { ordOn = !ordOn; renderTable(); }
-function toggleRow0() { row0Only = !row0Only; renderTable(); }
+function toggleRow0() { row0Only = false; renderTable(); }
 function toggleXs() { xsView = !xsView; $("xsBtn").classList.toggle("on", xsView); renderTable(); }
 var minC2 = null;
 function toggleC2(dir) {
@@ -1759,12 +1759,8 @@ function toggleRowLog(uid) {
 
 function buildRow(d) {
   const red = d.col === "R";
-  const uid = `log_${d.type}_${d.pair}_${d.sess || 1}_C${d.c}_R${d.r}_X${d.s1}`;
-  const isOpen = !!rowLogExp[uid];
-  const detHtml = buildPrimeDetailHtml(d);
-  return `<tr class="${red ? "row-red" : "row-green"}" onclick="toggleRowLog('${uid}')"><td class="cell-pair">${red ? "↓" : "↑"} ${pairName(d.pair)}${holdInfo(d)}</td>` +
-    `<td>C${d.c}</td><td>R${d.r}</td><td>X${d.s1}→X${d.s2}</td><td>${d.c1}</td><td>${d.c2}</td><td>${d.pct}%</td></tr>` +
-    (detHtml ? `<tr id="${uid}" style="display:${isOpen ? "table-row" : "none"}"><td colspan="7" class="prime-log">${detHtml}</td></tr>` : "");
+  return `<tr class="${red ? "row-red" : "row-green"}"><td class="cell-pair">${red ? "↓" : "↑"} ${pairName(d.pair)}</td>` +
+      `<td>C${d.c}</td><td>R${d.r}</td><td>X${d.s1}→X${d.s2}</td><td>${d.c1}</td><td>${d.c2}</td><td>${d.pct}%</td></tr>`;
 }
 
 function buildRows(data) {
@@ -1947,8 +1943,8 @@ function renderTable() {
     const wbRevs = allRevs.filter(x => x._wb);
     const wbMoms = allMoms.filter(x => x._wb);
 
-  const activeSourceRevs = row0Only ? rawRevs : wbRevs;
-    const activeSourceMoms = row0Only ? rawMoms : wbMoms;
+  const activeSourceRevs = wbRevs;
+    const activeSourceMoms = wbMoms;
 
   var _lvPre = activeSourceRevs.concat(activeSourceMoms).filter(function (x) {
     return x.pct >= minPct && matchesLevel(x, lv) && (!row0Only || x.r === 0) && (sessSel == null || (x.sess || 1) === sessSel);
