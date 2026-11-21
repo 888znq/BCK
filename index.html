@@ -804,8 +804,37 @@ function workerMain() {
                 return { rev: revs, mom: moms, revAll: revs, momAll: moms };
   }
 
-  self.onmessage = e => {
-    const { prices, minC, maxC, pair, startTsUtc, pre } = e.data;
+  function buildCmpBest(states, pair) {
+      var revs = [], moms = [], si, st, c, L, H, bR, bM, r, k, ms, base, cm, cum, i, s, c1, c2, q, pr, o, om, key;
+      for (si = 0; si < states.length; si++) {
+        st = states[si]; c = st.c; L = st.L; H = st.H; bR = {}; bM = {};
+        for (r = 0; r < c; r++) {
+          for (k = 0; k < 2; k++) {
+            ms = st.maxLen[k][r];
+            if (!ms) continue;
+            base = (k * c + r) * L;
+            cm = new Int32Array(ms + 2);
+            cum = 0;
+            for (i = ms; i >= 1; i--) { cum += H[base + i]; cm[i] = cum; }
+            for (s = 1; s <= ms; s++) {
+              c1 = cm[s];
+              if (c1 <= 0) continue;
+              c2 = cm[s + 1]; q = Math.round(c2 / c1 * 100); pr = 100 - q;
+              o = bR[s];
+              if (!o || c1 > o.c1 || (c1 === o.c1 && (pr > o.pct || (pr === o.pct && (c2 < o.c2 || (c2 === o.c2 && r < o.r)))))) bR[s] = { pair: pair, c: c, r: r, s1: s, s2: s + 1, c1: c1, c2: c2, col: k ? "R" : "G", pct: pr, type: "REV", _wb: true };
+              om = bM[s]; key = c1 - c2;
+              if (!om || c1 > om.c1 || (c1 === om.c1 && (q > om.pct || (q === om.pct && (key < om.c1 - om.c2 || (key === om.c1 - om.c2 && r < om.r)))))) bM[s] = { pair: pair, c: c, r: r, s1: s, s2: s + 1, c1: c1, c2: c2, col: k ? "R" : "G", pct: q, type: "MOM", _wb: true };
+            }
+          }
+        }
+        for (s in bR) revs.push(bR[s]);
+        for (s in bM) moms.push(bM[s]);
+      }
+      return { revs: revs, moms: moms };
+    }
+  
+    self.onmessage = e => {
+      const { prices, minC, maxC, pair, startTsUtc, pre } = e.data;
     const preLen = pre ? pre.length : 0;
     const n = prices.length;
     const states = [];
@@ -1080,9 +1109,12 @@ function workerMain() {
     updateAllRegisteredKings(false);
 
     const finalStanding = buildSignalsFromStates(states, pair, false);
-    self.postMessage({
-      revs: finalStanding.revAll,
-      moms: finalStanding.momAll,
+        var wbest = buildCmpBest(states, pair);
+        self.postMessage({
+          revs: finalStanding.revAll,
+          moms: finalStanding.momAll,
+          revsW: wbest.revs,
+          momsW: wbest.moms,
       dethroneLog,
       tradeStats,
       candidates,
@@ -1247,6 +1279,7 @@ function workerScan(prices, minC, maxC, pair, startTsUtc, onProgress, pre, sess 
   return new Promise(resolve => {
     const total = maxC - minC + 1;
     const nSh = Math.min(total, POOL_N * 2);
+        var revsW = [], momsW = [];
     const per = Math.ceil(total / nSh);
     const shards = [];
     for (let s = minC; s <= maxC; s += per) shards.push([s, Math.min(s + per - 1, maxC)]);
@@ -1267,6 +1300,8 @@ function workerScan(prices, minC, maxC, pair, startTsUtc, onProgress, pre, sess 
         scanMeta[`${pair}|${sess}`] = meta;
         for (const lvl in meta.primeBest.REV) { const pw = meta.primeBest.REV[lvl]; pw._isPrimeWinner = true; revs.push(pw); }
         for (const lvl in meta.primeBest.MOM) { const pw = meta.primeBest.MOM[lvl]; pw._isPrimeWinner = true; moms.push(pw); }
+                for (const x of revsW) revs.push(x);
+                for (const x of momsW) moms.push(x);
         resolve([revs, moms]);
       }
     };
@@ -1278,6 +1313,8 @@ function workerScan(prices, minC, maxC, pair, startTsUtc, onProgress, pre, sess 
         if (d) {
           for (const x of d.revs) { x.sess = sess; revs.push(x); }
           for (const x of d.moms) { x.sess = sess; moms.push(x); }
+                    for (const x of (d.revsW || [])) { x.sess = sess; revsW.push(x); }
+                    for (const x of (d.momsW || [])) { x.sess = sess; momsW.push(x); }
           Object.assign(meta.candidates, d.candidates);
           for (const t of ["REV", "MOM"]) {
             Object.assign(meta.dethroneLog[t], d.dethroneLog[t]);
@@ -1751,7 +1788,7 @@ function computeCrossSession() {
   const build = list => {
     const groups = {};
     for (const d of list) {
-      if (d._isPrimeWinner) continue;
+      if (d._isPrimeWinner || d._wb) continue;
       if (d.pct < minPct || !matchesLevel(d, lv) || (row0Only && d.r !== 0) || (lvlSel != null && d.s1 !== lvlSel)) continue;
       const g = groups[d.pair + "|" + d.c + "|" + d.r + "|" + d.col + "|" + d.s1] ||= { hits: [], sum: 0 };
       g.hits.push(d);
@@ -1877,6 +1914,21 @@ function row0Btn() {
   return `<button type="button" onclick="toggleRow0()" title="Row 0 only" style="background:` + (row0Only ? "var(--green)" : "none") + `;border:1px solid var(--border2);color:` + (row0Only ? "#000432" : "inherit") + `;cursor:pointer;padding:0 8px;font:inherit;border-radius:3px;margin-right:6px">R0</button>`;
 }
 
+function wsC2(x) { return x.type === "MOM" ? (x.c1 || 0) - (x.c2 || 0) : (x.c2 || 0); }
+function wsCmp(a, b) { return ((b.c1 || 0) - (a.c1 || 0)) || ((+b.pct || 0) - (+a.pct || 0)) || (wsC2(a) - wsC2(b)) || (a.c - b.c) || (a.r - b.r) || (a.s1 - b.s1); }
+function wsBuild(list) {
+  var bk = {}, i, x, k, top = [];
+  for (i = 0; i < list.length; i++) {
+    x = list[i];
+    k = x.pair + "|" + (x.sess || 1) + "|" + x.c;
+    if (!bk[k] || wsCmp(x, bk[k]) < 0) bk[k] = x;
+  }
+  for (k in bk) top.push(bk[k]);
+  top.sort(wsCmp);
+  top = top.slice(0, 10);
+  return top.sort(function (a, b) { return ((+b.pct || 0) - (+a.pct || 0)) || wsCmp(a, b); });
+}
+
 // ── Render Table using Ported 1-Best-Prime-Per-Level Selection ──
 function renderTable() {
   $("lvlsBtn").classList.toggle("on", lvlsOn);
@@ -1890,11 +1942,13 @@ function renderTable() {
 
   const primeRevs = allRevs.filter(x => x._isPrimeWinner);
   const primeMoms = allMoms.filter(x => x._isPrimeWinner);
-  const rawRevs = allRevs.filter(x => !x._isPrimeWinner);
-  const rawMoms = allMoms.filter(x => !x._isPrimeWinner);
+  const rawRevs = allRevs.filter(x => !x._isPrimeWinner && !x._wb);
+    const rawMoms = allMoms.filter(x => !x._isPrimeWinner && !x._wb);
+    const wbRevs = allRevs.filter(x => x._wb);
+    const wbMoms = allMoms.filter(x => x._wb);
 
-  const activeSourceRevs = row0Only ? rawRevs : primeRevs;
-  const activeSourceMoms = row0Only ? rawMoms : primeMoms;
+  const activeSourceRevs = row0Only ? rawRevs : wbRevs;
+    const activeSourceMoms = row0Only ? rawMoms : wbMoms;
 
   var _lvPre = activeSourceRevs.concat(activeSourceMoms).filter(function (x) {
     return x.pct >= minPct && matchesLevel(x, lv) && (!row0Only || x.r === 0) && (sessSel == null || (x.sess || 1) === sessSel);
@@ -1928,8 +1982,8 @@ function renderTable() {
     return lvlDir ? out : out.sort((a, b2) => (a.s1 - b2.s1) || (a.c - b2.c) || (a.r - b2.r));
   };
 
-  const rev = bestPrimePerLevel(lvlOrd(activeSourceRevs.filter(filterFn)));
-  const mom = bestPrimePerLevel(lvlOrd(activeSourceMoms.filter(filterFn)));
+  const rev = wsBuild(activeSourceRevs.filter(filterFn).filter(x => lvlSel == null || x.s1 === lvlSel));
+    const mom = wsBuild(activeSourceMoms.filter(filterFn).filter(x => lvlSel == null || x.s1 === lvlSel));
 
   const area = $("tableArea"), rank = "";
   if (xsView && last.sessCount > 1 && sessSel == null) { area.innerHTML = rank + buildXsHTML(); return; }
