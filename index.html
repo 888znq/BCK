@@ -1603,7 +1603,7 @@ var pctDesc = true;
 var lvlDir = 1;
 var bestLvl = true;
 function toggleBest() { bestLvl = !bestLvl; renderTable(); }
-function toggleLvlSort() { lvlDir = lvlDir === 1 ? -1 : 1; renderTable(); }
+function toggleLvlSort() { lvlSel = ((lvlSel || 0) + 1) % 10 || null; renderTable(); }
 var lvlAll = {};
 function stepLvlSel(dir) {
   var opts = [null].concat(Object.keys(lvlAll).map(Number).sort(function (a, b) { return a - b; }));
@@ -1773,7 +1773,7 @@ function buildRows(data) {
 
 function buildPane(label, data) {
   const hb = "background:none;border:1px solid var(--border2);color:inherit;cursor:pointer;padding:0 3px;font:inherit;font-size:9px;border-radius:3px;margin:0 2px";
-  const stH = `<button type="button" onclick="toggleLvlSort()" title="Sort by level: click to switch between lowest first and highest first" style="${hb};padding:0 8px">STREAK ${lvlDir === -1 ? "▼" : "▲"}</button>`;
+  const stH = `<button type="button" onclick="toggleLvlSort()" title="Level filter: click to cycle ALL, X1 to X9" style="${hb};padding:0 8px">LVL ${lvlSel == null ? "ALL" : "X" + lvlSel}</button>`;
   const c2H = `<button type="button" class="c2-dn" title="Lower min C2" style="${hb}">◀</button>C2${minC2 == null ? "" : "=" + minC2}<button type="button" class="c2-up" title="Raise min C2" style="${hb}">▶</button>`;
   const body = data.length
     ? `<table>${SIG_COLS}<thead><tr><th>PAIR</th><th>CYCLE</th><th>ROW</th><th>${stH}</th><th>C1</th><th>${c2H}</th><th>PROB%</th></tr></thead><tbody>${buildRows(data)}</tbody></table>`
@@ -1955,7 +1955,7 @@ function renderTable() {
   });
   Object.keys(lvlAll).forEach(function (k) { delete lvlAll[k]; });
   _lvPre.forEach(function (x) { lvlAll[x.s1] = 1; });
-  if (_lvPre.length && lvlSel != null && !lvlAll[lvlSel]) lvlSel = null;
+  
 
   var c2k = x => x.type === "MOM" ? (x.c1 || 0) - (x.c2 || 0) : (x.c2 || 0);
   const baseFn = x => x.pct >= minPct && matchesLevel(x, lv) && (!row0Only || x.r === 0) && (minC2 == null || (x.c2 || 0) === minC2);
