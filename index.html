@@ -824,12 +824,12 @@ function workerMain() {
                               o0 = bR0[s];
                               if (!o0 || c1 > o0.c1 || (c1 === o0.c1 && (pr > o0.pct || (pr === o0.pct && c2 < o0.c2)))) bR0[s] = { pair: pair, c: c, r: r, s1: s, s2: s + 1, c1: c1, c2: c2, col: k ? "R" : "G", pct: pr, type: "REV", _w0: true };
                               om0 = bM0[s];
-                              if (!om0 || c1 > om0.c1 || (c1 === om0.c1 && (q > om0.pct || (q === om0.pct && c1 - c2 < om0.c1 - om0.c2)))) bM0[s] = { pair: pair, c: c, r: r, s1: s, s2: s + 1, c1: c1, c2: c2, col: k ? "R" : "G", pct: q, type: "MOM", _w0: true };
+                              if (!om0 || q > om0.pct || (q === om0.pct && (c2 > om0.c2 || (c2 === om0.c2 && c1 > om0.c1)))) bM0[s] = { pair: pair, c: c, r: r, s1: s, s2: s + 1, c1: c1, c2: c2, col: k ? "R" : "G", pct: q, type: "MOM", _w0: true };
                             }
                             o = bR[s];
               if (!o || c1 > o.c1 || (c1 === o.c1 && (pr > o.pct || (pr === o.pct && (c2 < o.c2 || (c2 === o.c2 && r < o.r)))))) bR[s] = { pair: pair, c: c, r: r, s1: s, s2: s + 1, c1: c1, c2: c2, col: k ? "R" : "G", pct: pr, type: "REV", _wb: true };
               om = bM[s]; key = c1 - c2;
-              if (!om || c1 > om.c1 || (c1 === om.c1 && (q > om.pct || (q === om.pct && (key < om.c1 - om.c2 || (key === om.c1 - om.c2 && r < om.r)))))) bM[s] = { pair: pair, c: c, r: r, s1: s, s2: s + 1, c1: c1, c2: c2, col: k ? "R" : "G", pct: q, type: "MOM", _wb: true };
+              if (!om || q > om.pct || (q === om.pct && (c2 > om.c2 || (c2 === om.c2 && (c1 > om.c1 || (c1 === om.c1 && r < om.r)))))) bM[s] = { pair: pair, c: c, r: r, s1: s, s2: s + 1, c1: c1, c2: c2, col: k ? "R" : "G", pct: q, type: "MOM", _wb: true };
             }
           }
         }
@@ -1606,7 +1606,7 @@ var lvlsAllHide = false;
 var lvlsPanel = {};
 function toggleAllLvls() { lvlsHide = {}; renderTable(); }
 function toggleLvlPanel(l) { lvlsPanel[l] = !lvlsPanel[l]; renderTable(); }
-var lvlSel = null;
+var lvlSel = 1;
 var pctDesc = true;
 var lvlDir = 1;
 var bestLvl = true;
@@ -1919,7 +1919,10 @@ function row0Btn() {
 }
 
 function wsC2(x) { return x.type === "MOM" ? (x.c1 || 0) - (x.c2 || 0) : (x.c2 || 0); }
-function wsCmp(a, b) { return ((b.c1 || 0) - (a.c1 || 0)) || ((+b.pct || 0) - (+a.pct || 0)) || (wsC2(a) - wsC2(b)) || (a.c - b.c) || (a.r - b.r) || (a.s1 - b.s1); }
+function wsCmp(a, b) {
+  if (a.type === "MOM") return ((+b.pct || 0) - (+a.pct || 0)) || ((b.c2 || 0) - (a.c2 || 0)) || ((b.c1 || 0) - (a.c1 || 0)) || (a.c - b.c) || (a.r - b.r) || (a.s1 - b.s1);
+  return ((b.c1 || 0) - (a.c1 || 0)) || ((+b.pct || 0) - (+a.pct || 0)) || (wsC2(a) - wsC2(b)) || (a.c - b.c) || (a.r - b.r) || (a.s1 - b.s1);
+}
 function wsBuild(list) {
   var bk = {}, i, x, k, top = [];
   for (i = 0; i < list.length; i++) {
@@ -2488,7 +2491,7 @@ $("bar").addEventListener("change", function (e) {
 });
 
 // ── init ──
-try { lvlSel = null; } catch (eLv) {}
+try { lvlSel = 1; } catch (eLv) {}
 renderBar();
 (async () => {
   try {
