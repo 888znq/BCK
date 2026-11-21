@@ -805,9 +805,9 @@ function workerMain() {
   }
 
   function buildCmpBest(states, pair) {
-      var revs = [], moms = [], si, st, c, L, H, bR, bM, r, k, ms, base, cm, cum, i, s, c1, c2, q, pr, o, om, key;
+      var revs = [], moms = [], si, st, c, L, H, bR, bM, bR0, bM0, o0, om0, r, k, ms, base, cm, cum, i, s, c1, c2, q, pr, o, om, key;
       for (si = 0; si < states.length; si++) {
-        st = states[si]; c = st.c; L = st.L; H = st.H; bR = {}; bM = {};
+        st = states[si]; c = st.c; L = st.L; H = st.H; bR = {}; bM = {}; bR0 = {}; bM0 = {};
         for (r = 0; r < c; r++) {
           for (k = 0; k < 2; k++) {
             ms = st.maxLen[k][r];
@@ -820,7 +820,13 @@ function workerMain() {
               c1 = cm[s];
               if (c1 <= 0) continue;
               c2 = cm[s + 1]; q = Math.round(c2 / c1 * 100); pr = 100 - q;
-              o = bR[s];
+              if (r === 0) {
+                              o0 = bR0[s];
+                              if (!o0 || c1 > o0.c1 || (c1 === o0.c1 && (pr > o0.pct || (pr === o0.pct && c2 < o0.c2)))) bR0[s] = { pair: pair, c: c, r: r, s1: s, s2: s + 1, c1: c1, c2: c2, col: k ? "R" : "G", pct: pr, type: "REV", _w0: true };
+                              om0 = bM0[s];
+                              if (!om0 || c1 > om0.c1 || (c1 === om0.c1 && (q > om0.pct || (q === om0.pct && c1 - c2 < om0.c1 - om0.c2)))) bM0[s] = { pair: pair, c: c, r: r, s1: s, s2: s + 1, c1: c1, c2: c2, col: k ? "R" : "G", pct: q, type: "MOM", _w0: true };
+                            }
+                            o = bR[s];
               if (!o || c1 > o.c1 || (c1 === o.c1 && (pr > o.pct || (pr === o.pct && (c2 < o.c2 || (c2 === o.c2 && r < o.r)))))) bR[s] = { pair: pair, c: c, r: r, s1: s, s2: s + 1, c1: c1, c2: c2, col: k ? "R" : "G", pct: pr, type: "REV", _wb: true };
               om = bM[s]; key = c1 - c2;
               if (!om || c1 > om.c1 || (c1 === om.c1 && (q > om.pct || (q === om.pct && (key < om.c1 - om.c2 || (key === om.c1 - om.c2 && r < om.r)))))) bM[s] = { pair: pair, c: c, r: r, s1: s, s2: s + 1, c1: c1, c2: c2, col: k ? "R" : "G", pct: q, type: "MOM", _wb: true };
@@ -828,7 +834,9 @@ function workerMain() {
           }
         }
         for (s in bR) revs.push(bR[s]);
+                for (s in bR0) revs.push(bR0[s]);
         for (s in bM) moms.push(bM[s]);
+                for (s in bM0) moms.push(bM0[s]);
       }
       return { revs: revs, moms: moms };
     }
@@ -1586,7 +1594,7 @@ const lvlsEta = x => {
 function toggleLvlExp(k) { lvlsExp[k] = !lvlsExp[k]; renderTable(); }
 function toggleLvls() { lvlsOn = !lvlsOn; renderTable(); }
 function toggleOrd() { ordOn = !ordOn; renderTable(); }
-function toggleRow0() { row0Only = false; renderTable(); }
+function toggleRow0() { row0Only = !row0Only; renderTable(); }
 function toggleXs() { xsView = !xsView; $("xsBtn").classList.toggle("on", xsView); renderTable(); }
 var minC2 = null;
 function toggleC2(dir) {
@@ -1784,7 +1792,7 @@ function computeCrossSession() {
   const build = list => {
     const groups = {};
     for (const d of list) {
-      if (d._isPrimeWinner || d._wb) continue;
+      if (d._isPrimeWinner || d._wb || d._w0) continue;
       if (d.pct < minPct || !matchesLevel(d, lv) || (row0Only && d.r !== 0) || (lvlSel != null && d.s1 !== lvlSel)) continue;
       const g = groups[d.pair + "|" + d.c + "|" + d.r + "|" + d.col + "|" + d.s1] ||= { hits: [], sum: 0 };
       g.hits.push(d);
@@ -1938,13 +1946,13 @@ function renderTable() {
 
   const primeRevs = allRevs.filter(x => x._isPrimeWinner);
   const primeMoms = allMoms.filter(x => x._isPrimeWinner);
-  const rawRevs = allRevs.filter(x => !x._isPrimeWinner && !x._wb);
-    const rawMoms = allMoms.filter(x => !x._isPrimeWinner && !x._wb);
+  const rawRevs = allRevs.filter(x => !x._isPrimeWinner && !x._wb && !x._w0);
+    const rawMoms = allMoms.filter(x => !x._isPrimeWinner && !x._wb && !x._w0);
     const wbRevs = allRevs.filter(x => x._wb);
     const wbMoms = allMoms.filter(x => x._wb);
 
-  const activeSourceRevs = wbRevs;
-    const activeSourceMoms = wbMoms;
+  const activeSourceRevs = row0Only ? allRevs.filter(x => x._w0) : wbRevs;
+    const activeSourceMoms = row0Only ? allMoms.filter(x => x._w0) : wbMoms;
 
   var _lvPre = activeSourceRevs.concat(activeSourceMoms).filter(function (x) {
     return x.pct >= minPct && matchesLevel(x, lv) && (!row0Only || x.r === 0) && (sessSel == null || (x.sess || 1) === sessSel);
